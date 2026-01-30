@@ -192,37 +192,59 @@ function getSerpReportKeyword(report: BronSerpReport): string {
   return '';
 }
 
-// Find matching SERP report for a keyword
+// Normalize keyword text for comparison (strip title suffixes, lowercase)
+function normalizeKeywordForMatch(text: string): string {
+  let normalized = text.toLowerCase().trim();
+  // Remove page title suffix (after colon)
+  if (normalized.includes(':')) {
+    normalized = normalized.split(':')[0].trim();
+  }
+  return normalized;
+}
+
+// Find matching SERP report for a keyword (enhanced matching)
 export function findSerpForKeyword(keywordText: string, serpReports: BronSerpReport[]): BronSerpReport | null {
   if (!keywordText || !serpReports.length) return null;
-  const normalizedKeyword = keywordText.toLowerCase().trim();
+  const normalizedKeyword = normalizeKeywordForMatch(keywordText);
   
-  // Exact match using extended keyword extraction
-  const exactMatch = serpReports.find(r => getSerpReportKeyword(r) === normalizedKeyword);
+  // Strategy 1: Exact match using extended keyword extraction
+  const exactMatch = serpReports.find(r => {
+    const serpKeyword = getSerpReportKeyword(r);
+    return serpKeyword === normalizedKeyword;
+  });
   if (exactMatch) return exactMatch;
   
-  // Contains match
+  // Strategy 2: Exact match after stripping both sides of ":"
+  const exactMatchStripped = serpReports.find(r => {
+    const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(r));
+    return serpKeyword === normalizedKeyword;
+  });
+  if (exactMatchStripped) return exactMatchStripped;
+  
+  // Strategy 3: Contains match (one contains the other)
   const containsMatch = serpReports.find(r => {
-    const serpKeyword = getSerpReportKeyword(r);
+    const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(r));
     if (!serpKeyword) return false;
     return normalizedKeyword.includes(serpKeyword) || serpKeyword.includes(normalizedKeyword);
   });
   if (containsMatch) return containsMatch;
   
-  // Word overlap match (2+ word matches)
+  // Strategy 4: Word overlap match (2+ significant word matches)
   const keywordWords = normalizedKeyword.split(/\s+/).filter(w => w.length > 2);
-  for (const report of serpReports) {
-    const serpKeyword = getSerpReportKeyword(report);
-    if (!serpKeyword) continue;
-    const serpWords = serpKeyword.split(/\s+/).filter(w => w.length > 2);
-    const matchCount = keywordWords.filter(w => serpWords.includes(w)).length;
-    if (matchCount >= 2) return report;
+  if (keywordWords.length >= 2) {
+    for (const report of serpReports) {
+      const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(report));
+      if (!serpKeyword) continue;
+      const serpWords = serpKeyword.split(/\s+/).filter(w => w.length > 2);
+      const matchCount = keywordWords.filter(w => serpWords.includes(w)).length;
+      if (matchCount >= 2) return report;
+    }
   }
   
-  // Fallback: normalized slug comparison (remove special chars)
+  // Strategy 5: Normalized slug comparison (remove special chars)
   const normalizedSlug = normalizedKeyword.replace(/[^a-z0-9]/g, '');
   for (const report of serpReports) {
-    const serpKeyword = getSerpReportKeyword(report);
+    const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(report));
     if (!serpKeyword) continue;
     const serpSlug = serpKeyword.replace(/[^a-z0-9]/g, '');
     if (normalizedSlug === serpSlug) return report;
@@ -235,6 +257,18 @@ export function findSerpForKeyword(keywordText: string, serpReports: BronSerpRep
   }
   
   return null;
+}
+
+// Find SERP report by keyword ID (for direct ID matching)
+export function findSerpByKeywordId(keywordId: string | number, serpReports: BronSerpReport[]): BronSerpReport | null {
+  if (!keywordId || !serpReports.length) return null;
+  const idStr = String(keywordId);
+  
+  return serpReports.find(r => {
+    const rAny = r as unknown as Record<string, unknown>;
+    const reportKwId = rAny.keyword_id || rAny.keywordid || rAny.id || rAny.feedid;
+    return reportKwId && String(reportKwId) === idStr;
+  }) || null;
 }
 
 // Result type for grouped keywords
