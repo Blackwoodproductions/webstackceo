@@ -289,10 +289,10 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
   
   return (
     <div 
-      className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
+      className="grid items-center gap-2 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
       style={{ 
-        gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
-        minWidth: '900px',
+        gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+        minWidth: '800px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
@@ -346,10 +346,10 @@ BronKeywordSkeleton.displayName = 'BronKeywordSkeleton';
  */
 export const BronKeywordTableHeader = memo(() => (
   <div 
-    className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
+    className="grid items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
     style={{ 
-      gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
-      minWidth: '900px',
+      gridTemplateColumns: '48px 1fr 100px 210px 130px 80px 32px',
+      minWidth: '800px',
       contain: 'layout style' 
     }}
   >
@@ -393,8 +393,8 @@ export const BronKeywordSkeletonList = memo(({ count = 8 }: { count?: number }) 
     {/* AI Animation hero - using shared component for consistency with CADE */}
     <AIMetricsAnimation title="Analyzing Keywords" />
     
-    {/* Faded skeleton rows below for context - reduced top margin */}
-    <div className="space-y-2 opacity-40 mt-1">
+    {/* Faded skeleton rows below - no extra margin */}
+    <div className="space-y-2 opacity-40">
       <BronKeywordTableHeader />
       {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
         <BronKeywordSkeleton key={i} index={i} />
