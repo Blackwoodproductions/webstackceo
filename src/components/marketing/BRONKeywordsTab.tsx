@@ -419,15 +419,22 @@ export const BRONKeywordsTab = memo(({
           for (const item of oldestReportData) {
             if (item.keyword) {
               const key = item.keyword.toLowerCase().trim();
-              firstPositions[key] = {
+              const positions = {
                 google: getPosition(item.google),
                 bing: getPosition(item.bing),
                 yahoo: getPosition(item.yahoo),
               };
+              firstPositions[key] = positions;
+              
+              // Also store normalized version (no special chars) for better matching
+              const normalizedKey = key.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+              if (normalizedKey !== key) {
+                firstPositions[normalizedKey] = positions;
+              }
             }
           }
           console.log('[BRON] Loaded baseline positions for', Object.keys(firstPositions).length, 'keywords');
-          console.log('[BRON] Sample baseline keywords:', Object.keys(firstPositions).slice(0, 5));
+          console.log('[BRON] Sample baseline keywords:', Object.keys(firstPositions).slice(0, 10));
           setInitialPositions(firstPositions);
         }
       } catch (err) {
