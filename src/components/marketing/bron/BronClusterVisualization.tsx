@@ -133,34 +133,35 @@ const ClusterNode = memo(({
   const baseSize = node.isMainNode ? 80 : 50;
   const size = baseSize * zoom;
   
-  // Color based on ranking
-  let bgColor = "bg-muted/50";
-  let borderColor = "border-muted-foreground/30";
-  let glowColor = "";
+  // Get actual colors for SVG (not Tailwind classes)
+  let fillColor = "rgba(120, 120, 120, 0.3)"; // muted
+  let strokeColor = "rgba(150, 150, 150, 0.5)"; // muted-foreground
+  let glowStroke = "";
   
   if (googlePos !== null) {
     if (googlePos <= 3) {
-      bgColor = "bg-emerald-500/20";
-      borderColor = "border-emerald-400";
-      glowColor = "shadow-[0_0_20px_rgba(16,185,129,0.4)]";
+      fillColor = "rgba(16, 185, 129, 0.25)"; // emerald-500/25
+      strokeColor = "rgb(52, 211, 153)"; // emerald-400
+      glowStroke = "rgba(16, 185, 129, 0.4)";
     } else if (googlePos <= 10) {
-      bgColor = "bg-cyan-500/20";
-      borderColor = "border-cyan-400";
-      glowColor = "shadow-[0_0_15px_rgba(34,211,238,0.3)]";
+      fillColor = "rgba(34, 211, 238, 0.25)"; // cyan-500/25
+      strokeColor = "rgb(34, 211, 238)"; // cyan-400
+      glowStroke = "rgba(34, 211, 238, 0.35)";
     } else if (googlePos <= 20) {
-      bgColor = "bg-amber-500/20";
-      borderColor = "border-amber-400";
+      fillColor = "rgba(245, 158, 11, 0.25)"; // amber-500/25
+      strokeColor = "rgb(251, 191, 36)"; // amber-400
     } else if (googlePos <= 50) {
-      bgColor = "bg-orange-500/20";
-      borderColor = "border-orange-400";
+      fillColor = "rgba(249, 115, 22, 0.25)"; // orange-500/25
+      strokeColor = "rgb(251, 146, 60)"; // orange-400
     } else {
-      bgColor = "bg-rose-500/20";
-      borderColor = "border-rose-400";
+      fillColor = "rgba(244, 63, 94, 0.25)"; // rose-500/25
+      strokeColor = "rgb(251, 113, 133)"; // rose-400
     }
   }
   
   // Hover/selected state
   const hoverScale = isHovered || isSelected ? 1.15 : 1;
+  const finalOpacity = isHovered || isSelected ? 1 : 0.85;
   
   return (
     <g
@@ -171,15 +172,15 @@ const ClusterNode = memo(({
       style={{ cursor: 'pointer' }}
     >
       {/* Glow effect for top rankings */}
-      {glowColor && (
+      {glowStroke && (
         <circle
-          r={size / 2 + 8}
+          r={size / 2 + 10}
           fill="none"
-          className={`${glowColor.includes('emerald') ? 'stroke-emerald-400/30' : 'stroke-cyan-400/30'}`}
-          strokeWidth={4}
+          stroke={glowStroke}
+          strokeWidth={6}
           style={{
-            filter: 'blur(4px)',
-            opacity: isHovered || isSelected ? 1 : 0.6,
+            filter: 'blur(8px)',
+            opacity: isHovered || isSelected ? 0.9 : 0.5,
           }}
         />
       )}
@@ -187,12 +188,13 @@ const ClusterNode = memo(({
       {/* Main circle */}
       <circle
         r={(size / 2) * hoverScale}
-        className={`${bgColor} ${borderColor} transition-all duration-200`}
-        fill="currentColor"
-        stroke="currentColor"
+        fill={fillColor}
+        stroke={strokeColor}
         strokeWidth={node.isMainNode ? 3 : 2}
         style={{
-          filter: isHovered || isSelected ? 'brightness(1.2)' : 'none',
+          opacity: finalOpacity,
+          transition: 'all 0.2s ease',
+          filter: isHovered || isSelected ? 'brightness(1.3)' : 'none',
         }}
       />
       
@@ -441,13 +443,38 @@ export const BronClusterVisualization = memo(({
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
   
-  // Generate node positions in radial layout
+  // Measure container size
+  useEffect(() => {
+    if (!containerRef.current || !isOpen) return;
+    
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ 
+          width: Math.max(rect.width, 800), 
+          height: Math.max(rect.height - 64, 600) // subtract header height
+        });
+      }
+    };
+    
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [isOpen]);
+  
+  // Generate node positions in radial layout - use container dimensions
   const nodes = useMemo(() => {
     const result: NodeData[] = [];
-    const centerX = 600;
-    const centerY = 400;
-    const clusterRadius = 300;
+    
+    // Exit early if no clusters
+    if (!clusters || clusters.length === 0) return result;
+    
+    const centerX = containerSize.width / 2;
+    const centerY = containerSize.height / 2;
+    // Scale radius based on container size and cluster count
+    const clusterRadius = Math.min(containerSize.width, containerSize.height) * 0.3;
     
     clusters.forEach((cluster, clusterIndex) => {
       // Position main clusters in a circle
@@ -553,7 +580,7 @@ export const BronClusterVisualization = memo(({
     });
     
     return result;
-  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, linksIn, linksOut, selectedDomain, initialPositions]);
+  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, linksIn, linksOut, selectedDomain, initialPositions, containerSize]);
   
   // Generate connection lines
   const connections = useMemo(() => {
@@ -724,51 +751,62 @@ export const BronClusterVisualization = memo(({
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="w-full h-full pt-16 cursor-grab active:cursor-grabbing"
+        className="w-full h-full pt-16 cursor-grab active:cursor-grabbing overflow-hidden"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        style={{ contain: 'layout style paint' }}
       >
-        <svg
-          ref={svgRef}
-          width="100%"
-          height="100%"
-          viewBox="0 0 1200 800"
-          className="select-none"
-          style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            transformOrigin: 'center center',
-          }}
-        >
-          {/* Connection lines */}
-          {connections.map((conn, i) => (
-            <ConnectionLine
-              key={`conn-${i}`}
-              from={conn.from}
-              to={conn.to}
-              isHighlighted={
-                hoveredNode?.id === conn.from.id || 
-                hoveredNode?.id === conn.to.id ||
-                selectedNode?.id === conn.from.id ||
-                selectedNode?.id === conn.to.id
-              }
-            />
-          ))}
-          
-          {/* Nodes */}
-          {nodes.map(node => (
-            <ClusterNode
-              key={node.id}
-              node={node}
-              isHovered={hoveredNode?.id === node.id}
-              isSelected={selectedNode?.id === node.id}
-              zoom={zoom}
-              onHover={handleNodeHover}
-              onClick={handleNodeClick}
-            />
-          ))}
-        </svg>
+        {nodes.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg mb-2">No clusters to display</p>
+              <p className="text-sm">Add keywords with parent-child relationships to see clusters</p>
+            </div>
+          </div>
+        ) : (
+          <svg
+            ref={svgRef}
+            width={containerSize.width}
+            height={containerSize.height}
+            viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
+            className="select-none"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: 'center center',
+              willChange: 'transform',
+            }}
+          >
+            {/* Connection lines */}
+            {connections.map((conn, i) => (
+              <ConnectionLine
+                key={`conn-${i}`}
+                from={conn.from}
+                to={conn.to}
+                isHighlighted={
+                  hoveredNode?.id === conn.from.id || 
+                  hoveredNode?.id === conn.to.id ||
+                  selectedNode?.id === conn.from.id ||
+                  selectedNode?.id === conn.to.id
+                }
+              />
+            ))}
+            
+            {/* Nodes */}
+            {nodes.map(node => (
+              <ClusterNode
+                key={node.id}
+                node={node}
+                isHovered={hoveredNode?.id === node.id}
+                isSelected={selectedNode?.id === node.id}
+                zoom={zoom}
+                onHover={handleNodeHover}
+                onClick={handleNodeClick}
+              />
+            ))}
+          </svg>
+        )}
       </div>
       
       {/* Tooltip */}
