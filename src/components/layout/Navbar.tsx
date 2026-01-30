@@ -225,6 +225,9 @@ const Navbar = () => {
         if (popup.closed) {
           clearInterval(pollInterval);
           
+          // Wait a moment for session to propagate
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           // Check if we got a session
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
