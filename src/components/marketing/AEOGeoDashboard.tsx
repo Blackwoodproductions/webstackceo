@@ -1,9 +1,8 @@
 import { useState, useCallback, memo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BrainCircuit, Loader2, CheckCircle, XCircle, AlertCircle, 
   ChevronDown, ChevronRight, Lightbulb, Sparkles, 
-  MessageSquare, Zap, Play, Pause
+  MessageSquare, Play, Pause
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -39,14 +38,41 @@ interface AEOGeoDashboardProps {
   domain: string;
 }
 
+const CACHE_KEY = 'aeo_geo_results_v1';
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+// Load cached results
+function loadCachedResults(domain: string): Record<string, KeywordAEOResult> {
+  try {
+    const cached = localStorage.getItem(`${CACHE_KEY}_${domain}`);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_TTL) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load AEO cache:', e);
+  }
+  return {};
+}
+
+// Save results to cache
+function saveCachedResults(domain: string, results: Record<string, KeywordAEOResult>) {
+  try {
+    localStorage.setItem(`${CACHE_KEY}_${domain}`, JSON.stringify({
+      data: results,
+      timestamp: Date.now(),
+    }));
+  } catch (e) {
+    console.warn('Failed to save AEO cache:', e);
+  }
+}
+
 const LLM_ICONS: Record<string, string> = {
   'Google Gemini': '🔷',
   'ChatGPT': '🟢',
   'GPT-5 Mini': '🟡',
-  'Claude': '🟣',
-  'Perplexity': '🔵',
-  'Copilot': '🔶',
-  'Llama': '🦙',
 };
 
 const PositionBadge = memo(({ position, confidence }: { position: string; confidence: number }) => {
@@ -79,7 +105,7 @@ const LLMResultCard = memo(({ result }: { result: LLMResult }) => {
   const icon = LLM_ICONS[result.modelDisplayName] || '🤖';
   
   return (
-    <div className={`p-4 rounded-lg border transition-all ${
+    <div className={`p-4 rounded-lg border transition-colors ${
       result.position === 'prominent' 
         ? 'bg-emerald-500/5 border-emerald-500/30' 
         : result.position === 'mentioned'
@@ -134,7 +160,7 @@ const KeywordAEOCard = memo(({
     : 0;
 
   return (
-    <Card className="bg-card/80 border-border/50 backdrop-blur-sm overflow-hidden">
+    <Card className="bg-card/80 border-border/50 overflow-hidden contain-layout">
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors py-4">
@@ -166,7 +192,7 @@ const KeywordAEOCard = memo(({
                 {data.isLoading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">Checking LLMs...</span>
+                    <span className="text-xs text-muted-foreground">Checking...</span>
                   </div>
                 ) : data.results.length > 0 ? (
                   <>
@@ -205,14 +231,12 @@ const KeywordAEOCard = memo(({
               </div>
             ) : data.results.length > 0 ? (
               <div className="space-y-4">
-                {/* Results Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {data.results.map((result, idx) => (
                     <LLMResultCard key={`${result.model}-${result.queryUsed}-${idx}`} result={result} />
                   ))}
                 </div>
                 
-                {/* Optimization Suggestions */}
                 {data.suggestions.length > 0 && data.results.some(r => r.position === 'not_found') && (
                   <div className="mt-6 p-4 bg-gradient-to-br from-violet-500/10 to-purple-500/5 border border-violet-500/30 rounded-xl">
                     <div className="flex items-center gap-2 mb-3">
@@ -264,6 +288,16 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   const autoRunAbortRef = useRef(false);
   const hasFetchedRef = useRef<string | null>(null);
   
+  // Load cached results on mount
+  useEffect(() => {
+    if (domain) {
+      const cached = loadCachedResults(domain);
+      if (Object.keys(cached).length > 0) {
+        setKeywordResults(cached);
+      }
+    }
+  }, [domain]);
+  
   // Fetch BRON keywords for this domain
   useEffect(() => {
     if (!domain || hasFetchedRef.current === domain) return;
@@ -272,7 +306,6 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     const fetchKeywords = async () => {
       setIsLoadingKeywords(true);
       try {
-        // Use the BRON API to fetch keywords - it populates keywords state
         await bronApi.fetchKeywords(domain);
       } catch (error) {
         console.error('Error fetching BRON keywords:', error);
@@ -285,10 +318,9 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     fetchKeywords();
   }, [domain, bronApi]);
   
-  // When keywords updates, extract keyword text
+  // When keywords update, extract keyword text
   useEffect(() => {
     if (bronApi.keywords && bronApi.keywords.length > 0) {
-      // Extract unique keywords
       const keywordMap = new Map<string, number>();
       bronApi.keywords.forEach((kw, idx) => {
         const keyword = getTargetKeyword(kw);
@@ -301,12 +333,12 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
       const keywords = Array.from(keywordMap.entries())
         .map(([keyword, position]) => ({ keyword, position }))
         .sort((a, b) => (a.position || 999) - (b.position || 999))
-        .slice(0, 20); // Limit to top 20 keywords
+        .slice(0, 20);
       
       setBronKeywords(keywords);
       setIsLoadingKeywords(false);
       
-      // Initialize keyword results
+      // Initialize keyword results (preserve cached)
       const initialResults: Record<string, KeywordAEOResult> = {};
       keywords.forEach(kw => {
         if (!keywordResults[kw.keyword]) {
@@ -338,21 +370,24 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     
     try {
       const { data, error } = await supabase.functions.invoke('aeo-llm-check', {
-        body: { keyword, domain, queryType: 'both' }
+        body: { keyword, domain, queryType: 'direct' }
       });
       
       if (error) throw error;
       
-      setKeywordResults(prev => ({
-        ...prev,
-        [keyword]: {
-          keyword,
-          isLoading: false,
-          results: data.results || [],
-          suggestions: data.suggestions || [],
-          timestamp: data.timestamp,
-        }
-      }));
+      const newResult = {
+        keyword,
+        isLoading: false,
+        results: data.results || [],
+        suggestions: data.suggestions || [],
+        timestamp: data.timestamp,
+      };
+      
+      setKeywordResults(prev => {
+        const updated = { ...prev, [keyword]: newResult };
+        saveCachedResults(domain, updated);
+        return updated;
+      });
       
       return true;
     } catch (error) {
@@ -361,7 +396,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
       
       if (errorMessage.includes('Rate limit') || errorMessage.includes('429')) {
         toast.error('Rate limit hit. Pausing auto-check...');
-        return false; // Signal to stop auto-run
+        return false;
       } else if (errorMessage.includes('Payment required') || errorMessage.includes('402')) {
         toast.error('API credits exhausted. Please add credits to continue.');
         return false;
@@ -377,11 +412,11 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
           error: errorMessage,
         }
       }));
-      return true; // Continue despite single keyword error
+      return true;
     }
   }, [domain]);
   
-  // Auto-run checks sequentially
+  // Auto-run checks sequentially with shorter delays
   const startAutoRun = useCallback(async () => {
     if (bronKeywords.length === 0) {
       toast.info('No keywords to check');
@@ -401,14 +436,11 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
       if (keywordResults[keyword]?.results?.length > 0) continue;
       
       const success = await checkKeyword(keyword);
-      if (!success) {
-        // Rate limit or payment error - stop
-        break;
-      }
+      if (!success) break;
       
-      // Delay between checks to avoid rate limits (3 seconds)
+      // Reduced delay between checks (1.5 seconds)
       if (i < bronKeywords.length - 1 && !autoRunAbortRef.current) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
     
@@ -435,26 +467,11 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner */}
+      {/* Hero Banner - Static, no heavy animations */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-fuchsia-500/20 border border-violet-500/30 p-8">
-        {/* Animated background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl"
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{ duration: 8, repeat: Infinity }}
-          />
-          <motion.div
-            className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl"
-            animate={{ 
-              scale: [1.2, 1, 1.2],
-              opacity: [0.3, 0.5, 0.3],
-            }}
-            transition={{ duration: 6, repeat: Infinity }}
-          />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl" />
         </div>
         
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -526,7 +543,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         )}
       </div>
       
-      {/* Keywords List */}
+      {/* Keywords List - No heavy animations */}
       <div className="space-y-3">
         {isLoadingKeywords ? (
           <Card className="bg-muted/20 border-dashed">
@@ -546,24 +563,15 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
             </CardContent>
           </Card>
         ) : (
-          <AnimatePresence mode="popLayout">
-            {bronKeywords.map((kw, idx) => (
-              <motion.div
-                key={kw.keyword}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: idx * 0.03 }}
-              >
-                <KeywordAEOCard
-                  data={keywordResults[kw.keyword] || { keyword: kw.keyword, isLoading: false, results: [], suggestions: [] }}
-                  isExpanded={expandedKeyword === kw.keyword}
-                  onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
-                  position={kw.position}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          bronKeywords.map((kw) => (
+            <KeywordAEOCard
+              key={kw.keyword}
+              data={keywordResults[kw.keyword] || { keyword: kw.keyword, isLoading: false, results: [], suggestions: [] }}
+              isExpanded={expandedKeyword === kw.keyword}
+              onToggle={() => setExpandedKeyword(prev => prev === kw.keyword ? null : kw.keyword)}
+              position={kw.position}
+            />
+          ))
         )}
       </div>
       
