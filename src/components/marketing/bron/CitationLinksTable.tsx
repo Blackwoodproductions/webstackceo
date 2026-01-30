@@ -60,18 +60,24 @@ function categoryWordOverlap(keywordText: string, categoryText: string) {
  * Extract a keyword/topic text from a BRON link.
  * 
  * BRON API provides keyword info in multiple ways:
- * 1. Direct anchor_text/keyword field (most reliable) - e.g., "Family Dentist Burlington"
+ * 1. Direct keyword/anchor_text field (most reliable) - e.g., "Cosmetic Dentistry Port Coquitlam"
  * 2. URL path parsing as fallback - e.g., "local-seo-for-dentists-575290bc" -> "Local Seo For Dentists"
  */
 export function extractKeywordFromLink(link: BronLink): string {
-  // First, try direct keyword/anchor text fields from the API
+  const linkRecord = link as Record<string, unknown>;
+  
+  // First, try direct keyword/anchor text fields from the API (MOST RELIABLE)
+  // These fields contain the actual keyword that this link is associated with
   const directFields = [
-    (link as Record<string, unknown>).anchor_text as string,
-    (link as Record<string, unknown>).keyword as string,
-    (link as Record<string, unknown>).keyword_text as string,
-    (link as Record<string, unknown>).keywordtitle as string,
-    (link as Record<string, unknown>).title as string,
-    (link as Record<string, unknown>).text as string,
+    linkRecord.keyword as string,           // Primary keyword field
+    linkRecord.keyword_text as string,
+    linkRecord.keywordtitle as string,
+    linkRecord.target_keyword as string,    // Target keyword on our site
+    linkRecord.link_keyword as string,
+    link.anchor_text,                       // Anchor text used in link
+    linkRecord.title as string,
+    linkRecord.text as string,
+    linkRecord.phrase as string,
   ];
   
   for (const field of directFields) {

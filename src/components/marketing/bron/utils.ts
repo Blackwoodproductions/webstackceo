@@ -729,38 +729,62 @@ export function filterLinksForKeyword(
     return false;
   };
 
-  // NEW: Match link by keyword/anchor text association (for OUTBOUND links)
-  // BRON API associates outbound links with keywords via the anchor text or keyword field
+  // Match link by keyword/anchor text association
+  // BRON API associates links with keywords via multiple text fields
+  // This is the PRIMARY matching method for citation partners
   const matchesKeywordByText = (link: BronLink): boolean => {
-    // Get anchor text or keyword from the link
+    // Get ALL possible text fields that might contain the keyword association
+    const linkRecord = link as Record<string, unknown>;
     const linkTexts = [
       link.anchor_text,
-      (link as Record<string, unknown>).keyword as string,
-      (link as Record<string, unknown>).keyword_text as string,
-      (link as Record<string, unknown>).keywordtitle as string,
-      (link as Record<string, unknown>).title as string,
+      linkRecord.keyword as string,
+      linkRecord.keyword_text as string,
+      linkRecord.keywordtitle as string,
+      linkRecord.title as string,
+      linkRecord.text as string,
+      linkRecord.phrase as string,
+      // For BRON links table, the "keyword" field often contains the target keyword
+      linkRecord.target_keyword as string,
+      linkRecord.link_keyword as string,
     ].filter(Boolean);
 
     for (const text of linkTexts) {
       if (!text) continue;
       const linkTextLower = String(text).toLowerCase().trim();
       
-      // Exact match
+      // Exact match (highest priority)
       if (linkTextLower === keywordLower) return true;
+      
+      // Normalized match (remove location suffixes and compare)
+      const normalizeForMatch = (s: string) => s
+        .replace(/\s+(port coquitlam|vancouver|burnaby|surrey|bc|canada|los angeles|la|ca)$/i, '')
+        .replace(/\s+in\s+\w+$/i, '')
+        .replace(/\s+near\s+\w+$/i, '')
+        .trim();
+      
+      const normalizedLink = normalizeForMatch(linkTextLower);
+      const normalizedKeyword = normalizeForMatch(keywordLower);
+      
+      if (normalizedLink && normalizedKeyword && 
+          (normalizedLink === normalizedKeyword || 
+           normalizedLink.includes(normalizedKeyword) || 
+           normalizedKeyword.includes(normalizedLink))) {
+        return true;
+      }
       
       // Fuzzy match: check if significant words overlap
       const linkWords = linkTextLower.split(/\s+/).filter(w => w.length > 2);
       const keywordWords = keywordLower.split(/\s+/).filter(w => w.length > 2);
       
-      // If most words match (70%+), consider it a match
+      // If most words match (60%+ for better recall), consider it a match
       if (keywordWords.length >= 2 && linkWords.length >= 2) {
         const matchingWords = keywordWords.filter(w => linkWords.includes(w));
         const matchRatio = matchingWords.length / Math.min(keywordWords.length, linkWords.length);
-        if (matchRatio >= 0.7) return true;
+        if (matchRatio >= 0.6) return true;
       }
       
-      // Contains match for shorter keywords
-      if (keywordLower.length >= 5) {
+      // Contains match for shorter keywords (min 5 chars for precision)
+      if (keywordLower.length >= 5 && linkTextLower.length >= 5) {
         if (linkTextLower.includes(keywordLower) || keywordLower.includes(linkTextLower)) {
           return true;
         }
@@ -771,25 +795,22 @@ export function filterLinksForKeyword(
   };
 
   // LINKS IN: Filter for inbound links TO this specific keyword's page
-  // Each partner in the Business Collective links to specific pages
-  // We match links where the target URL contains our keyword's BRON token
+  // Citation partners link to specific keyword pages - match by keyword text FIRST
+  // This is the primary way BRON API organizes inbound citation links
   const keywordLinksIn = linksIn.filter((link) => {
-    // For inbound links, the `link` field typically contains the target URL on our domain
-    // First try URL-based matching (most reliable for inbound)
-    if (linkMatchesKeywordByUrl(link)) return true;
-    // Fallback: check if the link's anchor/keyword matches this keyword
+    // PRIMARY: Match by keyword/anchor text association (most reliable for BRON citations)
     if (matchesKeywordByText(link)) return true;
+    // SECONDARY: Try URL-based matching (fallback for when link has target URL)
+    if (linkMatchesKeywordByUrl(link)) return true;
     return false;
   });
   
-  // LINKS OUT: Filter for outbound links FROM this keyword's page
-  // These are links from our keyword page to partner sites
-  // BRON API shows: domain_name (partner), keyword/anchor_text association, category
+  // LINKS OUT: Filter for outbound links FROM this keyword's resource page
+  // These are links from our keyword's bottom-of-silo page to partner sites
   const keywordLinksOut = linksOut.filter((link) => {
     // Primary: Match by keyword/anchor text association
-    // This is how BRON API organizes outbound links - each link has a keyword it belongs to
     if (matchesKeywordByText(link)) return true;
-    // Fallback: Try URL-based matching (in case source URL is provided)
+    // Fallback: Try URL-based matching
     if (linkMatchesKeywordByUrl(link)) return true;
     return false;
   });
