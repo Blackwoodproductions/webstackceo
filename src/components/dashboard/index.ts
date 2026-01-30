@@ -4,7 +4,11 @@ export type { DashboardTab } from './VIDashboardHeader';
 export { VIChatSidebar } from './VIChatSidebar';
 export { VIDashboardTabs } from './VIDashboardTabs';
 export { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
+export { FeatureUpgradePrompt, type FeatureType } from './FeatureUpgradePrompt';
+export { FeatureGate } from './FeatureGate';
+export { WhiteLabelLogo } from './WhiteLabelLogo';
 
 // Re-export data hooks
 export { useDashboardData } from '@/hooks/use-dashboard-data';
 export { useLiveVisitors } from '@/hooks/use-live-visitors';
+export { useSubscriptionStatus, useFeatureAccess } from '@/hooks/use-subscription-status';
