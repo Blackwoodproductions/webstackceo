@@ -2,15 +2,13 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Activity, AlertTriangle, CheckCircle, XCircle, Clock, 
-  RefreshCw, Shield, Zap, Play, Wrench, ChevronDown,
-  ChevronRight, Bell, BellOff, Server, Globe, Database,
+  RefreshCw, Zap, Play, Wrench, Bell, BellOff, Server, Globe, Database,
   Code, ExternalLink, Gauge, Radio, Cpu, Wifi
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSystemHealth, type SystemHealthCheck, type SystemAlert, type RemediationLog } from '@/hooks/use-system-health';
 import { formatDistanceToNow, format } from 'date-fns';
