@@ -613,8 +613,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
         progressPercent={domainContextProgress}
       />
 
-      {/* Hero Banner - Dark theme matching dashboard cards */}
-      <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30 bg-gradient-to-br from-card via-card/95 to-background p-6 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+      {/* Hero Banner - Premium dark theme */}
+      <div className="relative rounded-2xl overflow-hidden border border-cyan-500/30 bg-gradient-to-br from-card via-card/95 to-background shadow-[0_0_30px_rgba(6,182,212,0.15)]">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* Grid pattern */}
@@ -625,7 +625,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
               backgroundSize: '24px 24px',
             }}
           />
-          {/* Radial glow */}
+          {/* Radial glows */}
           <div 
             className="absolute inset-0"
             style={{
@@ -638,27 +638,65 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500/60 via-cyan-500/40 to-cyan-500/60" />
         </div>
         
-        <div className="relative flex items-center justify-between gap-6">
-          {/* Left: Title & Description */}
-          <div className="flex-shrink-0">
-            <h1 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
-              Welcome to CADE Content Writer
-              <Badge className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 text-[10px] px-2 py-0.5">
-                Pro
-              </Badge>
-            </h1>
-            <p className="text-muted-foreground text-sm">AI-Powered content generation and SEO Optimization</p>
+        <div className="relative flex items-stretch">
+          {/* Left: Enhanced Visual Section */}
+          <div className="flex-shrink-0 p-6 pr-4 flex items-center gap-5">
+            {/* AI Brain Icon with glow */}
+            <div className="relative flex-shrink-0">
+              {/* Outer glow ring */}
+              <div 
+                className="absolute inset-0 w-16 h-16 rounded-full m-auto"
+                style={{
+                  background: 'radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%)',
+                }}
+              />
+              {/* Icon container */}
+              <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                <Brain className="w-7 h-7 text-cyan-400" />
+              </div>
+              {/* Sparkle accent */}
+              <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber-400 opacity-80" />
+            </div>
+            
+            {/* Title & Description */}
+            <div>
+              <h1 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+                CADE Content Writer
+                <Badge className="bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border-cyan-500/40 text-cyan-400 text-[10px] px-2 py-0.5 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                  Pro
+                </Badge>
+              </h1>
+              <p className="text-muted-foreground text-sm">AI-Powered content generation & SEO optimization</p>
+              
+              {/* Feature pills */}
+              <div className="flex items-center gap-2 mt-3">
+                <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                  Auto-Publish
+                </span>
+                <span className="text-[10px] px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400">
+                  SEO Optimized
+                </span>
+                <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                  FAQ Generation
+                </span>
+              </div>
+            </div>
           </div>
           
-          {/* Center & Right: Platform Cards with Settings */}
-          <CADEPlatformCards 
-            onSettingsClick={() => setDomainContextOpen(true)}
-            connectedPlatforms={[]} // TODO: Connect to actual connection state
-            onPlatformClick={(platformId) => {
-              // Handle platform click - could open connection dialog
-              console.log("Platform clicked:", platformId);
-            }}
-          />
+          {/* Vertical divider */}
+          <div className="w-px bg-gradient-to-b from-transparent via-cyan-500/30 to-transparent my-4" />
+          
+          {/* Right: Platform Cards with Settings */}
+          <div className="flex-1 p-4 flex items-center">
+            <CADEPlatformCards 
+              onSettingsClick={() => setDomainContextOpen(true)}
+              connectedPlatforms={[]} // TODO: Connect to actual connection state
+              onPlatformClick={(platformId) => {
+                // Handle platform click - could open connection dialog
+                console.log("Platform clicked:", platformId);
+              }}
+            />
+          </div>
         </div>
       </div>
 
