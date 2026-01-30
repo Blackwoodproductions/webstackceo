@@ -2,9 +2,10 @@ import { memo, useMemo } from "react";
 import { 
   ChevronUp, ChevronDown, ArrowUpRight, ArrowDownLeft,
   TrendingUp, TrendingDown, Minus, DollarSign, Search, MousePointerClick,
-  ShoppingCart, Info, Compass, Target, RefreshCw
+  ShoppingCart, Info, Compass, Target, RefreshCw, BarChart3
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
 
 // Types
@@ -42,6 +43,7 @@ interface BronKeywordCardProps {
   yahooMovement: number;
   metricsLoading?: boolean;
   onToggleExpand: () => void;
+  onOpenAnalysis?: (keyword: BronKeyword) => void; // NEW: Open analysis dialog
 }
 
 // Utility functions
@@ -460,6 +462,7 @@ export const BronKeywordCard = memo(({
   yahooMovement,
   metricsLoading,
   onToggleExpand,
+  onOpenAnalysis,
 }: BronKeywordCardProps) => {
   const keywordText = getKeywordDisplayText(kw);
   const deleted = kw.deleted === 1 || kw.is_deleted === true;
@@ -516,7 +519,7 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-3 w-full" 
             style={{ 
-              gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 36px',
+              gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 32px 36px',
             }}
           >
             {/* Column 1: Page Speed Gauge - centered for vertical alignment */}
@@ -636,7 +639,23 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 7: Expand/Collapse */}
+            {/* Column 7: Chart/Analysis Button */}
+            <div className="flex items-center justify-center">
+              {onOpenAnalysis && !isNested && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenAnalysis(kw);
+                  }}
+                  className={`${isCompact ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg flex items-center justify-center bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 border border-violet-500/30 transition-colors`}
+                  title="View Keyword Analysis"
+                >
+                  <BarChart3 className={isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                </button>
+              )}
+            </div>
+
+            {/* Column 8: Expand/Collapse */}
             <div className="flex items-center justify-center">
               <div className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-full flex items-center justify-center ${
                 isExpanded 
