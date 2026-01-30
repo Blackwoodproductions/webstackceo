@@ -148,12 +148,37 @@ function ClusterKeywordRowImpl({
   );
   
   // Calculate movements - memoized
+  // Compare current position with baseline (oldest report)
   const { googleMovement, bingMovement, yahooMovement, pageSpeed } = useMemo(() => {
-    const initial = initialPositions[keywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
+    // Try multiple key variations for matching baseline positions
+    const keyLower = keywordText.toLowerCase().trim();
+    // Also try the raw keyword field from the API if available
+    const altKeyLower = (kw.keyword || kw.keywordtitle || '').toLowerCase().trim();
+    
+    // Check both keys for baseline positions
+    let initial = initialPositions[keyLower] || initialPositions[altKeyLower];
+    
+    // If still not found, try partial match (baseline keywords may be slightly different)
+    if (!initial) {
+      for (const [baselineKey, positions] of Object.entries(initialPositions)) {
+        if (keyLower.includes(baselineKey) || baselineKey.includes(keyLower)) {
+          initial = positions;
+          break;
+        }
+      }
+    }
+    
+    if (!initial) {
+      initial = { google: null, bing: null, yahoo: null };
+    }
+    
     const currentGoogle = getPosition(serpData?.google);
     const currentBing = getPosition(serpData?.bing);
     const currentYahoo = getPosition(serpData?.yahoo);
     
+    // Movement = initial position - current position
+    // Positive = improved (was #10, now #5 = 10 - 5 = +5)
+    // Negative = dropped (was #5, now #10 = 5 - 10 = -5)
     const gMove = initial.google && currentGoogle ? initial.google - currentGoogle : 0;
     const bMove = initial.bing && currentBing ? initial.bing - currentBing : 0;
     const yMove = initial.yahoo && currentYahoo ? initial.yahoo - currentYahoo : 0;
@@ -171,7 +196,7 @@ function ClusterKeywordRowImpl({
       yahooMovement: yMove,
       pageSpeed: keywordUrl ? pageSpeedScores[keywordUrl] : undefined,
     };
-  }, [keywordText, serpData, initialPositions, kw.linkouturl, selectedDomain, isTrackingOnly, pageSpeedScores]);
+  }, [keywordText, serpData, initialPositions, kw.linkouturl, kw.keyword, kw.keywordtitle, selectedDomain, isTrackingOnly, pageSpeedScores]);
 
   // Stable callback refs
   const handleToggle = useCallback(() => onToggleExpand(kw), [onToggleExpand, kw]);

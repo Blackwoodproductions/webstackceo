@@ -392,7 +392,7 @@ export const BRONKeywordsTab = memo(({
     }
   }, [isDomainChanging]);
 
-  // Fetch initial positions from SERP history
+  // Fetch initial positions from SERP history (baseline = oldest report)
   useEffect(() => {
     const fetchInitialPositions = async () => {
       if (!selectedDomain || !onFetchSerpDetail || serpHistory.length === 0) return;
@@ -407,6 +407,8 @@ export const BRONKeywordsTab = memo(({
         const oldestReport = sortedHistory[0];
         if (!oldestReport) return;
         
+        console.log('[BRON] Fetching baseline positions from oldest report:', oldestReport.started || oldestReport.created_at);
+        
         const reportId = String(oldestReport.report_id || oldestReport.id);
         const oldestReportData = await onFetchSerpDetail(selectedDomain, reportId);
         
@@ -414,13 +416,16 @@ export const BRONKeywordsTab = memo(({
           const firstPositions: Record<string, InitialPositions> = {};
           for (const item of oldestReportData) {
             if (item.keyword) {
-              firstPositions[item.keyword.toLowerCase()] = {
+              const key = item.keyword.toLowerCase().trim();
+              firstPositions[key] = {
                 google: getPosition(item.google),
                 bing: getPosition(item.bing),
                 yahoo: getPosition(item.yahoo),
               };
             }
           }
+          console.log('[BRON] Loaded baseline positions for', Object.keys(firstPositions).length, 'keywords');
+          console.log('[BRON] Sample baseline keywords:', Object.keys(firstPositions).slice(0, 5));
           setInitialPositions(firstPositions);
         }
       } catch (err) {

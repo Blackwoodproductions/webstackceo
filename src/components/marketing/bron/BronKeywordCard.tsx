@@ -230,7 +230,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
 });
 PageSpeedGauge.displayName = 'PageSpeedGauge';
 
-// Rankings Display Component - compact with color-coded movement
+// Rankings Display Component - compact pills with color-coded movement
 const RankingsDisplay = memo(({ 
   googlePos, bingPos, yahooPos, 
   googleMovement, bingMovement, yahooMovement 
@@ -242,14 +242,15 @@ const RankingsDisplay = memo(({
   bingMovement: number;
   yahooMovement: number;
 }) => {
-  // Color coding: Green = UP (improved), Yellow/Amber = DOWN (dropped), Blue = NO MOVEMENT
+  // Color coding: Green = UP (improved), Amber/Yellow = DOWN (dropped), Blue = NO MOVEMENT
   const getMovementStyles = (movement: number, hasPosition: boolean) => {
     if (movement > 0) {
       // Improved ranking (lower position number means higher rank)
       return {
         textColor: 'text-emerald-400',
         bgColor: 'bg-emerald-500/20 border border-emerald-500/40',
-        icon: <TrendingUp className="w-3.5 h-3.5" strokeWidth={2.5} />,
+        icon: <TrendingUp className="w-3 h-3" strokeWidth={2.5} />,
+        glow: 'shadow-[0_0_8px_rgba(16,185,129,0.3)]',
       };
     }
     if (movement < 0) {
@@ -257,14 +258,16 @@ const RankingsDisplay = memo(({
       return {
         textColor: 'text-amber-400',
         bgColor: 'bg-amber-500/20 border border-amber-500/40',
-        icon: <TrendingDown className="w-3.5 h-3.5" strokeWidth={2.5} />,
+        icon: <TrendingDown className="w-3 h-3" strokeWidth={2.5} />,
+        glow: '',
       };
     }
     // No movement - still show blue background when we have a position
     return {
       textColor: 'text-blue-400',
       bgColor: hasPosition ? 'bg-blue-500/15 border border-blue-500/30' : '',
-      icon: hasPosition ? <Minus className="w-3 h-3" strokeWidth={2} /> : null,
+      icon: hasPosition ? <Minus className="w-2.5 h-2.5" strokeWidth={2} /> : null,
+      glow: '',
     };
   };
 
@@ -273,24 +276,24 @@ const RankingsDisplay = memo(({
     
     if (pos === null) {
       return (
-        <div className="flex items-center justify-center h-8">
-          <span className="text-sm text-muted-foreground/40">—</span>
+        <div className="flex items-center justify-center h-6">
+          <span className="text-xs text-muted-foreground/40">—</span>
         </div>
       );
     }
     
     return (
-      <div className={`flex items-center justify-center gap-1 h-8 px-2 rounded-md ${styles.bgColor}`}>
+      <div className={`flex items-center justify-center gap-0.5 h-6 px-1.5 rounded ${styles.bgColor} ${styles.glow}`}>
         {styles.icon && (
           <div className={`flex items-center ${styles.textColor}`}>
             {styles.icon}
           </div>
         )}
-        <span className={`text-sm font-bold ${styles.textColor}`}>
+        <span className={`text-xs font-semibold ${styles.textColor}`}>
           #{pos}
         </span>
         {movement !== 0 && (
-          <span className={`text-[10px] font-semibold ${styles.textColor}`}>
+          <span className={`text-[9px] font-semibold ${styles.textColor}`}>
             {movement > 0 ? `+${movement}` : movement}
           </span>
         )}
