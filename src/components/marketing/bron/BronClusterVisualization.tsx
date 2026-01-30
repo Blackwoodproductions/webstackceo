@@ -849,7 +849,7 @@ export const BronClusterVisualization = memo(({
                 <span className="text-sm font-bold text-violet-300 text-center px-4 leading-tight">
                   {selectedDomain || 'Main Site'}
                 </span>
-                <Zap className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-6 text-cyan-400" />
+                
               </div>
             </div>
             
