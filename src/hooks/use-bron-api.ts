@@ -703,6 +703,11 @@ export interface BronLink {
   linkid?: string | number;     // Primary ID from BRON API for link operations
   id?: string | number;         // Alternative ID field
   link_id?: string | number;    // Alternative ID field
+  // Feed/Keyword ID fields - associates this link with a specific keyword
+  feedid?: string | number;     // Keyword feed ID this link belongs to
+  feed_id?: string | number;    // Alternative field name
+  keywordid?: string | number;  // Keyword ID this link is associated with
+  keyword_id?: string | number; // Alternative field name
   // Fields from BRON API
   link?: string;              // The URL (on our domain for linksOut, on referrer for linksIn)
   domain_name?: string;       // The OTHER domain (referrer for linksIn, target for linksOut)
@@ -718,6 +723,9 @@ export interface BronLink {
   status?: string;            // Link status
   type?: string;              // Link type
   created_at?: string;        // Creation timestamp
+  // Keyword text fields that might contain the associated keyword
+  keyword?: string;           // The keyword text this link is for
+  keyword_text?: string;      // Alternative keyword text field
 }
 
 export interface BronSubscription {

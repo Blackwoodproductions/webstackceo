@@ -608,6 +608,18 @@ export function filterLinksForKeyword(
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
   const keywordLower = keywordText.toLowerCase().trim();
+  const keywordId = String(keyword.id);
+  
+  // Get all possible keyword IDs to match against link's feedid/keywordid
+  const keywordIdVariants = new Set<string>([
+    keywordId,
+    keywordId.replace(/^serp_/, ''), // Strip serp_ prefix if present
+  ]);
+  
+  // Also add feedid if available on the keyword object
+  const kwRecord = keyword as unknown as Record<string, unknown>;
+  if (kwRecord.feedid) keywordIdVariants.add(String(kwRecord.feedid));
+  if (kwRecord.feed_id) keywordIdVariants.add(String(kwRecord.feed_id));
 
   // Extract BRON token (e.g., "582231" or "582231bc") from URLs
   // BRON pages have two URL patterns:
@@ -650,6 +662,8 @@ export function filterLinksForKeyword(
     tokenCandidates.add(tokenFromUrl);
     // Also add with bc suffix for matching links pages
     tokenCandidates.add(`${tokenFromUrl}bc`);
+    // Also add to keywordIdVariants for feedid matching
+    keywordIdVariants.add(tokenFromUrl);
   }
   
   // Secondary: Try keyword ID if it looks like a BRON ID
@@ -662,6 +676,31 @@ export function filterLinksForKeyword(
   
   // Also match with hyphen prefix
   for (const t of Array.from(tokenCandidates)) tokenCandidates.add(`-${t}`);
+  
+  // ─── Match by keyword/feed ID (PRIMARY - most reliable for BRON API) ───
+  // BRON API associates links with keywords via feedid/keywordid fields
+  const matchesByKeywordId = (link: BronLink): boolean => {
+    const linkRecord = link as Record<string, unknown>;
+    // Check all possible ID fields in the link
+    const linkIdFields = [
+      linkRecord.feedid,
+      linkRecord.feed_id,
+      linkRecord.keywordid,
+      linkRecord.keyword_id,
+      linkRecord.kwid,
+      linkRecord.kw_id,
+      linkRecord.targetfeedid,
+      linkRecord.target_feed_id,
+    ];
+    
+    for (const field of linkIdFields) {
+      if (field !== undefined && field !== null) {
+        const fieldStr = String(field);
+        if (keywordIdVariants.has(fieldStr)) return true;
+      }
+    }
+    return false;
+  };
   
   // URL patterns for this keyword (slug-based matching fallback)
   const urlPatterns: string[] = [];
@@ -795,12 +834,14 @@ export function filterLinksForKeyword(
   };
 
   // LINKS IN: Filter for inbound links TO this specific keyword's page
-  // Citation partners link to specific keyword pages - match by keyword text FIRST
-  // This is the primary way BRON API organizes inbound citation links
+  // Citation partners link to specific keyword pages
+  // Priority: 1) feedid/keywordid match, 2) keyword text match, 3) URL token match
   const keywordLinksIn = linksIn.filter((link) => {
-    // PRIMARY: Match by keyword/anchor text association (most reliable for BRON citations)
+    // PRIMARY: Match by keyword ID (feedid/keywordid) - most reliable for BRON API
+    if (matchesByKeywordId(link)) return true;
+    // SECONDARY: Match by keyword/anchor text association
     if (matchesKeywordByText(link)) return true;
-    // SECONDARY: Try URL-based matching (fallback for when link has target URL)
+    // TERTIARY: Try URL-based matching (fallback for when link has target URL)
     if (linkMatchesKeywordByUrl(link)) return true;
     return false;
   });
@@ -808,9 +849,11 @@ export function filterLinksForKeyword(
   // LINKS OUT: Filter for outbound links FROM this keyword's resource page
   // These are links from our keyword's bottom-of-silo page to partner sites
   const keywordLinksOut = linksOut.filter((link) => {
-    // Primary: Match by keyword/anchor text association
+    // Primary: Match by keyword ID
+    if (matchesByKeywordId(link)) return true;
+    // Secondary: Match by keyword/anchor text association
     if (matchesKeywordByText(link)) return true;
-    // Fallback: Try URL-based matching
+    // Tertiary: Try URL-based matching
     if (linkMatchesKeywordByUrl(link)) return true;
     return false;
   });
