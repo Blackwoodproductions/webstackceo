@@ -80,20 +80,22 @@ export function DomainSelectorBar({
   
   return (
     <div 
-      className="relative border-x border-b border-border bg-card sticky z-[100] max-w-[1480px] mx-auto"
+      className="relative border-x border-b border-border bg-card sticky max-w-[1480px] mx-auto"
       style={{ 
         top: 'calc(var(--app-navbar-height, 64px) + var(--vi-dashboard-header-height, 0px))',
         background: 'hsl(var(--card))',
-        isolation: 'isolate',
+        zIndex: 100,
       }}
       data-no-theme-transition
     >
+      {/* Background grid pattern - static */}
       {/* Background grid pattern - static */}
       <div 
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-          backgroundSize: '24px 24px'
+          backgroundSize: '24px 24px',
+          zIndex: 1
         }}
       />
       
@@ -111,10 +113,14 @@ export function DomainSelectorBar({
               </div>
 
               <Select value={selectedValue} onValueChange={onDomainChange}>
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative z-[130]">
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[500] max-w-[400px] pointer-events-auto">
+                <SelectContent 
+                  className="bg-popover border border-border shadow-2xl max-w-[400px] pointer-events-auto"
+                  style={{ zIndex: 9999 }}
+                  sideOffset={4}
+                >
                   {viDomains.length === 0 && (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
                       No domains yet
