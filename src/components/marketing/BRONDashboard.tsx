@@ -9,7 +9,7 @@ import { BRONDomainsTab } from "./BRONDomainsTab";
 import { BRONLinksTab } from "./BRONLinksTab";
 import { BRONContentTab } from "./BRONContentTab";
 import { BRONSerpTab } from "./BRONSerpTab";
-import { BronDomainProfile, BronKeywordsInfoCards } from "./bron";
+import { BronDomainProfile, BronKeywordsInfoCards, BronStatsFooter } from "./bron";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -468,6 +468,16 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
           />
         </TabsContent>
       </Tabs>
+      
+      {/* Stats Footer Bar */}
+      {selectedDomain && (
+        <BronStatsFooter
+          keywords={stableKeywords}
+          serpReports={stableSerpReports}
+          linksInCount={stableLinksIn.length}
+          linksOutCount={stableLinksOut.length}
+        />
+      )}
     </div>
   );
 });

@@ -14,4 +14,5 @@ export { BronClusterCard } from "./BronClusterCard";
 export { BronClusterVisualization } from "./BronClusterVisualization";
 export { BronKeywordAnalysisDialog } from "./BronKeywordAnalysisDialog";
 export { BronMultiKeywordTrendChart } from "./BronMultiKeywordTrendChart";
+export { BronStatsFooter } from "./BronStatsFooter";
 export * from "./utils";
