@@ -328,10 +328,10 @@ export const BronMultiKeywordTrendChart = memo(({
                     {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
                     {summary.change === 0 && <Minus className="w-3 h-3" />}
                     <span className="text-lg font-bold">
-                      {summary.change >= 999 ? 'NEW' : 
-                       summary.change <= -999 ? 'LOST' :
-                       summary.change > 0 ? `${summary.change}` : 
-                       summary.change < 0 ? `${Math.abs(summary.change)}` : '0'}
+                      {summary.change >= 999 ? `+${summary.change}` : 
+                       summary.change <= -999 ? `${summary.change}` :
+                       summary.change > 0 ? `+${summary.change}` : 
+                       summary.change < 0 ? `${summary.change}` : '0'}
                     </span>
                   </div>
                 </div>

@@ -360,9 +360,9 @@ const RankingsDisplay = memo(({
     // Movement is calculated from position 1000 as baseline for new keywords
     // So #1 position = +999 movement, #10 = +990, etc.
     const formatMovement = (mv: number) => {
-      if (mv === 0) return '0'; // Show 0 instead of "-"
-      if (mv >= 999) return '+NEW';
-      if (mv <= -999) return 'LOST';
+      if (mv === 0) return ''; // No movement indicator
+      if (mv >= 999) return '+'; // Just show "+" for new entries, not "NEW"
+      if (mv <= -999) return '−'; // Just show "−" for lost entries
       return mv > 0 ? `+${mv}` : String(mv);
     };
     

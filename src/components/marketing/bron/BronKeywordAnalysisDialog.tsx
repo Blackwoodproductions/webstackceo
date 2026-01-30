@@ -1,8 +1,9 @@
 import { memo, useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Sparkles, Activity, Target, Users } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Sparkles, Activity, Target, Users, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-api";
 import { getTargetKeyword, getPosition } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
@@ -57,6 +58,7 @@ interface BronKeywordAnalysisDialogProps {
 }
 
 type DateRange = "all" | "30d" | "60d" | "90d";
+type SearchEngine = "google" | "bing" | "yahoo";
 
 // Multi-keyword chart data point
 interface ChartDataPoint {
@@ -87,30 +89,124 @@ const KEYWORD_COLORS = [
   "hsl(45, 93%, 47%)",    // Yellow
 ];
 
-// Custom tooltip showing all 3 engines
+// Search engine config
+const SEARCH_ENGINES: { id: SearchEngine; label: string; color: string; icon: string }[] = [
+  { id: "google", label: "Google", color: "hsl(217, 91%, 60%)", icon: "🔵" },
+  { id: "bing", label: "Bing", color: "hsl(172, 66%, 50%)", icon: "🟢" },
+  { id: "yahoo", label: "Yahoo", color: "hsl(280, 87%, 65%)", icon: "🟣" },
+];
+
+// Custom tooltip showing keyword positions
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload) return null;
   
+  // Sort by position (lower is better)
+  const sorted = [...payload].sort((a: any, b: any) => {
+    const posA = a.value === UNRANKED_POSITION ? 999 : (a.value ?? 999);
+    const posB = b.value === UNRANKED_POSITION ? 999 : (b.value ?? 999);
+    return posA - posB;
+  });
+  
   return (
-    <div className="rounded-xl border border-primary/30 bg-background/95 backdrop-blur-xl p-3 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
+    <div className="rounded-xl border border-primary/30 bg-background/95 backdrop-blur-xl p-3 shadow-[0_0_30px_rgba(139,92,246,0.2)] max-w-xs">
       <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
-      {payload.map((entry: any, idx: number) => {
+      {sorted.slice(0, 5).map((entry: any, idx: number) => {
         const val = entry.value;
         const displayVal = val === UNRANKED_POSITION ? 'Unranked' : `#${val}`;
+        const keywordName = entry.name.length > 30 ? entry.name.slice(0, 30) + '...' : entry.name;
         return (
-          <div key={idx} className="flex items-center gap-2 text-sm">
+          <div key={idx} className="flex items-center gap-2 text-sm py-0.5">
             <div 
-              className="w-2 h-2 rounded-full" 
+              className="w-2 h-2 rounded-full flex-shrink-0" 
               style={{ backgroundColor: entry.stroke || entry.color }}
             />
             <span className="text-foreground font-semibold">{displayVal}</span>
-            <span className="text-muted-foreground text-xs">{entry.name}</span>
+            <span className="text-muted-foreground text-xs truncate">{keywordName}</span>
           </div>
         );
       })}
+      {sorted.length > 5 && (
+        <p className="text-xs text-muted-foreground mt-1">+{sorted.length - 5} more</p>
+      )}
     </div>
   );
 };
+
+// Reusable chart component for a specific search engine
+const EngineChart = memo(({ 
+  engine,
+  chartData, 
+  keywordsWithColors, 
+  isLoading 
+}: { 
+  engine: SearchEngine;
+  chartData: ChartDataPoint[];
+  keywordsWithColors: { id: string; text: string; color: string }[];
+  isLoading: boolean;
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
+          <BarChart3 className="w-6 h-6 text-primary" />
+        </div>
+        <div className="text-muted-foreground">Loading historical data...</div>
+      </div>
+    );
+  }
+  
+  if (chartData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
+          <Activity className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <div className="text-muted-foreground">No historical data available for {engine}</div>
+      </div>
+    );
+  }
+  
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+        <XAxis 
+          dataKey="date" 
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis 
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+          reversed
+          domain={[1, UNRANKED_POSITION]}
+          ticks={[1, 5, 10, 20, 50, UNRANKED_POSITION]}
+          tickFormatter={(val) => val === UNRANKED_POSITION ? '∞' : `#${val}`}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        
+        {keywordsWithColors.map((kw) => (
+          <Line
+            key={kw.id}
+            type="monotone"
+            dataKey={kw.id}
+            name={kw.text}
+            stroke={kw.color}
+            strokeWidth={2.5}
+            dot={{ fill: kw.color, strokeWidth: 0, r: 4 }}
+            activeDot={{ r: 6, fill: kw.color, stroke: 'white', strokeWidth: 2 }}
+            connectNulls
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+});
+EngineChart.displayName = 'EngineChart';
 
 export const BronKeywordAnalysisDialog = memo(({
   isOpen,
@@ -122,6 +218,7 @@ export const BronKeywordAnalysisDialog = memo(({
   onFetchSerpDetail,
 }: BronKeywordAnalysisDialogProps) => {
   const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [selectedEngine, setSelectedEngine] = useState<SearchEngine>("google");
   const [isLoading, setIsLoading] = useState(false);
   const [historicalData, setHistoricalData] = useState<Map<string, BronSerpReport[]>>(new Map());
   
@@ -195,9 +292,9 @@ export const BronKeywordAnalysisDialog = memo(({
     fetchData();
   }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, mainKeywordText]);
   
-  // All keywords to analyze (main + related)
+  // All keywords to analyze (main + related) - limit to 3 for cluster view
   const allKeywords = useMemo(() => {
-    const kws = [keyword, ...relatedKeywords].slice(0, 8); // Max 8 keywords
+    const kws = [keyword, ...relatedKeywords].slice(0, 3); // Max 3 keywords for cluster
     return kws.map((kw, idx) => ({
       keyword: kw,
       id: String(kw.id),
@@ -206,8 +303,8 @@ export const BronKeywordAnalysisDialog = memo(({
     }));
   }, [keyword, relatedKeywords]);
 
-  // Build chart data with all cluster keywords (Google only)
-  const { chartData, keywordSummaries } = useMemo(() => {
+  // Build chart data for a specific engine
+  const buildChartDataForEngine = (engine: SearchEngine): { data: ChartDataPoint[], summaries: KeywordSummary[] } => {
     const data: ChartDataPoint[] = [];
     const positionsPerKeyword: Record<string, number[]> = {};
     
@@ -229,15 +326,23 @@ export const BronKeywordAnalysisDialog = memo(({
       
       allKeywords.forEach(kw => {
         const serpItem = findSerpForKeyword(kw.text, reportData);
-        const googlePos = getPosition(serpItem?.google);
+        let pos: number | null = null;
         
-        if (googlePos !== null) {
-          positionsPerKeyword[kw.id].push(googlePos);
+        if (engine === "google") {
+          pos = getPosition(serpItem?.google);
+        } else if (engine === "bing") {
+          pos = getPosition(serpItem?.bing);
+        } else if (engine === "yahoo") {
+          pos = getPosition(serpItem?.yahoo);
+        }
+        
+        if (pos !== null) {
+          positionsPerKeyword[kw.id].push(pos);
           hasAnyPosition = true;
         }
         
         // Use UNRANKED_POSITION for nulls so they appear at bottom
-        point[kw.id] = googlePos ?? UNRANKED_POSITION;
+        point[kw.id] = pos ?? UNRANKED_POSITION;
       });
       
       if (hasAnyPosition) {
@@ -271,8 +376,24 @@ export const BronKeywordAnalysisDialog = memo(({
       };
     });
     
-    return { chartData: data, keywordSummaries: summaries };
-  }, [filteredHistory, historicalData, allKeywords]);
+    return { data, summaries };
+  };
+
+  // Memoize chart data for each engine
+  const googleData = useMemo(() => buildChartDataForEngine("google"), [filteredHistory, historicalData, allKeywords]);
+  const bingData = useMemo(() => buildChartDataForEngine("bing"), [filteredHistory, historicalData, allKeywords]);
+  const yahooData = useMemo(() => buildChartDataForEngine("yahoo"), [filteredHistory, historicalData, allKeywords]);
+
+  const getCurrentData = () => {
+    switch (selectedEngine) {
+      case "google": return googleData;
+      case "bing": return bingData;
+      case "yahoo": return yahooData;
+      default: return googleData;
+    }
+  };
+
+  const currentData = getCurrentData();
   
   const dateRangeButtons: { value: DateRange; label: string }[] = [
     { value: "all", label: "All Time" },
@@ -298,7 +419,7 @@ export const BronKeywordAnalysisDialog = memo(({
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
                   Keyword Cluster Trend Analysis
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Historical Google ranking for cluster keywords</p>
+                <p className="text-sm text-muted-foreground mt-1">Historical ranking performance per search engine</p>
               </div>
             </div>
           </DialogHeader>
@@ -318,16 +439,21 @@ export const BronKeywordAnalysisDialog = memo(({
               <div className="flex flex-wrap gap-2 justify-center items-center mt-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Users className="w-3.5 h-3.5" />
-                  <span>Cluster ({relatedKeywords.length + 1} keywords):</span>
+                  <span>Cluster ({Math.min(relatedKeywords.length + 1, 3)} keywords):</span>
                 </div>
-                {relatedKeywords.map((rk) => (
-                  <Badge 
-                    key={String(rk.id)} 
-                    variant="outline" 
-                    className="text-xs bg-violet-500/10 border-violet-500/30 text-violet-300"
-                  >
-                    {getTargetKeyword(rk)}
-                  </Badge>
+                {relatedKeywords.slice(0, 2).map((rk, idx) => (
+                  <div key={String(rk.id)} className="flex items-center gap-1.5">
+                    <div 
+                      className="w-2.5 h-2.5 rounded-full" 
+                      style={{ backgroundColor: KEYWORD_COLORS[(idx + 1) % KEYWORD_COLORS.length] }}
+                    />
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs bg-violet-500/10 border-violet-500/30 text-violet-300"
+                    >
+                      {getTargetKeyword(rk)}
+                    </Badge>
+                  </div>
                 ))}
               </div>
             )}
@@ -352,84 +478,57 @@ export const BronKeywordAnalysisDialog = memo(({
             ))}
           </div>
 
-          {/* Chart Section */}
-          <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] flex-1 min-h-0">
-            {/* Legend */}
-            <div className="flex flex-wrap gap-3 mb-4">
-              {allKeywords.map((kw) => (
-                <div key={kw.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
-                  <div 
-                    className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
-                    style={{ backgroundColor: kw.color, color: kw.color }}
-                  />
-                  <span className="text-sm text-foreground truncate max-w-[180px]" title={kw.text}>
-                    {kw.text.length > 30 ? kw.text.slice(0, 30) + '...' : kw.text}
-                  </span>
-                </div>
+          {/* Search Engine Tabs */}
+          <Tabs value={selectedEngine} onValueChange={(v) => setSelectedEngine(v as SearchEngine)} className="flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-3 h-12 bg-card/50 border border-border/40 rounded-xl mb-4 shrink-0">
+              {SEARCH_ENGINES.map(engine => (
+                <TabsTrigger 
+                  key={engine.id} 
+                  value={engine.id}
+                  className="flex items-center gap-2 text-sm font-medium rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-violet-500/20 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/40"
+                >
+                  <Search className="w-4 h-4" />
+                  {engine.label}
+                </TabsTrigger>
               ))}
-            </div>
+            </TabsList>
 
-            {/* Chart */}
-            <div className="h-[calc(100%-3rem)] w-full">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
-                    <BarChart3 className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="text-muted-foreground">Loading historical data...</div>
-                </div>
-              ) : chartData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <div className="text-muted-foreground">No historical data available</div>
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      reversed
-                      domain={[1, UNRANKED_POSITION]}
-                      ticks={[1, 5, 10, 20, 50, UNRANKED_POSITION]}
-                      tickFormatter={(val) => val === UNRANKED_POSITION ? '∞' : `#${val}`}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    
+            {SEARCH_ENGINES.map(engine => (
+              <TabsContent key={engine.id} value={engine.id} className="flex-1 min-h-0 mt-0">
+                {/* Chart Section */}
+                <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] h-full flex flex-col">
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-3 mb-4 shrink-0">
                     {allKeywords.map((kw) => (
-                      <Line
-                        key={kw.id}
-                        type="monotone"
-                        dataKey={kw.id}
-                        name={kw.text}
-                        stroke={kw.color}
-                        strokeWidth={2.5}
-                        dot={{ fill: kw.color, strokeWidth: 0, r: 4 }}
-                        activeDot={{ r: 6, fill: kw.color, stroke: 'white', strokeWidth: 2 }}
-                        connectNulls
-                      />
+                      <div key={kw.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
+                        <div 
+                          className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
+                          style={{ backgroundColor: kw.color, color: kw.color }}
+                        />
+                        <span className="text-sm text-foreground truncate max-w-[180px]" title={kw.text}>
+                          {kw.text.length > 30 ? kw.text.slice(0, 30) + '...' : kw.text}
+                        </span>
+                      </div>
                     ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
+                  </div>
+
+                  {/* Chart */}
+                  <div className="flex-1 min-h-0">
+                    <EngineChart 
+                      engine={engine.id}
+                      chartData={engine.id === "google" ? googleData.data : engine.id === "bing" ? bingData.data : yahooData.data}
+                      keywordsWithColors={allKeywords}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
 
           {/* Keyword Summary Cards */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 shrink-0 max-h-40 overflow-y-auto">
-            {keywordSummaries.map((summary) => (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
+            {currentData.summaries.map((summary) => (
               <div 
                 key={summary.id}
                 className="relative rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-3 overflow-hidden"
@@ -442,32 +541,32 @@ export const BronKeywordAnalysisDialog = memo(({
                 
                 <div className="relative z-10">
                   {/* Keyword name with color indicator */}
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <div 
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-[0_0_8px_currentColor]" 
+                      className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
                       style={{ backgroundColor: summary.color, color: summary.color }}
                     />
-                    <span className="text-xs font-medium text-foreground truncate" title={summary.keyword}>
-                      {summary.keyword.length > 30 ? summary.keyword.slice(0, 30) + '...' : summary.keyword}
+                    <span className="text-sm font-medium text-foreground truncate" title={summary.keyword}>
+                      {summary.keyword.length > 25 ? summary.keyword.slice(0, 25) + '...' : summary.keyword}
                     </span>
                   </div>
                   
                   {/* Stats grid */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-center">
-                      <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Best</p>
-                      <p className="text-base font-bold" style={{ color: summary.color }}>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
+                      <p className="text-lg font-bold" style={{ color: summary.color }}>
                         {summary.best !== null ? `#${summary.best}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Current</p>
-                      <p className="text-base font-bold text-foreground">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
+                      <p className="text-lg font-bold" style={{ color: summary.color }}>
                         {summary.current !== null ? `#${summary.current}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">Change</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
                       <div className={`flex items-center justify-center gap-0.5 ${
                         summary.change > 0 
                           ? 'text-emerald-400' 
@@ -475,14 +574,12 @@ export const BronKeywordAnalysisDialog = memo(({
                             ? 'text-red-400' 
                             : 'text-muted-foreground'
                       }`}>
-                        {summary.change > 0 && <TrendingUp className="w-2.5 h-2.5" />}
-                        {summary.change < 0 && <TrendingDown className="w-2.5 h-2.5" />}
-                        {summary.change === 0 && <Minus className="w-2.5 h-2.5" />}
-                        <span className="text-base font-bold">
-                          {summary.change >= 999 ? 'NEW' : 
-                           summary.change <= -999 ? 'LOST' :
-                           summary.change > 0 ? `${summary.change}` : 
-                           summary.change < 0 ? `${Math.abs(summary.change)}` : '0'}
+                        {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
+                        {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
+                        {summary.change === 0 && <Minus className="w-3 h-3" />}
+                        <span className="text-lg font-bold">
+                          {summary.change > 0 ? `+${summary.change}` : 
+                           summary.change < 0 ? `${summary.change}` : '0'}
                         </span>
                       </div>
                     </div>
