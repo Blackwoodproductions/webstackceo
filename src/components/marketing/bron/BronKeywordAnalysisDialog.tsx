@@ -442,185 +442,132 @@ export const BronKeywordAnalysisDialog = memo(({
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-6xl h-[85vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
-        <div className="flex h-full flex-col overflow-hidden p-6">
-          {/* Futuristic header */}
-          <DialogHeader className="border-b border-border/50 pb-4 shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 via-violet-500/20 to-cyan-500/20 border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.3)]">
-                  <Activity className="w-7 h-7 text-primary" />
+      <DialogContent className="max-w-6xl h-[90vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
+        <div className="flex h-full flex-col overflow-hidden p-4">
+          {/* Compact Header Row */}
+          <DialogHeader className="shrink-0 pb-2">
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Icon + Title */}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-violet-500/20 border border-primary/40 flex items-center justify-center">
+                    <Activity className="w-5 h-5 text-primary" />
+                  </div>
+                  <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-amber-400" />
                 </div>
-                <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber-400" />
+                <div>
+                  <DialogTitle className="text-lg font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                    Cluster Trend Analysis
+                  </DialogTitle>
+                  <p className="text-xs text-muted-foreground">{mainKeywordText}</p>
+                </div>
               </div>
-              <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
-                  Keyword Cluster Trend Analysis
-                </DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Historical ranking performance per search engine</p>
+              
+              {/* Right: Date Range Buttons */}
+              <div className="flex gap-1">
+                {dateRangeButtons.map(btn => (
+                  <Button
+                    key={btn.value}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDateRange(btn.value)}
+                    className={`px-3 py-1 h-8 text-xs rounded-lg transition-all ${
+                      dateRange === btn.value 
+                        ? "bg-primary/20 text-primary border border-primary/40" 
+                        : "bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground"
+                    }`}
+                  >
+                    {btn.label}
+                  </Button>
+                ))}
               </div>
             </div>
           </DialogHeader>
 
-          {/* Cluster Keywords Display */}
-          <div className="flex flex-col items-center py-3 shrink-0 gap-2">
-            {/* Main Keyword */}
-            <div className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-primary/10 via-violet-500/10 to-cyan-500/10 border border-primary/30">
-              <div className="flex items-center gap-3">
-                <Target className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold text-foreground">{mainKeywordText}</h2>
-              </div>
-            </div>
-            
-            {/* Related Keywords in Cluster */}
-            {relatedKeywords.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center items-center mt-1">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Cluster ({Math.min(relatedKeywords.length + 1, 3)} keywords):</span>
-                </div>
-                {relatedKeywords.slice(0, 2).map((rk, idx) => (
-                  <div key={String(rk.id)} className="flex items-center gap-1.5">
+          {/* Search Engine Tabs + Chart */}
+          <Tabs value={selectedEngine} onValueChange={(v) => setSelectedEngine(v as SearchEngine)} className="flex-1 flex flex-col min-h-0">
+            {/* Compact Tab Row with Legend */}
+            <div className="flex items-center justify-between gap-4 py-2 shrink-0">
+              <TabsList className="grid grid-cols-3 h-9 bg-card/50 border border-border/40 rounded-lg w-auto">
+                {SEARCH_ENGINES.map(engine => (
+                  <TabsTrigger 
+                    key={engine.id} 
+                    value={engine.id}
+                    className="flex items-center gap-1.5 px-4 text-xs font-medium rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-violet-500/20 data-[state=active]:text-primary"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    {engine.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {/* Inline Legend */}
+              <div className="flex flex-wrap gap-2">
+                {allKeywords.map((kw) => (
+                  <div key={kw.id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/50 border border-border/30">
                     <div 
                       className="w-2.5 h-2.5 rounded-full" 
-                      style={{ backgroundColor: KEYWORD_COLORS[(idx + 1) % KEYWORD_COLORS.length] }}
+                      style={{ backgroundColor: kw.color }}
                     />
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs bg-violet-500/10 border-violet-500/30 text-violet-300"
-                    >
-                      {getTargetKeyword(rk)}
-                    </Badge>
+                    <span className="text-xs text-foreground truncate max-w-[140px]" title={kw.text}>
+                      {kw.text.length > 20 ? kw.text.slice(0, 20) + '...' : kw.text}
+                    </span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Date Range Selector */}
-          <div className="flex justify-center gap-2 py-2 shrink-0">
-            {dateRangeButtons.map(btn => (
-              <Button
-                key={btn.value}
-                variant="ghost"
-                size="sm"
-                onClick={() => setDateRange(btn.value)}
-                className={`relative px-4 py-2 rounded-xl transition-all duration-300 ${
-                  dateRange === btn.value 
-                    ? "bg-gradient-to-r from-primary/20 to-violet-500/20 text-primary border border-primary/40 shadow-[0_0_15px_rgba(139,92,246,0.2)]" 
-                    : "bg-card/50 text-muted-foreground hover:bg-card hover:text-foreground border border-transparent"
-                }`}
-              >
-                {btn.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Search Engine Tabs */}
-          <Tabs value={selectedEngine} onValueChange={(v) => setSelectedEngine(v as SearchEngine)} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="grid w-full grid-cols-3 h-12 bg-card/50 border border-border/40 rounded-xl mb-4 shrink-0">
-              {SEARCH_ENGINES.map(engine => (
-                <TabsTrigger 
-                  key={engine.id} 
-                  value={engine.id}
-                  className="flex items-center gap-2 text-sm font-medium rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-violet-500/20 data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary/40"
-                >
-                  <Search className="w-4 h-4" />
-                  {engine.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            </div>
 
             {SEARCH_ENGINES.map(engine => (
               <TabsContent key={engine.id} value={engine.id} className="flex-1 min-h-0 mt-0">
-                {/* Chart Section */}
-                <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] h-full flex flex-col">
-                  {/* Legend */}
-                  <div className="flex flex-wrap gap-3 mb-4 shrink-0">
-                    {allKeywords.map((kw) => (
-                      <div key={kw.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
-                        <div 
-                          className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
-                          style={{ backgroundColor: kw.color, color: kw.color }}
-                        />
-                        <span className="text-sm text-foreground truncate max-w-[180px]" title={kw.text}>
-                          {kw.text.length > 30 ? kw.text.slice(0, 30) + '...' : kw.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Chart */}
-                  <div className="flex-1 min-h-0">
-                    <EngineChart 
-                      engine={engine.id}
-                      chartData={engine.id === "google" ? googleData.data : engine.id === "bing" ? bingData.data : yahooData.data}
-                      keywordsWithColors={allKeywords}
-                      isLoading={isLoading}
-                    />
-                  </div>
+                {/* Chart Section - Full Height */}
+                <div className="rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-4 h-full">
+                  <EngineChart 
+                    engine={engine.id}
+                    chartData={engine.id === "google" ? googleData.data : engine.id === "bing" ? bingData.data : yahooData.data}
+                    keywordsWithColors={allKeywords}
+                    isLoading={isLoading}
+                  />
                 </div>
               </TabsContent>
             ))}
           </Tabs>
 
-          {/* Keyword Summary Cards */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
+          {/* Compact Summary Row */}
+          <div className="mt-3 flex gap-2 shrink-0">
             {currentData.summaries.map((summary) => (
               <div 
                 key={summary.id}
-                className="relative rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-3 overflow-hidden"
+                className="flex-1 flex items-center gap-3 rounded-lg border border-border/40 bg-card/50 px-3 py-2"
               >
-                {/* Accent glow */}
                 <div 
-                  className="absolute top-0 left-0 w-24 h-24 rounded-full blur-3xl opacity-15"
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                   style={{ backgroundColor: summary.color }}
                 />
-                
-                <div className="relative z-10">
-                  {/* Keyword name with color indicator */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div 
-                      className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
-                      style={{ backgroundColor: summary.color, color: summary.color }}
-                    />
-                    <span className="text-sm font-medium text-foreground truncate" title={summary.keyword}>
-                      {summary.keyword.length > 25 ? summary.keyword.slice(0, 25) + '...' : summary.keyword}
+                <span className="text-xs text-foreground truncate flex-1" title={summary.keyword}>
+                  {summary.keyword.length > 18 ? summary.keyword.slice(0, 18) + '...' : summary.keyword}
+                </span>
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="text-center">
+                    <span className="text-muted-foreground">Best:</span>
+                    <span className="font-bold ml-1" style={{ color: summary.color }}>
+                      {summary.best !== null ? `#${summary.best}` : '—'}
                     </span>
                   </div>
-                  
-                  {/* Stats grid */}
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
-                      <p className="text-lg font-bold" style={{ color: summary.color }}>
-                        {summary.best !== null ? `#${summary.best}` : '—'}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
-                      <p className="text-lg font-bold" style={{ color: summary.color }}>
-                        {summary.current !== null ? `#${summary.current}` : '—'}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
-                      <div className={`flex items-center justify-center gap-0.5 ${
-                        summary.change > 0 
-                          ? 'text-emerald-400' 
-                          : summary.change < 0 
-                            ? 'text-red-400' 
-                            : 'text-muted-foreground'
-                      }`}>
-                        {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
-                        {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
-                        {summary.change === 0 && <Minus className="w-3 h-3" />}
-                        <span className="text-lg font-bold">
-                          {summary.change > 0 ? `+${summary.change}` : 
-                           summary.change < 0 ? `${summary.change}` : '0'}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="text-center">
+                    <span className="text-muted-foreground">Now:</span>
+                    <span className="font-bold ml-1" style={{ color: summary.color }}>
+                      {summary.current !== null ? `#${summary.current}` : '—'}
+                    </span>
+                  </div>
+                  <div className={`flex items-center gap-0.5 ${
+                    summary.change > 0 ? 'text-emerald-400' : summary.change < 0 ? 'text-red-400' : 'text-muted-foreground'
+                  }`}>
+                    {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
+                    {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
+                    {summary.change === 0 && <Minus className="w-3 h-3" />}
+                    <span className="font-bold">
+                      {summary.change > 0 ? `+${summary.change}` : summary.change < 0 ? `${summary.change}` : '0'}
+                    </span>
                   </div>
                 </div>
               </div>
