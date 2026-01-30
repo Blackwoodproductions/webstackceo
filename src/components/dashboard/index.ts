@@ -8,6 +8,7 @@ export { FeatureUpgradePrompt, type FeatureType } from './FeatureUpgradePrompt';
 export { FeatureGate } from './FeatureGate';
 export { WhiteLabelLogo } from './WhiteLabelLogo';
 export { DomainSelectionDialog } from './DomainSelectionDialog';
+export { DomainSearchDropdown } from './DomainSearchDropdown';
 
 // Re-export data hooks
 export { useDashboardData } from '@/hooks/use-dashboard-data';
