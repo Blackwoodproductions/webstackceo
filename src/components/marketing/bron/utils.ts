@@ -176,17 +176,24 @@ function reconstructClustersFromCache(
 
 // Helper to extract keyword text from a SERP report (BRON API uses various field names)
 function getSerpReportKeyword(report: BronSerpReport): string {
-  // Primary field
-  if (report.keyword && typeof report.keyword === 'string' && report.keyword.trim()) {
-    return report.keyword.toLowerCase().trim();
-  }
-  // Check alternative field names (BRON API may use different names)
   const r = report as unknown as Record<string, unknown>;
-  const altFields = ['keyword_text', 'keywordtitle', 'title', 'phrase', 'query', 'search_term', 'text', 'name'];
-  for (const field of altFields) {
+  
+  // Priority order of fields to check
+  const fieldPriority = [
+    'keyword', 'keyword_text', 'keywordtitle', 'title', 
+    'phrase', 'query', 'search_term', 'text', 'name',
+    'restitle', 'metatitle'
+  ];
+  
+  for (const field of fieldPriority) {
     const val = r[field];
     if (typeof val === 'string' && val.trim()) {
-      return val.toLowerCase().trim();
+      let text = val.toLowerCase().trim();
+      // Handle cases where keyword might include position suffix like "keyword: #22"
+      if (text.includes(': #')) {
+        text = text.split(': #')[0].trim();
+      }
+      return text;
     }
   }
   return '';
@@ -241,7 +248,24 @@ export function findSerpForKeyword(keywordText: string, serpReports: BronSerpRep
     }
   }
   
-  // Strategy 5: Normalized slug comparison (remove special chars)
+  // Strategy 5: Single important word match (for short keywords)
+  if (keywordWords.length >= 1) {
+    // Find a word that's unique/important (not common words)
+    const commonWords = new Set(['the', 'and', 'for', 'with', 'best', 'near', 'top', 'how', 'what', 'why']);
+    const importantWords = keywordWords.filter(w => w.length > 3 && !commonWords.has(w));
+    if (importantWords.length > 0) {
+      for (const report of serpReports) {
+        const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(report));
+        if (!serpKeyword) continue;
+        const serpWords = serpKeyword.split(/\s+/).filter(w => w.length > 2);
+        // Match if most important words are present
+        const matchCount = importantWords.filter(w => serpWords.includes(w)).length;
+        if (matchCount >= Math.ceil(importantWords.length * 0.6)) return report;
+      }
+    }
+  }
+  
+  // Strategy 6: Normalized slug comparison (remove special chars)
   const normalizedSlug = normalizedKeyword.replace(/[^a-z0-9]/g, '');
   for (const report of serpReports) {
     const serpKeyword = normalizeKeywordForMatch(getSerpReportKeyword(report));
@@ -249,7 +273,7 @@ export function findSerpForKeyword(keywordText: string, serpReports: BronSerpRep
     const serpSlug = serpKeyword.replace(/[^a-z0-9]/g, '');
     if (normalizedSlug === serpSlug) return report;
     // Partial slug match (one contains the other, with min length)
-    if (normalizedSlug.length >= 8 && serpSlug.length >= 8) {
+    if (normalizedSlug.length >= 6 && serpSlug.length >= 6) {
       if (normalizedSlug.includes(serpSlug) || serpSlug.includes(normalizedSlug)) {
         return report;
       }
@@ -264,10 +288,18 @@ export function findSerpByKeywordId(keywordId: string | number, serpReports: Bro
   if (!keywordId || !serpReports.length) return null;
   const idStr = String(keywordId);
   
+  // Check multiple ID field variations
   return serpReports.find(r => {
     const rAny = r as unknown as Record<string, unknown>;
-    const reportKwId = rAny.keyword_id || rAny.keywordid || rAny.id || rAny.feedid;
-    return reportKwId && String(reportKwId) === idStr;
+    // All possible ID fields from BRON API
+    const idFields = ['keyword_id', 'keywordid', 'id', 'feedid', 'feed_id', 'serpid', 'serp_id'];
+    for (const field of idFields) {
+      const val = rAny[field];
+      if (val !== undefined && val !== null && String(val) === idStr) {
+        return true;
+      }
+    }
+    return false;
   }) || null;
 }
 

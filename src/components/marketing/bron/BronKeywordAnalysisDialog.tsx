@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-api";
 import { getTargetKeyword, getPosition } from "./BronKeywordCard";
 import { findSerpForKeyword, findSerpByKeywordId } from "./utils";
+import { BronMultiKeywordTrendChart } from "./BronMultiKeywordTrendChart";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { format } from "date-fns";
 
@@ -265,10 +266,45 @@ export const BronKeywordAnalysisDialog = memo(({
     }));
   }, [keyword, relatedKeywords]);
 
+  // Extract just the BronKeyword objects for the chart component
+  const chartKeywords = useMemo(() => 
+    allKeywords.map(k => k.keyword), 
+    [allKeywords]
+  );
+  
+  // Report dates for the chart (format expected by BronMultiKeywordTrendChart)
+  const reportDates = useMemo(() => {
+    return filteredHistory.map(item => {
+      const timestamp = getSerpListItemTimestamp(item) ?? 0;
+      return {
+        reportId: getReportId(item),
+        date: timestamp ? format(new Date(timestamp), 'MMM d') : '',
+        timestamp,
+      };
+    }).filter(r => r.reportId && r.timestamp > 0);
+  }, [filteredHistory]);
+
   // Fetch historical data for all reports
   useEffect(() => {
     const fetchData = async () => {
-      if (!isOpen || !selectedDomain || !onFetchSerpDetail || filteredHistory.length === 0) return;
+      console.log('[BronKeywordAnalysisDialog] Effect triggered:', {
+        isOpen,
+        selectedDomain,
+        hasOnFetchSerpDetail: !!onFetchSerpDetail,
+        filteredHistoryLength: filteredHistory.length,
+        serpHistoryLength: serpHistory.length,
+      });
+      
+      if (!isOpen || !selectedDomain || !onFetchSerpDetail) {
+        console.log('[BronKeywordAnalysisDialog] Early exit - missing deps');
+        return;
+      }
+      
+      if (filteredHistory.length === 0) {
+        console.log('[BronKeywordAnalysisDialog] No historical reports available to fetch');
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       const dataMap = new Map<string, BronSerpReport[]>();
@@ -298,31 +334,45 @@ export const BronKeywordAnalysisDialog = memo(({
         
         console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'reports for cluster:', allKeywords.map(k => k.text));
         
-        for (const item of reportsToFetch) {
+        // Fetch all reports in parallel for speed
+        const fetchPromises = reportsToFetch.map(async (item) => {
           const reportId = getReportId(item);
-          if (!reportId) continue;
+          if (!reportId) return { reportId: '', data: [] as BronSerpReport[] };
           
           try {
             const data = await onFetchSerpDetail(selectedDomain, reportId);
-            if (data?.length > 0) {
-              dataMap.set(reportId, data);
-            }
+            return { reportId, data: data || [] };
           } catch (e) {
             console.warn(`Failed to fetch report ${reportId}:`, e);
+            return { reportId, data: [] as BronSerpReport[] };
           }
-        }
+        });
+        
+        const results = await Promise.all(fetchPromises);
+        results.forEach(({ reportId, data }) => {
+          if (reportId && data.length > 0) {
+            dataMap.set(reportId, data);
+          }
+        });
         
         setHistoricalData(dataMap);
         console.log('[BronKeywordAnalysisDialog] Loaded', dataMap.size, 'historical reports');
+        
+        // Log detailed matching info for debugging
         if (dataMap.size > 0) {
           const firstReportId = [...dataMap.keys()][0];
-          const firstReportData = dataMap.get(firstReportId);
-          console.log('[BronKeywordAnalysisDialog] Sample SERP data (first 3):', firstReportData?.slice(0, 3).map(r => ({
-            keyword: r.keyword,
-            google: r.google,
-            bing: r.bing,
-            yahoo: r.yahoo
-          })));
+          const firstReportData = dataMap.get(firstReportId) || [];
+          console.log('[BronKeywordAnalysisDialog] Cluster keywords:', allKeywords.map(k => ({ id: k.id, text: k.text })));
+          console.log('[BronKeywordAnalysisDialog] Available SERP keywords:', 
+            firstReportData.map(r => r.keyword)
+          );
+          
+          // Test matching for each cluster keyword
+          allKeywords.forEach(kw => {
+            const match = findSerpForKeyword(kw.text, firstReportData);
+            const idMatch = findSerpByKeywordId(kw.keyword.id, firstReportData);
+            console.log(`[BronKeywordAnalysisDialog] Match test: "${kw.text}" -> text: ${match?.keyword || 'NONE'}, id: ${idMatch?.keyword || 'NONE'}`);
+          });
         }
       } catch (err) {
         console.error('Failed to fetch historical data:', err);
@@ -364,24 +414,35 @@ export const BronKeywordAnalysisDialog = memo(({
       const point: ChartDataPoint = { date: format(new Date(timestamp), 'MMM d'), timestamp };
       
       allKeywords.forEach(kw => {
-        // Try multiple matching strategies
-        let serpItem = findSerpForKeyword(kw.text, reportData);
+        // Try multiple matching strategies with increasing fuzziness
+        let serpItem: BronSerpReport | null = null;
         
-        // Fallback: Try matching by keyword ID
+        // Strategy 1: Match by extracted target keyword text
+        serpItem = findSerpForKeyword(kw.text, reportData);
+        
+        // Strategy 2: Match by keyword ID
         if (!serpItem) {
           serpItem = findSerpByKeywordId(kw.keyword.id, reportData);
         }
         
-        // Debug log for first iteration
+        // Strategy 3: Try original keyword field from BronKeyword
+        if (!serpItem && kw.keyword.keyword) {
+          serpItem = findSerpForKeyword(kw.keyword.keyword, reportData);
+        }
+        
+        // Strategy 4: Try keywordtitle field
+        if (!serpItem && kw.keyword.keywordtitle) {
+          serpItem = findSerpForKeyword(kw.keyword.keywordtitle, reportData);
+        }
+        
+        // Debug log for first report only
         if (!debugLogged && !serpItem && reportData.length > 0) {
-          console.log('[BronKeywordAnalysisDialog] No match for keyword:', kw.text, 
-            'Available SERP keywords:', reportData.slice(0, 5).map(r => ({
-              keyword: r.keyword,
-              google: r.google,
-              id: (r as any).id,
-              keyword_id: (r as any).keyword_id
-            }))
-          );
+          console.log('[BronKeywordAnalysisDialog] No match for:', {
+            targetText: kw.text,
+            originalKeyword: kw.keyword.keyword,
+            keywordtitle: kw.keyword.keywordtitle,
+            id: kw.keyword.id
+          }, 'vs SERP:', reportData.slice(0, 3).map(r => r.keyword));
         }
         
         let pos: number | null = null;
@@ -454,7 +515,16 @@ export const BronKeywordAnalysisDialog = memo(({
   };
 
   // Memoize chart data for each engine
-  const googleData = useMemo(() => buildChartDataForEngine("google"), [filteredHistory, historicalData, allKeywords]);
+  const googleData = useMemo(() => {
+    console.log('[BronKeywordAnalysisDialog] Building Google chart:', {
+      filteredHistoryLength: filteredHistory.length,
+      historicalDataSize: historicalData.size,
+      historicalDataKeys: [...historicalData.keys()].slice(0, 5),
+      filteredHistoryReportIds: filteredHistory.slice(0, 5).map(item => getReportId(item)),
+    });
+    return buildChartDataForEngine("google");
+  }, [filteredHistory, historicalData, allKeywords]);
+  
   const bingData = useMemo(() => buildChartDataForEngine("bing"), [filteredHistory, historicalData, allKeywords]);
   const yahooData = useMemo(() => buildChartDataForEngine("yahoo"), [filteredHistory, historicalData, allKeywords]);
 
@@ -520,103 +590,36 @@ export const BronKeywordAnalysisDialog = memo(({
             </div>
           </DialogHeader>
 
-          {/* Search Engine Tabs + Chart */}
-          <Tabs value={selectedEngine} onValueChange={(v) => setSelectedEngine(v as SearchEngine)} className="flex-1 flex flex-col min-h-0">
-            {/* Compact Tab Row with Legend */}
-            <div className="flex items-center justify-between gap-4 py-2 shrink-0">
-              <TabsList className="grid grid-cols-3 h-9 bg-card/50 border border-border/40 rounded-lg w-auto">
-                {SEARCH_ENGINES.map(engine => (
-                  <TabsTrigger 
-                    key={engine.id} 
-                    value={engine.id}
-                    className="flex items-center gap-1.5 px-4 text-xs font-medium rounded-md data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-violet-500/20 data-[state=active]:text-primary"
-                  >
-                    <Search className="w-3.5 h-3.5" />
-                    {engine.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              
-              {/* Inline Legend - Full keyword text */}
-              <div className="flex flex-wrap gap-2 flex-1 justify-end">
-                {allKeywords.map((kw) => (
-                  <div key={kw.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/40">
-                    <div 
-                      className="w-3 h-3 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: kw.color }}
-                    />
-                    <span className="text-sm text-foreground font-medium">
-                      {kw.text}
-                    </span>
-                  </div>
-                ))}
+          {/* Chart Section - Uses working BronMultiKeywordTrendChart */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                </div>
+                <div className="text-muted-foreground">Loading historical data...</div>
               </div>
-            </div>
-
-            {SEARCH_ENGINES.map(engine => (
-              <TabsContent key={engine.id} value={engine.id} className="flex-1 min-h-0 mt-0">
-                {/* Chart Section - Full Height */}
-                <div className="rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-4 h-full">
-                  <EngineChart 
-                    engine={engine.id}
-                    chartData={engine.id === "google" ? googleData.data : engine.id === "bing" ? bingData.data : yahooData.data}
-                    keywordsWithColors={allKeywords}
-                    isLoading={isLoading}
-                  />
+            ) : historicalData.size > 0 ? (
+              <BronMultiKeywordTrendChart
+                keywords={chartKeywords}
+                serpReportsMap={historicalData}
+                reportDates={reportDates}
+                title="CLUSTER RANKING TREND"
+                maxKeywords={3}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
+                  <Activity className="w-6 h-6 text-muted-foreground" />
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          {/* Summary Cards - Larger with vertical layout */}
-          <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
-            {currentData.summaries.map((summary) => (
-              <div 
-                key={summary.id}
-                className="rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/60 p-4"
-              >
-                {/* Keyword name with color indicator */}
-                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
-                  <div 
-                    className="w-3.5 h-3.5 rounded-full flex-shrink-0" 
-                    style={{ backgroundColor: summary.color }}
-                  />
-                  <span className="text-sm font-semibold text-foreground" title={summary.keyword}>
-                    {summary.keyword}
-                  </span>
-                </div>
-                
-                {/* Stats row */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
-                    <p className="text-xl font-bold" style={{ color: summary.color }}>
-                      {summary.best !== null ? `#${summary.best}` : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
-                    <p className="text-xl font-bold" style={{ color: summary.color }}>
-                      {summary.current !== null ? `#${summary.current}` : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
-                    <div className={`flex items-center justify-center gap-1 ${
-                      summary.change > 0 ? 'text-emerald-400' : summary.change < 0 ? 'text-red-400' : 'text-muted-foreground'
-                    }`}>
-                      {summary.change > 0 && <TrendingUp className="w-4 h-4" />}
-                      {summary.change < 0 && <TrendingDown className="w-4 h-4" />}
-                      {summary.change === 0 && <Minus className="w-4 h-4" />}
-                      <span className="text-xl font-bold">
-                        {summary.change > 0 ? `+${summary.change}` : summary.change < 0 ? `${summary.change}` : '0'}
-                      </span>
-                    </div>
-                  </div>
+                <div className="text-muted-foreground text-center">
+                  <p>No historical ranking data available</p>
+                  <p className="text-xs mt-1">Historical reports: {filteredHistory.length}</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
+
         </div>
       </DialogContent>
     </Dialog>

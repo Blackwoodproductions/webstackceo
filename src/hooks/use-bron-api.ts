@@ -1754,12 +1754,40 @@ export function useBronApi(): UseBronApiReturn {
   const fetchSerpDetail = useCallback(async (domain: string, reportId: string): Promise<BronSerpReport[]> => {
     try {
       const result = await callApi("getSerpDetail", { domain, data: { report_id: reportId } });
+      console.log('[BRON] fetchSerpDetail result for report', reportId, ':', 
+        result?.success ? 'success' : 'failed',
+        'data type:', typeof result?.data,
+        'isArray:', Array.isArray(result?.data)
+      );
+      
       if (result?.success && result.data) {
-        // API returns array directly or nested
-        const reports = Array.isArray(result.data)
-          ? result.data
-          : (result.data.rankings || result.data.keywords || result.data.items || []);
-        return Array.isArray(reports) ? reports : [];
+        // API can return data in various structures:
+        // 1. Direct array of SERP reports
+        // 2. { rankings: [...] }
+        // 3. { keywords: [...] }
+        // 4. { items: [...] }
+        // 5. { data: [...] }
+        let reports: unknown[] = [];
+        
+        if (Array.isArray(result.data)) {
+          reports = result.data;
+        } else if (typeof result.data === 'object') {
+          const data = result.data as Record<string, unknown>;
+          reports = (data.rankings as unknown[]) || 
+                   (data.keywords as unknown[]) || 
+                   (data.items as unknown[]) ||
+                   (data.data as unknown[]) ||
+                   (data.results as unknown[]) ||
+                   (data.serp as unknown[]) ||
+                   [];
+        }
+        
+        const finalReports = Array.isArray(reports) ? reports as BronSerpReport[] : [];
+        console.log('[BRON] fetchSerpDetail parsed', finalReports.length, 'reports for', reportId);
+        if (finalReports.length > 0) {
+          console.log('[BRON] First SERP item keys:', Object.keys(finalReports[0]));
+        }
+        return finalReports;
       }
       return [];
     } catch (err) {
