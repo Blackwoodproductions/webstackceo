@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   LayoutDashboard, Users, FileText, Settings, LogOut, 
   CheckCircle, XCircle, Clock, Star, Award, TrendingUp,
-  Plus, Edit, Trash2, Eye, Search, Building2
+  Plus, Edit, Trash2, Eye, Search, Building2, Shield, Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import type { User, Session } from "@supabase/supabase-js";
 import AdminApplicationsTab from "@/components/admin/AdminApplicationsTab";
 import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
+import { SuperAdminPanel } from "@/components/admin/SuperAdminPanel";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 
@@ -25,6 +26,7 @@ const Admin = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPartners: 0,
@@ -69,18 +71,30 @@ const Admin = () => {
   }, []);
 
   const checkAdminRole = async (userId: string) => {
-    const { data, error } = await supabase
+    // Check for admin role
+    const { data: adminData } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
 
-    if (data) {
-      setIsAdmin(true);
+    // Check for super_admin role
+    const { data: superAdminData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "super_admin")
+      .maybeSingle();
+
+    const hasAdmin = !!adminData || !!superAdminData;
+    const hasSuperAdmin = !!superAdminData;
+
+    setIsAdmin(hasAdmin);
+    setIsSuperAdmin(hasSuperAdmin);
+
+    if (hasAdmin) {
       fetchStats();
-    } else {
-      setIsAdmin(false);
     }
     setIsLoading(false);
   };
@@ -207,7 +221,7 @@ const Admin = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="applications" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-4' : 'grid-cols-3'} lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="applications" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Applications
@@ -230,6 +244,12 @@ const Admin = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="super-admin" className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-400" />
+                Super Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="applications">
@@ -243,6 +263,12 @@ const Admin = () => {
           <TabsContent value="directory">
             <AdminDirectoryTab onUpdate={fetchStats} />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="super-admin">
+              <SuperAdminPanel />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
