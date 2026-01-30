@@ -961,17 +961,20 @@ export const BRONKeywordsTab = memo(({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Cluster Map Button - positioned left of history selector */}
+              {/* Cluster Map Toggle Button - positioned left of history selector */}
               <Button
-                variant="outline"
+                variant={showClusterMap ? "default" : "outline"}
                 size="sm"
-                onClick={() => setShowClusterMap(true)}
+                onClick={() => setShowClusterMap(!showClusterMap)}
                 disabled={!selectedDomain || displayClusters.length === 0}
-                className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
-                title="View keyword clusters as visual map"
+                className={showClusterMap 
+                  ? "bg-violet-500 hover:bg-violet-600 text-white" 
+                  : "border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
+                }
+                title={showClusterMap ? "Back to keyword list" : "View keyword clusters as visual map"}
               >
                 <GitBranch className="w-4 h-4 mr-1" />
-                Cluster Map
+                {showClusterMap ? "Keyword List" : "Cluster Map"}
               </Button>
               
               {/* Historical Date Selector */}
@@ -1072,6 +1075,25 @@ export const BRONKeywordsTab = memo(({
           ) : displayClusters.length === 0 ? (
             // Fallback static skeleton
             <BronKeywordSkeletonList count={5} />
+          ) : showClusterMap ? (
+            // Show inline cluster visualization
+            <BronClusterVisualization
+              isOpen={true}
+              onClose={() => setShowClusterMap(false)}
+              clusters={displayClusters}
+              serpReports={activeSerpReports}
+              keywordMetrics={keywordMetrics}
+              pageSpeedScores={pageSpeedScores}
+              linksIn={linksIn}
+              linksOut={linksOut}
+              selectedDomain={selectedDomain}
+              initialPositions={initialPositions}
+              isBaselineReport={
+                selectedHistoryReportId !== null && baselineReportId !== null
+                  ? String(selectedHistoryReportId) === String(baselineReportId)
+                  : false
+              }
+            />
           ) : (
             <div className="no-theme-transition" data-no-theme-transition style={{ contain: 'layout style' }}>
               {/* Column Headers Row - extracted to shared component */}
@@ -1310,25 +1332,6 @@ export const BRONKeywordsTab = memo(({
           </div>
         </DialogContent>
       </Dialog>
-      
-      {/* Cluster Visualization Modal */}
-      <BronClusterVisualization
-        isOpen={showClusterMap}
-        onClose={() => setShowClusterMap(false)}
-        clusters={displayClusters}
-        serpReports={activeSerpReports}
-        keywordMetrics={keywordMetrics}
-        pageSpeedScores={pageSpeedScores}
-        linksIn={linksIn}
-        linksOut={linksOut}
-        selectedDomain={selectedDomain}
-        initialPositions={initialPositions}
-        isBaselineReport={
-          selectedHistoryReportId !== null && baselineReportId !== null
-            ? String(selectedHistoryReportId) === String(baselineReportId)
-            : false
-        }
-      />
       
       {/* Keyword Analysis Dialog */}
       {analysisKeyword && (
