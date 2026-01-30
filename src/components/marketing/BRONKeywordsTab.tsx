@@ -961,6 +961,19 @@ export const BRONKeywordsTab = memo(({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Cluster Map Button - positioned left of history selector */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClusterMap(true)}
+                disabled={!selectedDomain || displayClusters.length === 0}
+                className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
+                title="View keyword clusters as visual map"
+              >
+                <GitBranch className="w-4 h-4 mr-1" />
+                Cluster Map
+              </Button>
+              
               {/* Historical Date Selector */}
               {serpHistory.length > 0 && selectedDomain && (
                 <BronHistoryDateSelector
@@ -999,17 +1012,6 @@ export const BRONKeywordsTab = memo(({
                 title="Save current rankings as historical snapshot"
               >
                 <Save className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowClusterMap(true)}
-                disabled={!selectedDomain || displayClusters.length === 0}
-                className="border-violet-500/30 hover:bg-violet-500/10 text-violet-400"
-                title="View keyword clusters as visual map"
-              >
-                <GitBranch className="w-4 h-4 mr-1" />
-                Cluster Map
               </Button>
               <Button 
                 size="sm" 
