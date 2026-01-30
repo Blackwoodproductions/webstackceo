@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.domain-context-autofill]
 verify_jwt = false
+
+[functions.aeo-llm-check]
+verify_jwt = false

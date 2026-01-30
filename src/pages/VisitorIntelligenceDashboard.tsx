@@ -46,6 +46,7 @@ import { OnPageSEOConnect } from '@/components/marketing/OnPageSEOConnect';
 import { CADEPlatformConnect } from '@/components/marketing/CADEPlatformConnect';
 import { CADEDashboardNew } from '@/components/marketing/cade';
 import { BRONPlatformConnect } from '@/components/marketing/BRONPlatformConnect';
+import { AEOGeoDashboard } from '@/components/marketing/AEOGeoDashboard';
 import { SocialPanel } from '@/components/marketing/SocialPanel';
 import {
   Select,
@@ -277,11 +278,12 @@ const MarketingDashboard = () => {
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
   // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'bron' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
+  type DashboardTab = 'visitor-intelligence' | 'bron' | 'aeo-geo' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
   
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
     'bron',
+    'aeo-geo',
     'cade',
     'gmb',
     'social-signals',
@@ -3478,6 +3480,42 @@ f.parentNode.insertBefore(j,f);
               domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)} 
               isNewlyAddedDomain={newlyAddedDomain === rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)}
               onAutoFillComplete={() => setNewlyAddedDomain(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* AEO/GEO Tab Content */}
+      {activeTab === 'aeo-geo' && (
+        <div className="relative max-w-[1480px] mx-auto group/aeo">
+          <motion.div
+            className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/aeo:opacity-50 transition-opacity duration-500 blur-md -z-10"
+            animate={{
+              background: [
+                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3))",
+                "linear-gradient(270deg, rgba(236,72,153,0.3), rgba(139,92,246,0.3))",
+                "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3))",
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="relative bg-gradient-to-br from-card via-card/98 to-fuchsia-500/5 rounded-b-xl border-x border-b border-border backdrop-blur-xl p-8 overflow-hidden">
+            {/* Grid pattern */}
+            <div 
+              className="absolute inset-0 opacity-[0.02] pointer-events-none"
+              style={{
+                backgroundImage: `linear-gradient(hsl(280 80% 60%) 1px, transparent 1px), linear-gradient(90deg, hsl(280 80% 60%) 1px, transparent 1px)`,
+                backgroundSize: '30px 30px',
+              }}
+            />
+            {/* Scanning line */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-b from-transparent via-fuchsia-500/5 to-transparent pointer-events-none"
+              animate={{ y: ['-100%', '200%'] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+            />
+            <AEOGeoDashboard 
+              domain={rootDomainFromUrl(selectedTrackedDomain || selectedDomainKey)}
             />
           </div>
         </div>
