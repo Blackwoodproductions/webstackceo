@@ -23,7 +23,7 @@ import ogImages from "@/assets/og";
 // Shopping cart & promo components
 import { CartProvider } from "@/contexts/CartContext";
 import { ProductCatalog, CartDrawer } from "@/components/shop";
-import { StickyPromoBar, TrustBadges } from "@/components/marketing/PromoComponents";
+import { TrustBadges } from "@/components/marketing/PromoComponents";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -84,9 +84,6 @@ const Index = () => {
         </main>
         <Footer />
         <BackToTop />
-        
-        {/* Sticky promo bar at bottom */}
-        <StickyPromoBar />
       </div>
     </CartProvider>
   );
