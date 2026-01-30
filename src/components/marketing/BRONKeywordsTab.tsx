@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition, lazy, Suspense } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2, GitBranch } from "lucide-react";
+import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -961,7 +961,7 @@ export const BRONKeywordsTab = memo(({
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Cluster Map Toggle Button - positioned left of history selector */}
+              {/* Keyword Cluster Visualization Toggle Button */}
               <Button
                 variant={showClusterMap ? "default" : "outline"}
                 size="sm"
@@ -973,8 +973,8 @@ export const BRONKeywordsTab = memo(({
                 }
                 title={showClusterMap ? "Back to keyword list" : "View keyword clusters as visual map"}
               >
-                <GitBranch className="w-4 h-4 mr-1" />
-                {showClusterMap ? "Keyword List" : "Cluster Map"}
+                <Link2 className="w-4 h-4 mr-1" />
+                {showClusterMap ? "Keyword List" : "Keyword Cluster Visualization"}
               </Button>
               
               {/* Historical Date Selector */}
