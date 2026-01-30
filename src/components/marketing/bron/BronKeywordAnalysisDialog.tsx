@@ -154,6 +154,12 @@ export const BronKeywordAnalysisDialog = memo(({
     });
   }, [sortedHistory, dateRange]);
   
+  // Helper to get report ID from BronSerpListItem (API uses different field names)
+  const getReportId = (item: BronSerpListItem): string => {
+    // BRON API returns 'serpid' as the primary report identifier
+    return String(item.serpid || item.report_id || item.id || '');
+  };
+
   // Fetch historical data for all reports
   useEffect(() => {
     const fetchData = async () => {
@@ -166,12 +172,17 @@ export const BronKeywordAnalysisDialog = memo(({
         // Fetch all historical reports (limit to avoid too many requests)
         const reportsToFetch = filteredHistory.slice(0, 20);
         
+        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports');
+        
         for (const item of reportsToFetch) {
-          const reportId = String(item.report_id || item.id);
+          const reportId = getReportId(item);
+          if (!reportId) continue;
+          
           try {
             const data = await onFetchSerpDetail(selectedDomain, reportId);
             if (data?.length > 0) {
               dataMap.set(reportId, data);
+              console.log(`[BronKeywordAnalysisDialog] Report ${reportId}: ${data.length} entries`);
             }
           } catch (e) {
             console.warn(`Failed to fetch report ${reportId}:`, e);
@@ -179,6 +190,7 @@ export const BronKeywordAnalysisDialog = memo(({
         }
         
         setHistoricalData(dataMap);
+        console.log('[BronKeywordAnalysisDialog] Total historical data entries:', dataMap.size);
       } catch (err) {
         console.error('Failed to fetch historical data:', err);
       } finally {
@@ -202,9 +214,9 @@ export const BronKeywordAnalysisDialog = memo(({
     
     // Build chart data points
     filteredHistory.forEach(item => {
-      const reportId = String(item.report_id || item.id);
+      const reportId = getReportId(item);
       const reportData = historicalData.get(reportId);
-      if (!reportData) return;
+      if (!reportData || reportData.length === 0) return;
 
       const timestamp = getSerpListItemTimestamp(item);
       if (timestamp === null) return;
