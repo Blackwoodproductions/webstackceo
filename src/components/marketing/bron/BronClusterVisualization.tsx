@@ -1,5 +1,5 @@
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, Trophy, AlertTriangle, Zap } from "lucide-react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, FileText, CheckCircle2, AlertCircle, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
@@ -73,32 +73,83 @@ interface TooltipData extends NodeData {
   isLoadingTip?: boolean;
 }
 
-// AI tip generation
-const generateSEOTip = async (node: NodeData): Promise<string> => {
-  await new Promise(resolve => setTimeout(resolve, 600));
-  
-  const tips: string[] = [];
+// Enhanced AI tip generation with actionable insights
+const generateSEOTips = (node: NodeData): { mainTip: string; actionItems: string[]; improvement: string } => {
   const googlePos = getPosition(node.serpData?.google);
+  const movement = node.movement.google;
+  const linksIn = node.linksInCount;
+  const linksOut = node.linksOutCount;
+  const pageSpeed = node.pageSpeed?.mobileScore;
+  const metrics = node.metrics;
   
-  if (googlePos === null) {
-    tips.push("⚠️ Not ranking. Build topical authority.");
-  } else if (googlePos > 50) {
-    tips.push("📈 Outside top 50. Focus on on-page SEO.");
-  } else if (googlePos > 10) {
-    tips.push("🎯 Close! Add quality backlinks.");
-  } else if (googlePos > 3) {
-    tips.push("⭐ Top 10! Optimize CTR.");
+  let mainTip = "";
+  const actionItems: string[] = [];
+  let improvement = "";
+  
+  // Improvement summary
+  if (movement > 0) {
+    if (movement >= 50) {
+      improvement = `🚀 Massive improvement! Climbed ${movement} positions`;
+    } else if (movement >= 20) {
+      improvement = `📈 Strong gains! Up ${movement} positions`;
+    } else if (movement >= 5) {
+      improvement = `✅ Good progress! Improved ${movement} spots`;
+    } else {
+      improvement = `↗️ Slight improvement of ${movement} positions`;
+    }
+  } else if (movement < 0) {
+    improvement = `⚠️ Dropped ${Math.abs(movement)} positions - needs attention`;
   } else {
-    tips.push("🏆 Top 3! Maintain with fresh content.");
+    improvement = "➡️ Holding steady at current position";
   }
   
-  if (node.movement.google > 5) {
-    tips.push("📊 Great momentum!");
-  } else if (node.movement.google < -5) {
-    tips.push("📉 Check algorithm updates.");
+  // Main tip based on ranking
+  if (googlePos === null) {
+    mainTip = "Not yet indexed. Focus on building topical authority and quality backlinks.";
+    actionItems.push("Submit URL to Google Search Console");
+    actionItems.push("Build 3-5 quality inbound links");
+    actionItems.push("Add internal links from related pages");
+  } else if (googlePos > 50) {
+    mainTip = "Outside top 50. Major on-page and off-page work needed.";
+    actionItems.push("Optimize title tag with primary keyword");
+    actionItems.push("Improve content depth (+500 words)");
+    actionItems.push("Build 5+ quality backlinks");
+  } else if (googlePos > 20) {
+    mainTip = "Page 2-5. Good foundation, needs authority signals.";
+    actionItems.push("Add FAQ schema markup");
+    actionItems.push("Improve internal linking structure");
+    actionItems.push("Target featured snippet opportunity");
+  } else if (googlePos > 10) {
+    mainTip = "Almost page 1! Small optimizations can push you over.";
+    actionItems.push("Optimize meta description for CTR");
+    actionItems.push("Add 2-3 supporting internal links");
+    actionItems.push("Update content with fresh stats");
+  } else if (googlePos > 3) {
+    mainTip = "Top 10! Focus on CTR optimization and user signals.";
+    actionItems.push("A/B test meta title variations");
+    actionItems.push("Improve page load speed");
+    actionItems.push("Add compelling featured image");
+  } else {
+    mainTip = "Top 3! Maintain position with fresh content updates.";
+    actionItems.push("Update content quarterly");
+    actionItems.push("Monitor competitor changes");
+    actionItems.push("Build brand mentions");
   }
   
-  return tips.join(" ");
+  // Add context-specific actions
+  if (pageSpeed !== undefined && pageSpeed < 50) {
+    actionItems.unshift("⚡ Critical: Improve page speed (currently " + pageSpeed + "/100)");
+  }
+  
+  if (linksIn < 3) {
+    actionItems.push("Build more inbound citation links");
+  }
+  
+  if (metrics?.cpc && metrics.cpc > 5) {
+    actionItems.push("💰 High-value keyword ($" + metrics.cpc.toFixed(2) + " CPC) - prioritize!");
+  }
+  
+  return { mainTip, actionItems: actionItems.slice(0, 4), improvement };
 };
 
 // Animated electrical line component
@@ -210,7 +261,7 @@ const ElectricLine = memo(({
 });
 ElectricLine.displayName = 'ElectricLine';
 
-// Tooltip Component
+// Enhanced Tooltip Component with more relevant data
 const NodeTooltip = memo(({
   data,
   position,
@@ -222,74 +273,169 @@ const NodeTooltip = memo(({
   const bingPos = getPosition(data.serpData?.bing);
   const yahooPos = getPosition(data.serpData?.yahoo);
   
+  // Generate tips synchronously
+  const tips = useMemo(() => generateSEOTips(data), [data]);
+  
+  // Calculate total improvement across engines
+  const totalImprovement = data.movement.google + data.movement.bing + data.movement.yahoo;
+  const avgImprovement = Math.round(totalImprovement / 3);
+  
   return (
     <div
-      className="fixed z-[100] bg-background/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl p-3 min-w-[260px] max-w-[320px] pointer-events-none"
+      className="fixed z-[100] bg-background/98 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl p-4 min-w-[340px] max-w-[400px] pointer-events-none"
       style={{
-        left: Math.min(position.x + 15, window.innerWidth - 340),
-        top: Math.min(position.y - 20, window.innerHeight - 280),
+        left: Math.min(position.x + 15, window.innerWidth - 420),
+        top: Math.min(position.y - 20, window.innerHeight - 520),
       }}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
-          <h4 className="font-semibold text-foreground text-sm truncate">{data.keywordText}</h4>
+          <h4 className="font-bold text-foreground text-base leading-tight">{data.keywordText}</h4>
           {data.keyword.linkouturl && (
             <a
               href={data.keyword.linkouturl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5 pointer-events-auto"
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1 pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="truncate max-w-[160px]">{data.keyword.linkouturl}</span>
+              <span className="truncate max-w-[200px]">{data.keyword.linkouturl}</span>
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
             </a>
           )}
         </div>
         <Badge className={data.isMainNode 
-          ? "bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs flex-shrink-0"
-          : "bg-violet-500/20 text-violet-400 border-violet-400/50 text-xs flex-shrink-0"
+          ? "bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs flex-shrink-0 px-2 py-1"
+          : "bg-violet-500/20 text-violet-400 border-violet-400/50 text-xs flex-shrink-0 px-2 py-1"
         }>
-          {data.isMainNode ? "Money" : "Support"}
+          {data.isMainNode ? "Money Page" : "Supporting"}
         </Badge>
       </div>
       
-      <div className="grid grid-cols-3 gap-1.5 mb-2">
-        <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-          <div className="text-[10px] text-muted-foreground">Google</div>
-          <div className="font-bold text-foreground text-sm">{googlePos ?? '—'}</div>
-          {data.movement.google !== 0 && (
-            <div className={`text-[10px] flex items-center justify-center gap-0.5 ${data.movement.google > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {data.movement.google > 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
-              {Math.abs(data.movement.google)}
-            </div>
+      {/* Improvement Summary Banner */}
+      <div className={`rounded-lg px-3 py-2 mb-3 ${
+        data.movement.google > 0 
+          ? 'bg-emerald-500/10 border border-emerald-500/30' 
+          : data.movement.google < 0 
+            ? 'bg-rose-500/10 border border-rose-500/30'
+            : 'bg-muted/50 border border-border/50'
+      }`}>
+        <div className="flex items-center gap-2">
+          {data.movement.google > 0 ? (
+            <TrendingUp className="w-4 h-4 text-emerald-400" />
+          ) : data.movement.google < 0 ? (
+            <TrendingDown className="w-4 h-4 text-rose-400" />
+          ) : (
+            <BarChart3 className="w-4 h-4 text-muted-foreground" />
           )}
-        </div>
-        <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-          <div className="text-[10px] text-muted-foreground">Bing</div>
-          <div className="font-bold text-foreground text-sm">{bingPos ?? '—'}</div>
-        </div>
-        <div className="bg-muted/50 rounded-lg p-1.5 text-center">
-          <div className="text-[10px] text-muted-foreground">Yahoo</div>
-          <div className="font-bold text-foreground text-sm">{yahooPos ?? '—'}</div>
+          <span className={`text-sm font-medium ${
+            data.movement.google > 0 ? 'text-emerald-400' : data.movement.google < 0 ? 'text-rose-400' : 'text-muted-foreground'
+          }`}>
+            {tips.improvement}
+          </span>
         </div>
       </div>
       
-      <div className="border-t border-border/50 pt-2">
-        <div className="flex items-center gap-1.5 mb-1">
-          <Sparkles className="w-3 h-3 text-violet-400" />
-          <span className="text-[10px] font-medium text-violet-400">AI Tip</span>
+      {/* Rankings Grid */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-muted/40 rounded-lg p-2 text-center border border-border/30">
+          <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Google</div>
+          <div className="font-bold text-foreground text-lg">{googlePos ?? '—'}</div>
+          {data.movement.google !== 0 && (
+            <div className={`text-xs flex items-center justify-center gap-0.5 font-medium ${data.movement.google > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {data.movement.google > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {data.movement.google > 0 ? '+' : ''}{data.movement.google}
+            </div>
+          )}
         </div>
-        {data.isLoadingTip ? (
+        <div className="bg-muted/40 rounded-lg p-2 text-center border border-border/30">
+          <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Bing</div>
+          <div className="font-bold text-foreground text-lg">{bingPos ?? '—'}</div>
+          {data.movement.bing !== 0 && (
+            <div className={`text-xs flex items-center justify-center gap-0.5 font-medium ${data.movement.bing > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {data.movement.bing > 0 ? '+' : ''}{data.movement.bing}
+            </div>
+          )}
+        </div>
+        <div className="bg-muted/40 rounded-lg p-2 text-center border border-border/30">
+          <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Yahoo</div>
+          <div className="font-bold text-foreground text-lg">{yahooPos ?? '—'}</div>
+          {data.movement.yahoo !== 0 && (
+            <div className={`text-xs flex items-center justify-center gap-0.5 font-medium ${data.movement.yahoo > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {data.movement.yahoo > 0 ? '+' : ''}{data.movement.yahoo}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Metrics Row */}
+      <div className="flex items-center gap-3 mb-3 text-xs">
+        {/* Links */}
+        <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
+          <LinkIcon className="w-3 h-3 text-cyan-400" />
+          <span className="text-muted-foreground">Links:</span>
+          <span className="text-foreground font-medium">{data.linksInCount} in</span>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-foreground font-medium">{data.linksOutCount} out</span>
+        </div>
+        
+        {/* PageSpeed if available */}
+        {data.pageSpeed?.mobileScore !== undefined && (
+          <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
+            <Gauge className="w-3 h-3 text-amber-400" />
+            <span className="text-muted-foreground">Speed:</span>
+            <span className={`font-medium ${
+              data.pageSpeed.mobileScore >= 90 ? 'text-emerald-400' :
+              data.pageSpeed.mobileScore >= 50 ? 'text-amber-400' : 'text-rose-400'
+            }`}>{data.pageSpeed.mobileScore}/100</span>
+          </div>
+        )}
+        
+        {/* CPC if available */}
+        {data.metrics?.cpc !== undefined && (
+          <div className="flex items-center gap-1.5 bg-muted/30 rounded px-2 py-1">
+            <DollarSign className="w-3 h-3 text-emerald-400" />
+            <span className="text-muted-foreground">CPC:</span>
+            <span className="text-foreground font-medium">${data.metrics.cpc.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Search Volume if available */}
+      {data.metrics?.search_volume !== undefined && data.metrics.search_volume > 0 && (
+        <div className="flex items-center gap-2 mb-3 text-xs bg-violet-500/10 rounded-lg px-3 py-1.5 border border-violet-500/20">
+          <Target className="w-3.5 h-3.5 text-violet-400" />
+          <span className="text-violet-300">Monthly Search Volume:</span>
+          <span className="text-violet-400 font-bold">{data.metrics.search_volume.toLocaleString()}</span>
+        </div>
+      )}
+      
+      {/* AI Analysis Section */}
+      <div className="border-t border-border/50 pt-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="w-4 h-4 text-violet-400" />
+          <span className="text-sm font-semibold text-violet-400">AI Ranking Analysis</span>
+        </div>
+        
+        {/* Main tip */}
+        <p className="text-sm text-foreground mb-3 leading-relaxed">
+          {tips.mainTip}
+        </p>
+        
+        {/* Action items */}
+        <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Analyzing...
+            <Lightbulb className="w-3 h-3 text-amber-400" />
+            <span className="font-medium">Recommended Actions:</span>
           </div>
-        ) : data.aiTip ? (
-          <div className="text-xs text-muted-foreground">
-            {data.aiTip}
-          </div>
-        ) : null}
+          {tips.actionItems.map((action, idx) => (
+            <div key={idx} className="flex items-start gap-2 text-xs pl-1">
+              <CheckCircle2 className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-muted-foreground">{action}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -465,14 +611,8 @@ export const BronClusterVisualization = memo(({
     setHoveredNode(node);
     
     if (node) {
-      setTooltipData({ ...node, isLoadingTip: true });
-      
-      try {
-        const tip = await generateSEOTip(node);
-        setTooltipData(prev => prev?.id === node.id ? { ...prev, aiTip: tip, isLoadingTip: false } : prev);
-      } catch {
-        setTooltipData(prev => prev?.id === node.id ? { ...prev, isLoadingTip: false } : prev);
-      }
+      // Tips are now generated synchronously in the tooltip itself
+      setTooltipData({ ...node });
     } else {
       setTooltipData(null);
     }
