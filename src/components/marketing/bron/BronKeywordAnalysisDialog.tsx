@@ -24,6 +24,10 @@ function getSerpListItemTimestamp(item: BronSerpListItem): number | null {
     item.created_at,
     item.created,
     item.timestamp,
+    // Some BRON history payloads only include completion timestamps
+    (item as any).complete,
+    (item as any).completed,
+    (item as any).completed_at,
   ];
 
   for (const c of candidates) {
@@ -285,6 +289,17 @@ export const BronKeywordAnalysisDialog = memo(({
       };
     }).filter(r => r.reportId && r.timestamp > 0);
   }, [filteredHistory]);
+
+  // Only switch from the full-screen loader to the chart once we have at least
+  // one report that can actually render (prevents "No historical data" while still counting).
+  const hasRenderableHistory = useMemo(() => {
+    if (historicalData.size === 0) return false;
+    for (const r of reportDates) {
+      const arr = historicalData.get(r.reportId);
+      if (Array.isArray(arr) && arr.length > 0) return true;
+    }
+    return false;
+  }, [historicalData, reportDates]);
 
   // Fetch historical data for all reports
   useEffect(() => {
@@ -641,7 +656,13 @@ export const BronKeywordAnalysisDialog = memo(({
 
           {/* Chart Section - Uses working BronMultiKeywordTrendChart */}
           <div className="flex-1 min-h-0 overflow-auto">
-            {historicalData.size > 0 ? (
+            {isLoading && !hasRenderableHistory ? (
+              <BronHistoricalLoadingScreen
+                title="Loading historical data…"
+                done={fetchProgress.done}
+                total={fetchProgress.total}
+              />
+            ) : historicalData.size > 0 ? (
               <div className="relative">
                 {isLoading && (
                   <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/70 backdrop-blur px-4 py-2">
@@ -662,12 +683,6 @@ export const BronKeywordAnalysisDialog = memo(({
                   maxKeywords={3}
                 />
               </div>
-            ) : isLoading ? (
-              <BronHistoricalLoadingScreen
-                title="Loading historical data…"
-                done={fetchProgress.done}
-                total={fetchProgress.total}
-              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
