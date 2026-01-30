@@ -153,6 +153,7 @@ export interface GSCDashboardPanelProps {
   externalSelectedSite?: string; // Allow parent to control selected site
   externalDateRange?: DateRangeType; // Optional parent-controlled date range
   hideDateSelector?: boolean; // When true, hide internal date selector UI
+  isSuperAdmin?: boolean; // When true, bypass GSC verification requirements
 }
 
 const SEARCH_TYPE_CONFIG: Record<SearchType, { label: string; icon: React.ReactNode; color: string }> = {
@@ -172,6 +173,7 @@ export const GSCDashboardPanel = ({
   externalSelectedSite,
   externalDateRange,
   hideDateSelector,
+  isSuperAdmin = false,
 }: GSCDashboardPanelProps) => {
   const { toast } = useToast();
   const { openOAuthPopup } = usePopupOAuth();
@@ -411,13 +413,15 @@ export const GSCDashboardPanel = ({
   }, [externalSelectedSite]);
   
   // Check if the externally selected site is in GSC
+  // Super admins bypass GSC verification requirements entirely
   const isExternalSiteInGsc = useMemo(() => {
+    if (isSuperAdmin) return true; // Super admins can view all domains without verification
     if (!externalSelectedSite) return true; // No site selected
     if (!isAuthenticated) return true; // Not authenticated, can't check
     if (sites.length === 0) return true; // Sites not loaded yet
     const normalizedExternal = normalizeGscDomain(externalSelectedSite);
     return sites.some(site => normalizeGscDomain(site.siteUrl) === normalizedExternal);
-  }, [externalSelectedSite, sites, isAuthenticated]);
+  }, [externalSelectedSite, sites, isAuthenticated, isSuperAdmin]);
 
   const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
     if (!profile) return;

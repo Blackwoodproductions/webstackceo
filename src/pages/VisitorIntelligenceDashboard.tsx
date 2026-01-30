@@ -2838,6 +2838,7 @@ f.parentNode.insertBefore(j,f);
             externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
             externalDateRange={integratedGscDateRange}
             hideDateSelector={true}
+            isSuperAdmin={isSuperAdmin}
             onSiteChange={(site) => {
               const cleanDomain = normalizeDomain(site);
               setSelectedGscDomain(cleanDomain);
@@ -3412,7 +3413,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* BRON Tab Content */}
       {activeTab === 'bron' && (
-        <FeatureGate feature="bron">
+        <FeatureGate feature="bron" isAdmin={isSuperAdmin}>
         <div className="relative max-w-[1480px] mx-auto group/bron">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/bron:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3452,7 +3453,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* AEO/GEO Tab Content */}
       {activeTab === 'aeo-geo' && (
-        <FeatureGate feature="aeo-geo">
+        <FeatureGate feature="aeo-geo" isAdmin={isSuperAdmin}>
         <div className="relative max-w-[1480px] mx-auto group/aeo">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/aeo:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3490,7 +3491,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* CADE Tab Content */}
       {activeTab === 'cade' && (
-        <FeatureGate feature="cade">
+        <FeatureGate feature="cade" isAdmin={isSuperAdmin}>
         <div className="relative max-w-[1480px] mx-auto group/cade">
           <motion.div
             className="absolute -inset-[2px] rounded-b-[14px] opacity-30 group-hover/cade:opacity-50 transition-opacity duration-500 blur-md -z-10"
@@ -3653,7 +3654,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* Social Signals Tab Content */}
       {activeTab === 'social-signals' && (
-        <FeatureGate feature="social-signals">
+        <FeatureGate feature="social-signals" isAdmin={isSuperAdmin}>
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <SocialPanel selectedDomain={selectedTrackedDomain || selectedDomainKey} />
         </div>
@@ -3662,7 +3663,7 @@ f.parentNode.insertBefore(j,f);
 
       {/* On-page SEO Tab Content */}
       {activeTab === 'on-page-seo' && (
-        <FeatureGate feature="on-page-seo">
+        <FeatureGate feature="on-page-seo" isAdmin={isSuperAdmin}>
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <div className="space-y-6">
             {/* Title Header */}
@@ -3912,7 +3913,7 @@ f.parentNode.insertBefore(j,f);
       )}
 
       {activeTab === 'landing-pages' && (
-        <FeatureGate feature="landing-pages">
+        <FeatureGate feature="landing-pages" isAdmin={isSuperAdmin}>
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <LandingPagesPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
           

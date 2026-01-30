@@ -9,6 +9,8 @@ interface FeatureGateProps {
   children: ReactNode;
   /** If true, always show children (for demo/development) */
   bypassGate?: boolean;
+  /** If true, bypass gate for admin users (super admin / admin) */
+  isAdmin?: boolean;
 }
 
 /**
@@ -19,16 +21,22 @@ interface FeatureGateProps {
  * <FeatureGate feature="bron">
  *   <BRONPlatformConnect ... />
  * </FeatureGate>
+ * 
+ * For admin users who should bypass all gates:
+ * <FeatureGate feature="bron" isAdmin={isSuperAdmin}>
+ *   <BRONPlatformConnect ... />
+ * </FeatureGate>
  */
 export const FeatureGate = memo(function FeatureGate({
   feature,
   children,
   bypassGate = false,
+  isAdmin = false,
 }: FeatureGateProps) {
   const { hasAccess, isLoading } = useFeatureAccess(feature);
 
-  // Bypass gate for development/demo
-  if (bypassGate) {
+  // Bypass gate for development/demo or admin users
+  if (bypassGate || isAdmin) {
     return <>{children}</>;
   }
 
