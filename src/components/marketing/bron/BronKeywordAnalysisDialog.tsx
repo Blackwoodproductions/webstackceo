@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { format } from "date-fns";
+
+// Position value for unranked (displayed at bottom of chart)
+const UNRANKED_POSITION = 100;
 
 function getSerpListItemTimestamp(item: BronSerpListItem): number | null {
   const candidates: Array<string | number | undefined | null> = [
@@ -22,14 +25,12 @@ function getSerpListItemTimestamp(item: BronSerpListItem): number | null {
   for (const c of candidates) {
     if (c === undefined || c === null) continue;
     if (typeof c === 'number') {
-      // Heuristic: treat 10-digit values as seconds.
       const ms = c < 2_000_000_000 ? c * 1000 : c;
       if (Number.isFinite(ms) && ms > 0) return ms;
       continue;
     }
     const s = String(c).trim();
     if (!s) continue;
-    // Numeric string timestamp
     if (/^\d{10,13}$/.test(s)) {
       const n = Number(s);
       if (!Number.isFinite(n)) continue;
@@ -48,60 +49,62 @@ interface BronKeywordAnalysisDialogProps {
   isOpen: boolean;
   onClose: () => void;
   keyword: BronKeyword;
-  relatedKeywords?: BronKeyword[]; // Supporting keywords in the cluster
+  relatedKeywords?: BronKeyword[];
   serpHistory: BronSerpListItem[];
   selectedDomain?: string;
   onFetchSerpDetail?: (domain: string, reportId: string) => Promise<BronSerpReport[]>;
 }
 
-// Date range filter options
 type DateRange = "all" | "30d" | "60d" | "90d";
 
-// Chart data point
+// Chart data point with Google/Bing/Yahoo positions
 interface ChartDataPoint {
   date: string;
   timestamp: number;
-  [key: string]: number | string;
+  google: number | null;
+  bing: number | null;
+  yahoo: number | null;
 }
 
-// Keyword summary with movement
-interface KeywordSummary {
-  keyword: string;
+// Search engine summary
+interface EngineSummary {
+  engine: string;
+  label: string;
   best: number | null;
   current: number | null;
-  baseline: number | null; // First recorded position (oldest report)
-  change: number; // Change from baseline to current (positive = improved)
+  baseline: number | null;
+  change: number;
   color: string;
-  gradient: string;
 }
 
-const KEYWORD_COLORS = [
-  { stroke: "hsl(217, 91%, 60%)", gradient: "from-blue-500/20 to-blue-500/5" },
-  { stroke: "hsl(280, 87%, 65%)", gradient: "from-violet-500/20 to-violet-500/5" },
-  { stroke: "hsl(172, 66%, 50%)", gradient: "from-cyan-500/20 to-cyan-500/5" },
-  { stroke: "hsl(142, 71%, 45%)", gradient: "from-emerald-500/20 to-emerald-500/5" },
-  { stroke: "hsl(38, 92%, 50%)", gradient: "from-amber-500/20 to-amber-500/5" },
-];
+// Engine colors - Google blue, Bing cyan, Yahoo purple
+const ENGINE_COLORS = {
+  google: { stroke: "hsl(217, 91%, 60%)", fill: "hsl(217, 91%, 60%)" },
+  bing: { stroke: "hsl(172, 66%, 50%)", fill: "hsl(172, 66%, 50%)" },
+  yahoo: { stroke: "hsl(280, 87%, 65%)", fill: "hsl(280, 87%, 65%)" },
+};
 
-// Custom gradient tooltip
+// Custom tooltip showing all 3 engines
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload) return null;
   
   return (
     <div className="rounded-xl border border-primary/30 bg-background/95 backdrop-blur-xl p-3 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
       <p className="text-xs font-medium text-muted-foreground mb-2">{label}</p>
-      {payload.map((entry: any, idx: number) => (
-        <div key={idx} className="flex items-center gap-2 text-sm">
-          <div 
-            className="w-2 h-2 rounded-full" 
-            style={{ backgroundColor: entry.stroke || entry.color }}
-          />
-          <span className="text-foreground font-semibold">#{entry.value}</span>
-          <span className="text-muted-foreground text-xs truncate max-w-[150px]">
-            {entry.dataKey.length > 20 ? `${entry.dataKey.slice(0, 20)}...` : entry.dataKey}
-          </span>
-        </div>
-      ))}
+      {payload.map((entry: any, idx: number) => {
+        const val = entry.value;
+        const displayVal = val === UNRANKED_POSITION ? 'Unranked' : `#${val}`;
+        return (
+          <div key={idx} className="flex items-center gap-2 text-sm">
+            <div 
+              className="w-2 h-2 rounded-full" 
+              style={{ backgroundColor: entry.stroke || entry.color }}
+            />
+            <span className="text-foreground font-semibold">{displayVal}</span>
+            <span className="text-muted-foreground text-xs">{entry.name}</span>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -121,16 +124,7 @@ export const BronKeywordAnalysisDialog = memo(({
   
   const mainKeywordText = useMemo(() => getKeywordDisplayText(keyword), [keyword]);
   
-  // Get all keywords to track (main + related, max 5)
-  const trackedKeywords = useMemo(() => {
-    const all = [keyword, ...relatedKeywords.slice(0, 4)];
-    return all.map(kw => ({
-      keyword: kw,
-      text: getKeywordDisplayText(kw),
-    }));
-  }, [keyword, relatedKeywords]);
-  
-  // Sort history by date
+  // Sort history by date (oldest first for chart)
   const sortedHistory = useMemo(() => {
     return [...serpHistory].sort((a, b) => {
       const dateA = getSerpListItemTimestamp(a) ?? 0;
@@ -154,9 +148,8 @@ export const BronKeywordAnalysisDialog = memo(({
     });
   }, [sortedHistory, dateRange]);
   
-  // Helper to get report ID from BronSerpListItem (API uses different field names)
+  // Helper to get report ID from BronSerpListItem
   const getReportId = (item: BronSerpListItem): string => {
-    // BRON API returns 'serpid' as the primary report identifier
     return String(item.serpid || item.report_id || item.id || '');
   };
 
@@ -169,31 +162,18 @@ export const BronKeywordAnalysisDialog = memo(({
       const dataMap = new Map<string, BronSerpReport[]>();
       
       try {
-        // Fetch all historical reports (limit to avoid too many requests)
         const reportsToFetch = filteredHistory.slice(0, 20);
         
-        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports for keywords:', trackedKeywords.map(tk => tk.text));
-        console.log('[BronKeywordAnalysisDialog] Report IDs to fetch:', reportsToFetch.map(r => getReportId(r)));
+        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports for keyword:', mainKeywordText);
         
         for (const item of reportsToFetch) {
           const reportId = getReportId(item);
-          if (!reportId) {
-            console.warn('[BronKeywordAnalysisDialog] Skipping report with no ID:', item);
-            continue;
-          }
+          if (!reportId) continue;
           
           try {
             const data = await onFetchSerpDetail(selectedDomain, reportId);
             if (data?.length > 0) {
               dataMap.set(reportId, data);
-              // Log first report's structure to understand API response
-              if (dataMap.size === 1) {
-                console.log('[BronKeywordAnalysisDialog] First report sample entry keys:', Object.keys(data[0]));
-                console.log('[BronKeywordAnalysisDialog] First report sample entry:', JSON.stringify(data[0]).slice(0, 500));
-              }
-              console.log(`[BronKeywordAnalysisDialog] Report ${reportId}: ${data.length} entries`);
-            } else {
-              console.log(`[BronKeywordAnalysisDialog] Report ${reportId}: empty response`);
             }
           } catch (e) {
             console.warn(`Failed to fetch report ${reportId}:`, e);
@@ -201,7 +181,7 @@ export const BronKeywordAnalysisDialog = memo(({
         }
         
         setHistoricalData(dataMap);
-        console.log('[BronKeywordAnalysisDialog] Total historical data entries:', dataMap.size);
+        console.log('[BronKeywordAnalysisDialog] Fetched data for', dataMap.size, 'reports');
       } catch (err) {
         console.error('Failed to fetch historical data:', err);
       } finally {
@@ -210,105 +190,80 @@ export const BronKeywordAnalysisDialog = memo(({
     };
     
     fetchData();
-  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, trackedKeywords]);
+  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, mainKeywordText]);
   
-  // Build chart data
-  const { chartData, keywordSummaries } = useMemo(() => {
+  // Build chart data with Google/Bing/Yahoo positions for the single keyword
+  const { chartData, engineSummaries } = useMemo(() => {
     const data: ChartDataPoint[] = [];
-    const summaries: KeywordSummary[] = [];
     
-    console.log('[BronKeywordAnalysisDialog] Building chart data, historicalData size:', historicalData.size, 'filteredHistory length:', filteredHistory.length);
-    
-    // Track best/current/baseline for each keyword
-    const keywordStats: Record<string, { best: number | null; current: number | null; baseline: number | null; all: number[] }> = {};
-    trackedKeywords.forEach(tk => {
-      keywordStats[tk.text] = { best: null, current: null, baseline: null, all: [] };
-    });
-    
-    // Build chart data points
-    let matchedReports = 0;
-    let unmatchedReports = 0;
+    // Track positions per engine across all reports
+    const googlePositions: number[] = [];
+    const bingPositions: number[] = [];
+    const yahooPositions: number[] = [];
     
     filteredHistory.forEach(item => {
       const reportId = getReportId(item);
       const reportData = historicalData.get(reportId);
-      if (!reportData || reportData.length === 0) {
-        unmatchedReports++;
-        return;
-      }
-      matchedReports++;
+      if (!reportData || reportData.length === 0) return;
 
       const timestamp = getSerpListItemTimestamp(item);
       if (timestamp === null) return;
       
-      const point: ChartDataPoint = {
-        date: format(new Date(timestamp), 'MMM d'),
-        timestamp,
-      };
+      // Find this keyword in the report
+      const serpItem = findSerpForKeyword(mainKeywordText, reportData);
       
-      trackedKeywords.forEach(tk => {
-        // Use fuzzy matching like the main dashboard does
-        const serpItem = findSerpForKeyword(tk.text, reportData);
-        const pos = getPosition(serpItem?.google);
-        if (pos !== null) {
-          point[tk.text] = pos;
-          keywordStats[tk.text].all.push(pos);
-        }
-      });
+      // Get positions for each engine (null if not ranked, UNRANKED_POSITION for chart)
+      const googlePos = getPosition(serpItem?.google);
+      const bingPos = getPosition(serpItem?.bing);
+      const yahooPos = getPosition(serpItem?.yahoo);
       
-      // Only add point if it has at least one keyword position
-      const hasData = trackedKeywords.some(tk => point[tk.text] !== undefined);
-      if (hasData) {
-        data.push(point);
+      // Track actual positions (not UNRANKED_POSITION) for stats
+      if (googlePos !== null) googlePositions.push(googlePos);
+      if (bingPos !== null) bingPositions.push(bingPos);
+      if (yahooPos !== null) yahooPositions.push(yahooPos);
+      
+      // Only add point if we have at least one position
+      if (googlePos !== null || bingPos !== null || yahooPos !== null) {
+        data.push({
+          date: format(new Date(timestamp), 'MMM d'),
+          timestamp,
+          // Use UNRANKED_POSITION for null values so they appear at bottom of chart
+          google: googlePos ?? UNRANKED_POSITION,
+          bing: bingPos ?? UNRANKED_POSITION,
+          yahoo: yahooPos ?? UNRANKED_POSITION,
+        });
       }
     });
     
-    console.log('[BronKeywordAnalysisDialog] Chart data build result: matchedReports:', matchedReports, 'unmatchedReports:', unmatchedReports, 'dataPoints:', data.length);
-    
-    // Calculate best/current/baseline for each keyword
-    // Baseline = first ever recorded position (from oldest report in "All Time" view)
-    trackedKeywords.forEach((tk, idx) => {
-      const stats = keywordStats[tk.text];
-      if (stats.all.length > 0) {
-        stats.best = Math.min(...stats.all);
-        stats.current = stats.all[stats.all.length - 1];
-        stats.baseline = stats.all[0]; // First recorded position is the baseline
-      }
+    // Calculate summaries for each engine
+    const calculateSummary = (positions: number[], engine: string, label: string, color: string): EngineSummary => {
+      const best = positions.length > 0 ? Math.min(...positions) : null;
+      const current = positions.length > 0 ? positions[positions.length - 1] : null;
+      const baseline = positions.length > 0 ? positions[0] : null;
       
-      // Change is calculated using position 1000 as baseline for unranked keywords
-      // Positive = improved (e.g., baseline #10 to current #5 = +5)
-      // Negative = dropped (e.g., baseline #5 to current #10 = -5)
-      // New keyword at #1 = 1000 - 1 = +999 improvement
-      const UNRANKED_POSITION = 1000;
-      const baseline = stats.baseline;
-      const current = stats.current;
+      // Change from baseline to current
+      const BASELINE_UNRANKED = 1000;
       let change = 0;
-      
-      // Both null = no data, no change
       if (baseline === null && current === null) {
         change = 0;
       } else {
-        const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
-        const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
+        const effectiveBaseline = baseline === null ? BASELINE_UNRANKED : baseline;
+        const effectiveCurrent = current === null ? BASELINE_UNRANKED : current;
         change = effectiveBaseline - effectiveCurrent;
       }
       
-      const colorObj = KEYWORD_COLORS[idx % KEYWORD_COLORS.length];
-      summaries.push({
-        keyword: tk.text,
-        best: stats.best,
-        current: stats.current,
-        baseline: stats.baseline,
-        change,
-        color: colorObj.stroke,
-        gradient: colorObj.gradient,
-      });
-    });
+      return { engine, label, best, current, baseline, change, color };
+    };
     
-    return { chartData: data, keywordSummaries: summaries };
-  }, [filteredHistory, historicalData, trackedKeywords]);
+    const summaries: EngineSummary[] = [
+      calculateSummary(googlePositions, 'google', 'Google', ENGINE_COLORS.google.stroke),
+      calculateSummary(bingPositions, 'bing', 'Bing', ENGINE_COLORS.bing.stroke),
+      calculateSummary(yahooPositions, 'yahoo', 'Yahoo', ENGINE_COLORS.yahoo.stroke),
+    ];
+    
+    return { chartData: data, engineSummaries: summaries };
+  }, [filteredHistory, historicalData, mainKeywordText]);
   
-  // Render date range buttons
   const dateRangeButtons: { value: DateRange; label: string }[] = [
     { value: "all", label: "All Time" },
     { value: "30d", label: "30 Days" },
@@ -333,7 +288,7 @@ export const BronKeywordAnalysisDialog = memo(({
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-violet-400 to-cyan-400 bg-clip-text text-transparent">
                   Keyword Trend Analysis
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Historical ranking performance over time</p>
+                <p className="text-sm text-muted-foreground mt-1">Historical ranking across Google, Bing & Yahoo</p>
               </div>
             </div>
           </DialogHeader>
@@ -348,7 +303,7 @@ export const BronKeywordAnalysisDialog = memo(({
             </div>
           </div>
 
-          {/* Date Range Selector - Futuristic tabs */}
+          {/* Date Range Selector */}
           <div className="flex justify-center gap-2 py-2 shrink-0">
             {dateRangeButtons.map(btn => (
               <Button
@@ -367,96 +322,118 @@ export const BronKeywordAnalysisDialog = memo(({
             ))}
           </div>
 
-          {/* Chart Section - Glassmorphism container */}
+          {/* Chart Section */}
           <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] flex-1 min-h-0">
             {/* Legend */}
             <div className="flex flex-wrap gap-3 mb-4">
-              {keywordSummaries.map((summary, idx) => (
-                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
+              {engineSummaries.map((summary) => (
+                <div key={summary.engine} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/50 border border-border/30">
                   <div 
                     className="w-3 h-3 rounded-full shadow-[0_0_8px_currentColor]" 
                     style={{ backgroundColor: summary.color, color: summary.color }}
                   />
-                  <span className="text-sm text-foreground truncate max-w-[200px]">
-                    {summary.keyword.length > 30 
-                      ? `${summary.keyword.slice(0, 30)}...` 
-                      : summary.keyword
-                    }
-                  </span>
+                  <span className="text-sm text-foreground">{summary.label}</span>
                 </div>
               ))}
             </div>
 
             {/* Chart */}
-            <div className="h-full w-full">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
-                  <BarChart3 className="w-6 h-6 text-primary" />
+            <div className="h-[calc(100%-3rem)] w-full">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-muted-foreground">Loading historical data...</div>
                 </div>
-                <div className="text-muted-foreground">Loading historical data...</div>
-              </div>
-            ) : chartData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-muted-foreground" />
+              ) : chartData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div className="text-muted-foreground">No historical data available</div>
                 </div>
-                <div className="text-muted-foreground">No historical data available</div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
-                  <defs>
-                    {keywordSummaries.map((summary, idx) => (
-                      <linearGradient key={idx} id={`gradient-${idx}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={summary.color} stopOpacity={0.3} />
-                        <stop offset="100%" stopColor={summary.color} stopOpacity={0} />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                    <defs>
+                      <linearGradient id="gradient-google" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={ENGINE_COLORS.google.fill} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={ENGINE_COLORS.google.fill} stopOpacity={0} />
                       </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    reversed
-                    domain={['dataMin - 2', 'dataMax + 2']}
-                    tickFormatter={(val) => `#${val}`}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  {keywordSummaries.map((summary, idx) => (
+                      <linearGradient id="gradient-bing" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={ENGINE_COLORS.bing.fill} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={ENGINE_COLORS.bing.fill} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradient-yahoo" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={ENGINE_COLORS.yahoo.fill} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={ENGINE_COLORS.yahoo.fill} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      reversed
+                      domain={[1, UNRANKED_POSITION]}
+                      ticks={[1, 5, 10, 20, 50, UNRANKED_POSITION]}
+                      tickFormatter={(val) => val === UNRANKED_POSITION ? '∞' : `#${val}`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
                     <Area
-                      key={summary.keyword}
                       type="monotone"
-                      dataKey={summary.keyword}
-                      stroke={summary.color}
+                      dataKey="google"
+                      name="Google"
+                      stroke={ENGINE_COLORS.google.stroke}
                       strokeWidth={2.5}
-                      fill={`url(#gradient-${idx})`}
-                      dot={{ fill: summary.color, strokeWidth: 0, r: 4 }}
-                      activeDot={{ r: 6, fill: summary.color, stroke: 'white', strokeWidth: 2 }}
+                      fill="url(#gradient-google)"
+                      dot={{ fill: ENGINE_COLORS.google.fill, strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6, fill: ENGINE_COLORS.google.fill, stroke: 'white', strokeWidth: 2 }}
                       connectNulls
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+                    <Area
+                      type="monotone"
+                      dataKey="bing"
+                      name="Bing"
+                      stroke={ENGINE_COLORS.bing.stroke}
+                      strokeWidth={2.5}
+                      fill="url(#gradient-bing)"
+                      dot={{ fill: ENGINE_COLORS.bing.fill, strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6, fill: ENGINE_COLORS.bing.fill, stroke: 'white', strokeWidth: 2 }}
+                      connectNulls
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="yahoo"
+                      name="Yahoo"
+                      stroke={ENGINE_COLORS.yahoo.stroke}
+                      strokeWidth={2.5}
+                      fill="url(#gradient-yahoo)"
+                      dot={{ fill: ENGINE_COLORS.yahoo.fill, strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6, fill: ENGINE_COLORS.yahoo.fill, stroke: 'white', strokeWidth: 2 }}
+                      connectNulls
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-			</div>
 
-          {/* Keyword Summary Cards - equal width grid */}
+          {/* Engine Summary Cards */}
           <div className="mt-4 grid grid-cols-3 gap-4 shrink-0">
-            {keywordSummaries.slice(0, 3).map((summary, idx) => (
+            {engineSummaries.map((summary) => (
               <div 
-                key={idx}
-                className={`relative rounded-2xl border border-border/50 bg-gradient-to-br ${summary.gradient} backdrop-blur-sm p-4 overflow-hidden flex-1`}
+                key={summary.engine}
+                className="relative rounded-2xl border border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-4 overflow-hidden"
               >
                 {/* Accent glow */}
                 <div 
@@ -470,24 +447,19 @@ export const BronKeywordAnalysisDialog = memo(({
                       className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" 
                       style={{ backgroundColor: summary.color, color: summary.color }}
                     />
-                    <span className="text-sm font-medium text-foreground truncate">
-                      {summary.keyword.length > 25 
-                        ? `${summary.keyword.slice(0, 25)}...` 
-                        : summary.keyword
-                      }
-                    </span>
+                    <span className="text-sm font-medium text-foreground">{summary.label}</span>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
-                      <p className="text-lg font-bold text-cyan-400">
+                      <p className="text-lg font-bold" style={{ color: summary.color }}>
                         {summary.best !== null ? `#${summary.best}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
-                      <p className="text-lg font-bold text-violet-400">
+                      <p className="text-lg font-bold text-foreground">
                         {summary.current !== null ? `#${summary.current}` : '—'}
                       </p>
                     </div>

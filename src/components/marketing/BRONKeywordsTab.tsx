@@ -812,29 +812,23 @@ export const BRONKeywordsTab = memo(({
     return () => clearTimeout(timer);
   }, [mergedKeywords.length, selectedDomain]);
 
-  // Callbacks
+  // Callbacks - Accordion behavior: only one keyword expanded at a time
   const handleToggleExpand = useCallback((kw: BronKeyword) => {
     const id = kw.id;
     const isCurrentlyExpanded = expandedIdsRef.current.has(id);
 
-    // Batch both state updates together using React's automatic batching.
-    // We use flushSync-free approach: update form state first, then expanded state
-    // in a single synchronous block so React batches them automatically.
     if (!isCurrentlyExpanded) {
-      // Expanding: set form data and expansion in one go
+      // Expanding: close all others, set form data, then expand this one
       const hasForm = !!(inlineEditFormsRef.current as any)[id];
       if (!hasForm) {
         const newForm = buildInitialInlineForm(kw);
         setInlineEditForms((p) => ({ ...p, [id]: newForm }));
       }
-      setExpandedIds((prev) => new Set(prev).add(id));
+      // Accordion: replace expanded set with only this ID
+      setExpandedIds(new Set([id]));
     } else {
-      // Collapsing: just remove from expanded set
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
+      // Collapsing: remove from expanded set
+      setExpandedIds(new Set());
     }
   }, [buildInitialInlineForm]);
 
