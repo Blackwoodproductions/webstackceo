@@ -1,5 +1,4 @@
-import { memo, useState, useMemo, useCallback } from "react";
-import { ChevronDown, Layers } from "lucide-react";
+import { memo, useMemo, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { BronKeywordCard, getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
@@ -263,10 +262,6 @@ export const BronClusterCard = memo(({
   onToggleLink,
 }: BronClusterCardProps) => {
   const hasChildren = cluster.children.length > 0;
-  const [clusterExpanded, setClusterExpanded] = useState(true);
-  
-  // Cluster header text
-  const parentText = useMemo(() => getKeywordDisplayText(cluster.parent), [cluster.parent]);
   
   // If no children, render as a simple card (no cluster wrapper)
   if (!hasChildren) {
@@ -298,106 +293,64 @@ export const BronClusterCard = memo(({
     );
   }
 
-  // Cluster card with header and children - CSS-only transitions for performance
-  const toggleCluster = useCallback(() => setClusterExpanded(e => !e), []);
-  
+  // Render all keywords in a flat list without cluster wrapper
   return (
-    <div 
-      className="relative rounded-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-500/5 overflow-hidden"
-      style={{ contain: 'layout style paint' }}
-    >
-      {/* Cluster Header */}
-      <button 
-        type="button"
-        className="flex items-center gap-3 px-4 py-3 w-full text-left bg-blue-500/10 border-b border-blue-500/20 cursor-pointer hover:bg-blue-500/15 transition-colors"
-        onClick={toggleCluster}
-      >
-        <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center shrink-0">
-          <Layers className="w-4 h-4 text-blue-400" />
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-blue-400 truncate" title={parentText}>
-            {parentText.length > 50 ? `${parentText.slice(0, 50)}...` : parentText}
-          </h4>
-        </div>
-        
-        <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/40 shrink-0">
-          Main · {cluster.children.length}
-        </Badge>
-        
-        <div 
-          className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-500/20 text-blue-400 transition-transform duration-150"
-          style={{ transform: clusterExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-        >
-          <ChevronDown className="w-4 h-4" />
-        </div>
-      </button>
+    <div className="space-y-2" style={{ contain: 'layout style paint' }}>
+      {/* Parent keyword row */}
+      <ClusterKeywordRow
+        kw={cluster.parent}
+        isNested={false}
+        isLastChild={false}
+        isMainKeyword={true}
+        clusterChildCount={cluster.children.length}
+        serpReports={serpReports}
+        keywordMetrics={keywordMetrics}
+        pageSpeedScores={pageSpeedScores}
+        linksIn={linksIn}
+        linksOut={linksOut}
+        selectedDomain={selectedDomain}
+        isExpanded={expandedIds.has(cluster.parent.id)}
+        initialPositions={initialPositions}
+        metricsLoadingKeys={metricsLoadingKeys}
+        inlineEditForms={inlineEditForms}
+        savingIds={savingIds}
+        onToggleExpand={onToggleExpand}
+        onUpdateForm={onUpdateForm}
+        onSave={onSave}
+        onOpenArticleEditor={onOpenArticleEditor}
+        onToggleLink={onToggleLink}
+      />
       
-      {/* Cluster Content - CSS height transition instead of framer-motion */}
-      <div 
-        className="overflow-hidden transition-[max-height] duration-200 ease-out"
-        style={{ 
-          maxHeight: clusterExpanded ? '5000px' : '0px',
-          contain: 'layout style'
-        }}
-      >
-        <div className="p-3 space-y-2">
-          {/* Parent keyword row */}
-          <ClusterKeywordRow
-            kw={cluster.parent}
-            isNested={false}
-            isLastChild={false}
-            isMainKeyword={true}
-            clusterChildCount={cluster.children.length}
-            serpReports={serpReports}
-            keywordMetrics={keywordMetrics}
-            pageSpeedScores={pageSpeedScores}
-            linksIn={linksIn}
-            linksOut={linksOut}
-            selectedDomain={selectedDomain}
-            isExpanded={expandedIds.has(cluster.parent.id)}
-            initialPositions={initialPositions}
-            metricsLoadingKeys={metricsLoadingKeys}
-            inlineEditForms={inlineEditForms}
-            savingIds={savingIds}
-            onToggleExpand={onToggleExpand}
-            onUpdateForm={onUpdateForm}
-            onSave={onSave}
-            onOpenArticleEditor={onOpenArticleEditor}
-            onToggleLink={onToggleLink}
-          />
-          
-          {/* Children with tree connectors */}
-          <div className="ml-4 border-l-2 border-amber-500/30 pl-0">
-            {cluster.children.map((child, idx) => (
-              <ClusterKeywordRow
-                key={child.id}
-                kw={child}
-                isNested={true}
-                isLastChild={idx === cluster.children.length - 1}
-                isMainKeyword={false}
-                serpReports={serpReports}
-                keywordMetrics={keywordMetrics}
-                pageSpeedScores={pageSpeedScores}
-                linksIn={linksIn}
-                linksOut={linksOut}
-                selectedDomain={selectedDomain}
-                isExpanded={expandedIds.has(child.id)}
-                initialPositions={initialPositions}
-                metricsLoadingKeys={metricsLoadingKeys}
-                inlineEditForms={inlineEditForms}
-                savingIds={savingIds}
-                onToggleExpand={onToggleExpand}
-                onUpdateForm={onUpdateForm}
-                onSave={onSave}
-                onOpenArticleEditor={onOpenArticleEditor}
-                onToggleLink={onToggleLink}
-              />
-            ))}
-          </div>
+      {/* Children with tree connectors */}
+      {cluster.children.length > 0 && (
+        <div className="ml-4 border-l-2 border-amber-500/30 pl-0">
+          {cluster.children.map((child, idx) => (
+            <ClusterKeywordRow
+              key={child.id}
+              kw={child}
+              isNested={true}
+              isLastChild={idx === cluster.children.length - 1}
+              isMainKeyword={false}
+              serpReports={serpReports}
+              keywordMetrics={keywordMetrics}
+              pageSpeedScores={pageSpeedScores}
+              linksIn={linksIn}
+              linksOut={linksOut}
+              selectedDomain={selectedDomain}
+              isExpanded={expandedIds.has(child.id)}
+              initialPositions={initialPositions}
+              metricsLoadingKeys={metricsLoadingKeys}
+              inlineEditForms={inlineEditForms}
+              savingIds={savingIds}
+              onToggleExpand={onToggleExpand}
+              onUpdateForm={onUpdateForm}
+              onSave={onSave}
+              onOpenArticleEditor={onOpenArticleEditor}
+              onToggleLink={onToggleLink}
+            />
+          ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }, (prev, next) => {
