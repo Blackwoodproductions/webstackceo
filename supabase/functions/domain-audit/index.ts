@@ -63,7 +63,22 @@ serve(async (req) => {
   }
 
   try {
-    const { domain } = await req.json();
+    const body = await req.json();
+    const { domain, health_check } = body;
+    
+    // Health check endpoint for system monitoring
+    if (health_check === true) {
+      const AHREFS_API_KEY = Deno.env.get("AHREFS_API_KEY");
+      return new Response(
+        JSON.stringify({ 
+          status: "healthy",
+          service: "domain-audit",
+          ahrefs_configured: !!AHREFS_API_KEY,
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     if (!domain) {
       return new Response(

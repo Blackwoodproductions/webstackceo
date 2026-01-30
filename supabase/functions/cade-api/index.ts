@@ -22,6 +22,20 @@ serve(async (req) => {
     
     console.log(`[CADE API] Action: ${action}, Domain: ${domain || "N/A"}`);
     
+    // Health check endpoint for system monitoring - no API key required
+    if (action === "health_check") {
+      const apiKey = Deno.env.get("CADE_API_KEY");
+      return new Response(
+        JSON.stringify({ 
+          status: "healthy",
+          service: "cade-api",
+          api_key_configured: !!apiKey,
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // Always use the system API key - no user key needed
     const apiKey = Deno.env.get("CADE_API_KEY");
     const apiSecret = Deno.env.get("CADE_API_SECRET");

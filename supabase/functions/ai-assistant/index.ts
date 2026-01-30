@@ -129,7 +129,22 @@ serve(async (req) => {
   }
 
   try {
-    const { message, sessionId, action, visitorInfo } = await req.json();
+    const body = await req.json();
+    const { message, sessionId, action, visitorInfo, health_check } = body;
+    
+    // Health check endpoint for system monitoring
+    if (health_check === true) {
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      return new Response(
+        JSON.stringify({ 
+          status: "healthy",
+          service: "ai-assistant",
+          api_configured: !!LOVABLE_API_KEY,
+          timestamp: new Date().toISOString(),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
