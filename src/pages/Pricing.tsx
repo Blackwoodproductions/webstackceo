@@ -9,9 +9,11 @@ import SEOBreadcrumb from "@/components/ui/seo-breadcrumb";
 import ogImages from "@/assets/og";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import InteractiveGrid from "@/components/ui/interactive-grid";
+import { CartProvider } from "@/contexts/CartContext";
 
 const Pricing = () => {
   return (
+    <CartProvider>
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* VI Dashboard Background Effects - exact replica */}
       <VIDashboardEffects />
@@ -55,6 +57,7 @@ const Pricing = () => {
       <Footer />
       <BackToTop />
     </div>
+    </CartProvider>
   );
 };
 
