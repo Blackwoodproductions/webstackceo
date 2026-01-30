@@ -1958,14 +1958,6 @@ const MarketingDashboard = () => {
                   </DropdownMenuItem>
                 )}
 
-                {isSuperAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin?tab=super-admin" className="flex items-center gap-2 cursor-pointer">
-                      <Shield className="w-4 h-4" />
-                      Super Admin
-                    </Link>
-                  </DropdownMenuItem>
-                )}
 
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
