@@ -349,22 +349,22 @@ export const BronKeywordAnalysisDialog = memo(({
           ]);
         };
 
-        const fetchOne = async (reportId: string, attempt = 0): Promise<BronSerpReport[]> => {
+        const fetchOne = async (apiReportId: string, attempt = 0): Promise<BronSerpReport[]> => {
           try {
-            const data = await withTimeout(onFetchSerpDetail(selectedDomain, reportId), 12000);
+            const data = await withTimeout(onFetchSerpDetail(selectedDomain, apiReportId), 12000);
             const arr = Array.isArray(data) ? data : [];
             // If we got an empty array, it can be a soft rate-limit response.
             if (arr.length === 0 && attempt < 2) {
               await sleep(500 * (attempt + 1));
-              return fetchOne(reportId, attempt + 1);
+              return fetchOne(apiReportId, attempt + 1);
             }
             return arr;
           } catch (e) {
             if (attempt < 2) {
               await sleep(500 * (attempt + 1));
-              return fetchOne(reportId, attempt + 1);
+              return fetchOne(apiReportId, attempt + 1);
             }
-            console.warn(`[BronKeywordAnalysisDialog] Failed to fetch report ${reportId}:`, e);
+            console.warn(`[BronKeywordAnalysisDialog] Failed to fetch report ${apiReportId}:`, e);
             return [];
           }
         };
@@ -372,16 +372,23 @@ export const BronKeywordAnalysisDialog = memo(({
         // Throttled sequential fetch to avoid rate limit
         setFetchProgress({ done: 0, total: reportsToFetch.length });
         for (let i = 0; i < reportsToFetch.length; i++) {
-          const reportId = getReportId(reportsToFetch[i]);
-          if (!reportId) continue;
+          const item = reportsToFetch[i];
+          const displayReportId = getReportId(item);
+          if (!displayReportId) continue;
+
+          // The BRON detail endpoint is inconsistent about which ID it accepts.
+          // Empirically it tends to work with `report_id` or `id` (like our baseline fetch),
+          // while the UI/report list often prefers `serpid`.
+          // Fetch with a tolerant ID, but store under the UI key so the chart can map it.
+          const apiReportId = String((item as any).report_id || (item as any).id || (item as any).serpid || displayReportId);
 
           // Small delay between calls keeps the endpoint happy.
           if (i > 0) await sleep(220);
-          const data = await fetchOne(reportId);
+          const data = await fetchOne(apiReportId);
 
           if (cancelled) return;
           if (data.length > 0) {
-            dataMap.set(reportId, data);
+            dataMap.set(displayReportId, data);
             // Stream partial results so the chart can render ASAP.
             setHistoricalData(new Map(dataMap));
           }
