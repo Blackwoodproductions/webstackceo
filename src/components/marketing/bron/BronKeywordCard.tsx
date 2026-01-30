@@ -118,6 +118,18 @@ export function getPosition(val?: string | number): number | null {
   return isNaN(num) || num === 0 ? null : num;
 }
 
+// Extract the "change vs previous report" delta when the API returns values like "12+3" or "12 -2".
+// Convention: +N means improved (moved up), -N means dropped (moved down).
+export function getPositionDelta(val?: string | number): number {
+  if (val === undefined || val === null) return 0;
+  const raw = String(val).trim();
+  const str = raw.replace(/[()]/g, '').trim();
+  const match = str.match(/^(\d+)\s*([+-]\d+)\s*$/);
+  if (!match?.[2]) return 0;
+  const delta = parseInt(match[2], 10);
+  return Number.isFinite(delta) ? delta : 0;
+}
+
 function getKeywordIntent(keyword: string) {
   const kw = keyword.toLowerCase();
   
@@ -235,7 +247,8 @@ PageSpeedGauge.displayName = 'PageSpeedGauge';
 // Rankings Display Component - compact pills with color-coded movement
 const RankingsDisplay = memo(({ 
   googlePos, bingPos, yahooPos, 
-  googleMovement, bingMovement, yahooMovement 
+  googleMovement, bingMovement, yahooMovement,
+  googlePrevDelta, bingPrevDelta, yahooPrevDelta,
 }: { 
   googlePos: number | null;
   bingPos: number | null;
@@ -243,6 +256,9 @@ const RankingsDisplay = memo(({
   googleMovement: number;
   bingMovement: number;
   yahooMovement: number;
+  googlePrevDelta: number;
+  bingPrevDelta: number;
+  yahooPrevDelta: number;
 }) => {
   // Color coding: Green = UP (improved), Amber/Yellow = DOWN (dropped), Blue = NO MOVEMENT
   const getMovementStyles = (movement: number, hasPosition: boolean) => {
@@ -273,7 +289,7 @@ const RankingsDisplay = memo(({
     };
   };
 
-  const renderRanking = (pos: number | null, movement: number) => {
+  const renderRanking = (pos: number | null, movement: number, prevDelta: number) => {
     const styles = getMovementStyles(movement, pos !== null);
     
     if (pos === null) {
@@ -299,15 +315,23 @@ const RankingsDisplay = memo(({
             {movement > 0 ? `+${movement}` : movement}
           </span>
         )}
+        {prevDelta !== 0 && (
+          <span
+            className="text-[8px] text-muted-foreground/80"
+            title="Change vs previous report"
+          >
+            p{prevDelta > 0 ? `+${prevDelta}` : prevDelta}
+          </span>
+        )}
       </div>
     );
   };
 
   return (
     <>
-      {renderRanking(googlePos, googleMovement)}
-      {renderRanking(bingPos, bingMovement)}
-      {renderRanking(yahooPos, yahooMovement)}
+      {renderRanking(googlePos, googleMovement, googlePrevDelta)}
+      {renderRanking(bingPos, bingMovement, bingPrevDelta)}
+      {renderRanking(yahooPos, yahooMovement, yahooPrevDelta)}
     </>
   );
 });
@@ -475,6 +499,11 @@ export const BronKeywordCard = memo(({
   const bingPos = getPosition(serpData?.bing);
   const yahooPos = getPosition(serpData?.yahoo);
 
+  // Per-report movement (vs previous report) when present in the API value (e.g. "12+3")
+  const googlePrevDelta = getPositionDelta(serpData?.google);
+  const bingPrevDelta = getPositionDelta(serpData?.bing);
+  const yahooPrevDelta = getPositionDelta(serpData?.yahoo);
+
   // Build URL for this keyword
   const keywordUrl = useMemo(() => {
     if (kw.linkouturl) return kw.linkouturl;
@@ -628,6 +657,9 @@ export const BronKeywordCard = memo(({
               googleMovement={googleMovement}
               bingMovement={bingMovement}
               yahooMovement={yahooMovement}
+              googlePrevDelta={googlePrevDelta}
+              bingPrevDelta={bingPrevDelta}
+              yahooPrevDelta={yahooPrevDelta}
             />
 
             {/* Column 8: Keyword Metrics */}
