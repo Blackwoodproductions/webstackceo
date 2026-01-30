@@ -417,11 +417,13 @@ export const BronClusterCard = memo(({
       />
       
       {/* Children container with left border as vertical connector line */}
-      {/* Offset: Parent has px-4 (16px) + chart column (44px) + pagespeed(52px) = icons start at ~112px */}
-      {/* Nested container: ml-8 (32px) + pl-24 (24px) = 56px offset, then 52px pagespeed column = 108px */}
-      {/* Reduce ml to 8px to shift nested icons left ~12px for better alignment */}
+      {/* Keep indentation stable and intentionally aligned to the grid:
+          - Supporting rows omit the chart column in their grid (44px)
+          - We offset the nested cards by exactly 44px (ml + pl)
+          - Nested rows use the same left padding as parent rows (pl-4)
+          => PageSpeed + Intent columns align perfectly top-to-bottom */}
       {cluster.children.length > 0 && (
-        <div className="relative ml-[8px] pl-[24px] border-l-2 border-amber-500/30">
+        <div className="relative ml-[20px] pl-[24px] border-l-2 border-amber-500/30">
           {cluster.children.map((child, idx) => (
             <ClusterKeywordRow
               key={child.id}

@@ -605,8 +605,10 @@ export const BronKeywordCard = memo(({
   }, [kw.linkouturl, selectedDomain, keywordText, isTrackingOnly]);
 
   // Nested/supporting keywords are smaller - tighter padding
+  // IMPORTANT: keep LEFT padding aligned with non-nested rows so PageSpeed + Intent columns
+  // stay perfectly vertically aligned across main + supporting cards.
   const isCompact = isNested;
-  const rowPadding = isCompact ? 'px-3 py-1.5' : 'px-4 py-2';
+  const rowPadding = isCompact ? 'pl-4 pr-3 py-1.5' : 'px-4 py-2';
   const gaugeSize = isCompact ? 'w-9 h-9' : 'w-10 h-10';
   const textSize = isCompact ? 'text-sm' : 'text-sm';
   const badgeSize = isCompact ? 'text-[8px] h-4 px-1.5' : 'text-[9px] h-4 px-1.5';
