@@ -581,10 +581,10 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-3 w-full" 
             style={{ 
-              gridTemplateColumns: '36px 48px 40px 1fr 80px 80px 80px 150px 140px',
+              gridTemplateColumns: '52px 48px 44px 1fr 80px 80px 80px 150px 140px',
             }}
           >
-            {/* Column 1: Chart/Analysis Button - NOW FIRST */}
+            {/* Column 1: Chart/Analysis Button - NOW FIRST - wider column to push PageSpeed/Intent right */}
             <div className="flex items-center justify-center">
               {onOpenAnalysis && !isNested ? (
                 <button
@@ -592,13 +592,13 @@ export const BronKeywordCard = memo(({
                     e.stopPropagation();
                     onOpenAnalysis(kw);
                   }}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
                   title="View Keyword Analysis"
                 >
-                  <BarChart3 className={actionIconSize} />
+                  <BarChart3 className="w-5 h-5" />
                 </button>
               ) : (
-                <div className="w-8 h-8" />
+                <div className="w-10 h-10" />
               )}
             </div>
 
