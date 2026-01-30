@@ -25,11 +25,11 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     // Parse request body
-    const { lineItems } = await req.json();
+    const { lineItems, embedded = false } = await req.json();
     if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
       throw new Error("No line items provided");
     }
-    logStep("Line items received", { count: lineItems.length });
+    logStep("Line items received", { count: lineItems.length, embedded });
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -75,22 +75,47 @@ serve(async (req) => {
     // Get origin for redirect URLs
     const origin = req.headers.get("origin") || "https://webstack.ceo";
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create checkout session with embedded mode support
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : userEmail,
       line_items: stripeLineItems,
       mode: "payment",
-      success_url: `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/#services`,
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       metadata: {
         source: 'webstack-cart',
       },
+    };
+
+    // Configure for embedded vs hosted checkout
+    if (embedded) {
+      sessionConfig.ui_mode = 'embedded';
+      sessionConfig.return_url = `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`;
+    } else {
+      sessionConfig.success_url = `${origin}/checkout-success?session_id={CHECKOUT_SESSION_ID}`;
+      sessionConfig.cancel_url = `${origin}/#services`;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+
+    logStep("Checkout session created", { 
+      sessionId: session.id, 
+      url: session.url,
+      embedded,
+      hasClientSecret: !!session.client_secret,
     });
 
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
+    // Return appropriate response based on mode
+    if (embedded) {
+      return new Response(JSON.stringify({ 
+        clientSecret: session.client_secret, 
+        sessionId: session.id 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

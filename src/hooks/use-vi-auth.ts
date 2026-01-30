@@ -38,16 +38,17 @@ export const useVIAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string) => {
     try {
+      // Check for admin OR super_admin role
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+        .in('role', ['admin', 'super_admin']);
 
       if (error) throw error;
       
-      const adminStatus = !!data;
+      // User has access if they have admin or super_admin role
+      const adminStatus = data && data.length > 0;
       setIsAdmin(adminStatus);
       return adminStatus;
     } catch (error) {
