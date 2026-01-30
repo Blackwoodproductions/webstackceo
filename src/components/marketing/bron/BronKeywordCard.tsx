@@ -577,11 +577,11 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout - reordered: Chart first, then PageSpeed, Intent vertical, Keyword, Rankings, Metrics, Links, Expand */}
+          {/* Grid-based layout - reordered: Chart first, then PageSpeed, Intent vertical, Keyword, Rankings, Metrics, Links */}
           <div 
             className="grid items-center gap-3 w-full" 
             style={{ 
-              gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
+              gridTemplateColumns: '36px 48px 40px 1fr 80px 80px 80px 150px 140px',
             }}
           >
             {/* Column 1: Chart/Analysis Button - NOW FIRST */}
@@ -592,17 +592,17 @@ export const BronKeywordCard = memo(({
                     e.stopPropagation();
                     onOpenAnalysis(kw);
                   }}
-                  className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]`}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
                   title="View Keyword Analysis"
                 >
                   <BarChart3 className={actionIconSize} />
                 </button>
               ) : (
-                <div className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'}`} />
+                <div className="w-8 h-8" />
               )}
             </div>
 
-            {/* Column 2: Page Speed Gauge */}
+            {/* Column 2: Page Speed Gauge - consistent size for main and supporting */}
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 shrink-0 flex items-center justify-center">
                 <PageSpeedGauge 
@@ -614,10 +614,10 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 3: Intent Badge - VERTICAL on left */}
+            {/* Column 3: Intent Badge - consistent size for main and supporting */}
             <div className="flex flex-col items-center justify-center gap-0.5">
-              <div className={`${isCompact ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
-                <IntentIcon className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} ${intent.color}`} />
+              <div className={`w-7 h-7 rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
+                <IntentIcon className={`w-3.5 h-3.5 ${intent.color}`} />
               </div>
               <span className={`text-[7px] font-medium capitalize ${intent.color} whitespace-nowrap leading-none`}>
                 {intent.type.slice(0, 4)}
@@ -691,8 +691,8 @@ export const BronKeywordCard = memo(({
               isBaselineReport={isBaselineReport}
             />
 
-            {/* Column 8: Keyword Metrics */}
-            <div className="flex items-center justify-center">
+            {/* Column 8: Keyword Metrics - added right margin for spacing */}
+            <div className="flex items-center justify-center mr-3">
               <MetricsDisplay 
                 metrics={metrics} 
                 googlePos={googlePos} 
@@ -700,60 +700,47 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 9: Links Display with integrated collapse */}
-            <div className="flex items-center justify-center">
-              <div className={`flex items-center gap-1 ${isCompact ? 'px-2 py-1' : 'px-2 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
-                {/* Collapse/Expand chevron - integrated on left side */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleExpand();
-                  }}
-                  className={`shrink-0 ${isCompact ? 'w-5 h-5' : 'w-6 h-6'} rounded flex items-center justify-center ${
-                    isExpanded 
-                      ? 'bg-primary/20 text-primary' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  title={isExpanded ? 'Collapse' : 'Expand'}
-                  aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                >
+            {/* Column 9: Links Pill - entire pill is clickable for collapse */}
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand();
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-card/80 border border-border/40 hover:bg-card transition-colors ${
+                  isExpanded ? 'ring-1 ring-primary/40' : ''
+                }`}
+                title={isExpanded ? 'Collapse' : 'Expand to view links'}
+                aria-label={isExpanded ? 'Collapse' : 'Expand'}
+              >
+                {/* Collapse/Expand chevron */}
+                <div className={`shrink-0 w-6 h-6 rounded flex items-center justify-center ${
+                  isExpanded 
+                    ? 'bg-primary/20 text-primary' 
+                    : 'text-muted-foreground'
+                }`}>
                   {isExpanded 
-                    ? <ChevronUp className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> 
-                    : <ChevronDown className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                    ? <ChevronUp className="w-4 h-4" /> 
+                    : <ChevronDown className="w-4 h-4" />
                   }
-                </button>
+                </div>
 
                 <div className="flex items-center gap-1">
-                  <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-cyan-400`}>{linksInCount}</span>
+                  <span className="text-xs font-semibold text-cyan-400">{linksInCount}</span>
                   <ArrowDownLeft className={`${actionIconSize} text-cyan-400`} />
                 </div>
 
-                {/* Center link icon (opens link report / expands keyword) */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Open (but don't toggle closed) to show link report
-                    if (!isExpanded && !isTrackingOnly) onToggleExpand();
-                  }}
-                  className="shrink-0 w-6 h-6 rounded-full bg-background/40 border border-border/50 flex items-center justify-center hover:bg-background/60"
-                  title={isTrackingOnly ? 'Link report not available for tracking-only keywords' : 'Open link report'}
-                  aria-label="Open link report"
-                >
-                  <Link className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
+                {/* Center link icon */}
+                <div className="shrink-0 w-5 h-5 rounded-full bg-background/40 border border-border/50 flex items-center justify-center">
+                  <Link className="w-3 h-3 text-muted-foreground" />
+                </div>
 
                 <div className="flex items-center gap-1">
                   <ArrowUpRight className={`${actionIconSize} text-violet-400`} />
-                  <span className={`${isCompact ? 'text-[10px]' : 'text-xs'} font-semibold text-violet-400`}>{linksOutCount}</span>
+                  <span className="text-xs font-semibold text-violet-400">{linksOutCount}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Column 10: Now empty - collapse moved into links pill */}
-            <div className="flex items-center justify-center">
-              {/* Placeholder for grid alignment */}
+              </button>
             </div>
           </div>
         </div>

@@ -282,7 +282,7 @@ export const BronKeywordAnalysisDialog = memo(({
   
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-5xl h-[85vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
+      <DialogContent className="max-w-6xl h-[85vh] overflow-hidden bg-background/98 backdrop-blur-2xl border-primary/20 shadow-[0_0_60px_rgba(139,92,246,0.15)] p-0">
         <div className="flex h-full flex-col overflow-hidden p-6">
           {/* Futuristic header */}
           <DialogHeader className="border-b border-border/50 pb-4 shrink-0">
