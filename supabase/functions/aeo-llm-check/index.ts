@@ -23,11 +23,9 @@ interface LLMResult {
   error?: string;
 }
 
-// Models available via Lovable AI Gateway
+// Optimized: Use fastest model only for speed
 const AVAILABLE_MODELS = [
   { id: 'google/gemini-3-flash-preview', displayName: 'Google Gemini', icon: 'gemini' },
-  { id: 'openai/gpt-5', displayName: 'ChatGPT', icon: 'openai' },
-  { id: 'openai/gpt-5-mini', displayName: 'GPT-5 Mini', icon: 'openai' },
 ];
 
 async function queryLLM(
@@ -35,9 +33,16 @@ async function queryLLM(
   prompt: string,
   keyword: string,
   domain: string,
-  apiKey: string
-): Promise<{ mentioned: boolean; snippet: string | null; position: 'prominent' | 'mentioned' | 'not_found'; confidence: number }> {
+  apiKey: string,
+  queryType: string
+): Promise<LLMResult> {
+  const displayName = model.includes('gemini') ? 'Google Gemini' : 
+                     model.includes('gpt-5-mini') ? 'GPT-5 Mini' : 'ChatGPT';
+  
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -49,14 +54,17 @@ async function queryLLM(
         messages: [
           { 
             role: "system", 
-            content: "You are a helpful assistant. Provide accurate, factual information based on your training data. Be specific about businesses and services when asked." 
+            content: "You are a helpful assistant. Provide accurate, factual information. Be specific about businesses and services when asked. Keep responses concise (under 200 words)." 
           },
           { role: "user", content: prompt }
         ],
-        max_tokens: 500,
+        max_tokens: 300, // Reduced for speed
         temperature: 0.3,
       }),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -83,7 +91,6 @@ async function queryLLM(
     let confidence = 0;
     
     if (domainMentioned || keywordMentioned) {
-      // Check if mentioned in first 200 characters (prominent)
       const first200 = lowerContent.substring(0, 200);
       if (first200.includes(lowerDomain) || first200.includes(lowerKeyword)) {
         position = 'prominent';
@@ -109,14 +116,26 @@ async function queryLLM(
     }
     
     return {
+      model,
+      modelDisplayName: displayName,
       mentioned: position !== 'not_found',
       snippet,
       position,
       confidence,
+      queryUsed: queryType,
     };
   } catch (error) {
     console.error(`Error querying ${model}:`, error);
-    throw error;
+    return {
+      model,
+      modelDisplayName: displayName,
+      mentioned: false,
+      snippet: null,
+      position: 'not_found',
+      confidence: 0,
+      queryUsed: queryType,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
@@ -131,7 +150,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { keyword, domain, location, queryType = 'both' } = await req.json() as LLMCheckRequest;
+    const { keyword, domain, location, queryType = 'direct' } = await req.json() as LLMCheckRequest;
     
     if (!keyword || !domain) {
       return new Response(
@@ -140,81 +159,33 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[AEO Check] Checking keyword "${keyword}" for domain "${domain}" with query type "${queryType}"`);
+    console.log(`[AEO Check] Checking keyword "${keyword}" for domain "${domain}"`);
 
-    // Build queries
-    const queries: { type: string; prompt: string }[] = [];
-    
-    if (queryType === 'direct' || queryType === 'both') {
-      queries.push({
-        type: 'direct',
-        prompt: `What do you know about ${keyword}? If there are specific companies or services related to this, please mention them.`,
-      });
-    }
-    
-    if (queryType === 'recommendation' || queryType === 'both') {
-      const locationSuffix = location ? ` in ${location}` : '';
-      queries.push({
-        type: 'recommendation',
-        prompt: `Can you recommend the best ${keyword}${locationSuffix}? Please list specific companies or providers if you know any.`,
-      });
-    }
+    // Build single optimized query for speed
+    const locationSuffix = location ? ` in ${location}` : '';
+    const prompt = `What are the best ${keyword}${locationSuffix}? List specific companies, providers, or services if you know any.`;
 
-    const results: LLMResult[] = [];
+    // Run single fast check with Gemini Flash
+    const result = await queryLLM(
+      'google/gemini-3-flash-preview',
+      prompt,
+      keyword,
+      domain,
+      LOVABLE_API_KEY,
+      'recommendation'
+    );
 
-    // Query each model with each query type
-    for (const model of AVAILABLE_MODELS) {
-      for (const query of queries) {
-        try {
-          const result = await queryLLM(
-            model.id,
-            query.prompt,
-            keyword,
-            domain,
-            LOVABLE_API_KEY
-          );
-          
-          results.push({
-            model: model.id,
-            modelDisplayName: model.displayName,
-            mentioned: result.mentioned,
-            snippet: result.snippet,
-            position: result.position,
-            confidence: result.confidence,
-            queryUsed: query.type,
-          });
-        } catch (error) {
-          results.push({
-            model: model.id,
-            modelDisplayName: model.displayName,
-            mentioned: false,
-            snippet: null,
-            position: 'not_found',
-            confidence: 0,
-            queryUsed: query.type,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-        
-        // Small delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-    }
+    const results: LLMResult[] = [result];
 
     // Generate optimization suggestions if not found
-    const notFoundModels = results.filter(r => r.position === 'not_found' && !r.error);
     const suggestions: string[] = [];
-    
-    if (notFoundModels.length > 0) {
+    if (result.position === 'not_found' && !result.error) {
       suggestions.push(
-        "Create authoritative content about your core services on your website",
-        "Get listed in industry directories and review platforms (Google Business, Yelp, industry-specific directories)",
+        "Create authoritative content about your core services",
+        "Get listed in industry directories (Google Business, Yelp)",
         "Build citations across trusted data sources that LLMs crawl",
-        "Publish case studies and testimonials that mention your brand + keywords",
-        "Create FAQ content targeting common questions in your niche",
-        "Secure mentions in Wikipedia or other high-authority knowledge bases",
-        "Contribute expert content to industry publications and blogs",
-        "Ensure your schema markup is comprehensive (Organization, LocalBusiness, etc.)"
+        "Publish case studies and testimonials mentioning your brand",
+        "Create FAQ content targeting common questions in your niche"
       );
     }
 
