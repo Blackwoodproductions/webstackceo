@@ -1,5 +1,5 @@
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
-import { getKeywordDisplayText, getPosition, PageSpeedScore } from "./BronKeywordCard";
+import { getKeywordDisplayText, getTargetKeyword, getPosition, PageSpeedScore } from "./BronKeywordCard";
 
 // Re-export PageSpeedScore for backward compatibility
 export type { PageSpeedScore };

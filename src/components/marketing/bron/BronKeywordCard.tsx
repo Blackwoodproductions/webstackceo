@@ -48,6 +48,41 @@ interface BronKeywordCardProps {
 }
 
 // Utility functions
+// Extract the actual TARGET KEYWORD (not page title) for SERP matching
+// This should be the keyword we're ranking for, e.g. "Best Dentist in Port Coquitlam"
+export function getTargetKeyword(kw: BronKeyword): string {
+  // Priority 1: Explicit keyword field (most reliable)
+  if (kw.keyword && kw.keyword.trim()) return kw.keyword.trim();
+  
+  // Priority 2: Extract from URL slug (this IS the target keyword)
+  if (kw.linkouturl) {
+    const pathStart = kw.linkouturl.indexOf('/', kw.linkouturl.indexOf('//') + 2);
+    if (pathStart > 0) {
+      const path = kw.linkouturl.slice(pathStart).replace(/\/$/, '');
+      const lastSlash = path.lastIndexOf('/');
+      const segment = lastSlash >= 0 ? path.slice(lastSlash + 1) : path;
+      if (segment.length > 2) {
+        // Remove trailing ID pattern like "-15134" or "-568071bc"
+        const cleaned = segment.replace(/-\d+bc$/i, '').replace(/-\d+$/, '');
+        if (cleaned.length > 2) {
+          // Convert slug to readable text
+          const words = cleaned.split(/[-_]+/).filter(w => w.length > 0);
+          const readable = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          if (readable.length > 3) return readable;
+        }
+      }
+    }
+  }
+  
+  // Priority 3: keywordtitle only if it doesn't contain ":" (indicates page title format)
+  if (kw.keywordtitle && kw.keywordtitle.trim() && !kw.keywordtitle.includes(':')) {
+    return kw.keywordtitle.trim();
+  }
+  
+  // Fallback: Return the display text (even if it's a page title)
+  return getKeywordDisplayText(kw);
+}
+
 export function getKeywordDisplayText(kw: BronKeyword): string {
   // FAST PATH: Check primary string fields first (no parsing needed)
   if (kw.keywordtitle && kw.keywordtitle.trim()) return kw.keywordtitle.trim();
@@ -97,7 +132,7 @@ export function getKeywordDisplayText(kw: BronKeyword): string {
       .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—');
     
     // Try h1 first, then h3, h2, title (combined into one pass for efficiency)
-    const headingMatch = decoded.match(/<h[123][^>]*>([^<]{4,})<\/h[123]>/i) 
+    const headingMatch = decoded.match(/<h[123][^>]*>([^<]{4,})<\/h[123]>/i)
                       || decoded.match(/<title[^>]*>([^<]{4,})<\/title>/i);
     if (headingMatch && headingMatch[1]) {
       return headingMatch[1].trim();

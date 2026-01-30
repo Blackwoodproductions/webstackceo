@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { BronKeyword, BronSerpReport } from "@/hooks/use-bron-api";
-import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
+import { getTargetKeyword, getPosition } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
@@ -92,7 +92,7 @@ export const BronMultiKeywordTrendChart = memo(({
     return keywords.slice(0, maxKeywords).map((kw, idx) => ({
       keyword: kw,
       id: String(kw.id),
-      text: getKeywordDisplayText(kw),
+      text: getTargetKeyword(kw),
       color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length],
     }));
   }, [keywords, maxKeywords]);
