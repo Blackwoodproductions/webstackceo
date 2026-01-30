@@ -9,7 +9,6 @@ interface LLMCheckRequest {
   keyword: string;
   domain: string;
   location?: string;
-  queryType: 'direct' | 'recommendation' | 'both';
 }
 
 interface LLMResult {
@@ -23,25 +22,24 @@ interface LLMResult {
   error?: string;
 }
 
-// Optimized: Use fastest model only for speed
-const AVAILABLE_MODELS = [
-  { id: 'google/gemini-3-flash-preview', displayName: 'Google Gemini', icon: 'gemini' },
+// All models to check - run in parallel
+const MODELS_TO_CHECK = [
+  { id: 'google/gemini-3-flash-preview', displayName: 'Google Gemini', icon: '🔷' },
+  { id: 'openai/gpt-5', displayName: 'ChatGPT', icon: '🟢' },
+  { id: 'openai/gpt-5-mini', displayName: 'GPT-5 Mini', icon: '🟡' },
 ];
 
 async function queryLLM(
   model: string,
+  displayName: string,
   prompt: string,
   keyword: string,
   domain: string,
-  apiKey: string,
-  queryType: string
+  apiKey: string
 ): Promise<LLMResult> {
-  const displayName = model.includes('gemini') ? 'Google Gemini' : 
-                     model.includes('gpt-5-mini') ? 'GPT-5 Mini' : 'ChatGPT';
-  
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -58,7 +56,7 @@ async function queryLLM(
           },
           { role: "user", content: prompt }
         ],
-        max_tokens: 300, // Reduced for speed
+        max_tokens: 300,
         temperature: 0.3,
       }),
       signal: controller.signal,
@@ -68,10 +66,28 @@ async function queryLLM(
 
     if (!response.ok) {
       if (response.status === 429) {
-        throw new Error("Rate limit exceeded");
+        return {
+          model,
+          modelDisplayName: displayName,
+          mentioned: false,
+          snippet: null,
+          position: 'not_found',
+          confidence: 0,
+          queryUsed: 'recommendation',
+          error: 'Rate limited',
+        };
       }
       if (response.status === 402) {
-        throw new Error("Payment required");
+        return {
+          model,
+          modelDisplayName: displayName,
+          mentioned: false,
+          snippet: null,
+          position: 'not_found',
+          confidence: 0,
+          queryUsed: 'recommendation',
+          error: 'Payment required',
+        };
       }
       throw new Error(`API error: ${response.status}`);
     }
@@ -122,7 +138,7 @@ async function queryLLM(
       snippet,
       position,
       confidence,
-      queryUsed: queryType,
+      queryUsed: 'recommendation',
     };
   } catch (error) {
     console.error(`Error querying ${model}:`, error);
@@ -133,9 +149,95 @@ async function queryLLM(
       snippet: null,
       position: 'not_found',
       confidence: 0,
-      queryUsed: queryType,
+      queryUsed: 'recommendation',
       error: error instanceof Error ? error.message : 'Unknown error',
     };
+  }
+}
+
+// Check Perplexity separately (if API key available)
+async function queryPerplexity(
+  prompt: string,
+  keyword: string,
+  domain: string,
+  apiKey: string
+): Promise<LLMResult | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          { role: 'system', content: 'Be precise and concise. Provide specific business recommendations.' },
+          { role: 'user', content: prompt }
+        ],
+      }),
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error('Perplexity API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    const lowerContent = content.toLowerCase();
+    const lowerKeyword = keyword.toLowerCase();
+    const lowerDomain = domain.toLowerCase().replace(/^www\./, '').replace(/\.[a-z]+$/, '');
+    
+    const keywordMentioned = lowerContent.includes(lowerKeyword);
+    const domainMentioned = lowerContent.includes(lowerDomain);
+    
+    let position: 'prominent' | 'mentioned' | 'not_found' = 'not_found';
+    let confidence = 0;
+    
+    if (domainMentioned || keywordMentioned) {
+      const first200 = lowerContent.substring(0, 200);
+      if (first200.includes(lowerDomain) || first200.includes(lowerKeyword)) {
+        position = 'prominent';
+        confidence = domainMentioned ? 95 : 70;
+      } else {
+        position = 'mentioned';
+        confidence = domainMentioned ? 75 : 50;
+      }
+    }
+    
+    let snippet: string | null = null;
+    if (position !== 'not_found') {
+      const searchTerm = domainMentioned ? lowerDomain : lowerKeyword;
+      const idx = lowerContent.indexOf(searchTerm);
+      if (idx !== -1) {
+        const start = Math.max(0, idx - 50);
+        const end = Math.min(content.length, idx + searchTerm.length + 100);
+        snippet = (start > 0 ? '...' : '') + content.substring(start, end) + (end < content.length ? '...' : '');
+      } else {
+        snippet = content.substring(0, 150) + (content.length > 150 ? '...' : '');
+      }
+    }
+    
+    return {
+      model: 'perplexity/sonar',
+      modelDisplayName: 'Perplexity',
+      mentioned: position !== 'not_found',
+      snippet,
+      position,
+      confidence,
+      queryUsed: 'recommendation',
+    };
+  } catch (error) {
+    console.error('Perplexity error:', error);
+    return null;
   }
 }
 
@@ -150,7 +252,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { keyword, domain, location, queryType = 'direct' } = await req.json() as LLMCheckRequest;
+    const PERPLEXITY_API_KEY = Deno.env.get("PERPLEXITY_API_KEY");
+
+    const { keyword, domain, location } = await req.json() as LLMCheckRequest;
     
     if (!keyword || !domain) {
       return new Response(
@@ -161,25 +265,37 @@ serve(async (req) => {
 
     console.log(`[AEO Check] Checking keyword "${keyword}" for domain "${domain}"`);
 
-    // Build single optimized query for speed
     const locationSuffix = location ? ` in ${location}` : '';
     const prompt = `What are the best ${keyword}${locationSuffix}? List specific companies, providers, or services if you know any.`;
 
-    // Run single fast check with Gemini Flash
-    const result = await queryLLM(
-      'google/gemini-3-flash-preview',
-      prompt,
-      keyword,
-      domain,
-      LOVABLE_API_KEY,
-      'recommendation'
+    // Run all LLM checks in parallel for speed
+    const llmPromises = MODELS_TO_CHECK.map(model => 
+      queryLLM(model.id, model.displayName, prompt, keyword, domain, LOVABLE_API_KEY)
     );
 
-    const results: LLMResult[] = [result];
+    // Add Perplexity if API key available
+    if (PERPLEXITY_API_KEY) {
+      llmPromises.push(
+        queryPerplexity(prompt, keyword, domain, PERPLEXITY_API_KEY).then(r => r || {
+          model: 'perplexity/sonar',
+          modelDisplayName: 'Perplexity',
+          mentioned: false,
+          snippet: null,
+          position: 'not_found' as const,
+          confidence: 0,
+          queryUsed: 'recommendation',
+          error: 'API unavailable',
+        })
+      );
+    }
+
+    const results = await Promise.all(llmPromises);
 
     // Generate optimization suggestions if not found
+    const notFoundModels = results.filter(r => r.position === 'not_found' && !r.error);
     const suggestions: string[] = [];
-    if (result.position === 'not_found' && !result.error) {
+    
+    if (notFoundModels.length > 0) {
       suggestions.push(
         "Create authoritative content about your core services",
         "Get listed in industry directories (Google Business, Yelp)",
