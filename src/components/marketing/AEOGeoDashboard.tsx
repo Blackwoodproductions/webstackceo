@@ -856,7 +856,21 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   // When keywords update, extract keyword text and group into clusters
   const keywordClusters = useMemo(() => {
     if (!bronApi.keywords || bronApi.keywords.length === 0) return [];
-    return groupKeywords(bronApi.keywords, domain);
+    console.log('[AEO] Raw keywords from BRON API:', bronApi.keywords.length);
+    // Log supporting keyword data for debugging
+    const withSupportingKw = bronApi.keywords.filter(k => k.supporting_keywords && k.supporting_keywords.length > 0);
+    const withBubbleFeedId = bronApi.keywords.filter(k => k.bubblefeedid);
+    const withParentKwId = bronApi.keywords.filter(k => k.parent_keyword_id);
+    console.log('[AEO] Keywords with supporting_keywords array:', withSupportingKw.length);
+    console.log('[AEO] Keywords with bubblefeedid:', withBubbleFeedId.length);
+    console.log('[AEO] Keywords with parent_keyword_id:', withParentKwId.length);
+    
+    const clusters = groupKeywords(bronApi.keywords, domain);
+    console.log('[AEO] Clusters generated:', clusters.length);
+    const clustersWithChildren = clusters.filter(c => c.children && c.children.length > 0);
+    console.log('[AEO] Clusters with children:', clustersWithChildren.length);
+    
+    return clusters;
   }, [bronApi.keywords, domain]);
 
   // Flatten clusters into keyword list with hierarchy info
