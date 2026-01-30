@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { GoogleAdsCampaignSetupWizard } from './GoogleAdsCampaignSetupWizard';
 import { GoogleAdsMetricsDashboard } from './GoogleAdsMetricsDashboard';
+import { PPCKeywordLandingSystem } from './ppc';
 
 interface Keyword {
   id: string;
@@ -708,15 +709,31 @@ export function LandingPagesPanel({ selectedDomain }: LandingPagesPanelProps) {
           )}
         </motion.div>
       ) : (
-        /* Connected State - Google Ads Dashboard */
-        <GoogleAdsMetricsDashboard
-          campaigns={[]}
-          isLoading={isFetchingKeywords}
-          onRefresh={handleFetchKeywords}
-          selectedDomain={selectedDomain || undefined}
-          customerId={connectedCustomerId || undefined}
-          onBackToSetup={() => setShowCampaignSetup(true)}
-        />
+        /* Connected State - Premium PPC Landing System */
+        <div className="space-y-6">
+          <PPCKeywordLandingSystem
+            selectedDomain={selectedDomain}
+            accessToken={accessToken}
+            keywords={keywords.map(k => ({
+              ...k,
+              hasLandingPage: false,
+              abTestStatus: 'none' as const,
+            }))}
+            isConnected={isConnected}
+          />
+          
+          {/* Original Google Ads Dashboard (below) */}
+          <div className="pt-6 border-t border-border/50">
+            <GoogleAdsMetricsDashboard
+              campaigns={[]}
+              isLoading={isFetchingKeywords}
+              onRefresh={handleFetchKeywords}
+              selectedDomain={selectedDomain || undefined}
+              customerId={connectedCustomerId || undefined}
+              onBackToSetup={() => setShowCampaignSetup(true)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
