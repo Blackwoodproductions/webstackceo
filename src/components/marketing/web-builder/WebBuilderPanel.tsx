@@ -10,18 +10,23 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGeoCurrency } from '@/hooks/use-geo-currency';
 import { HighTechBackground, HighTechCardWrapper, PulsingDot, LiveBadge } from '@/components/ui/high-tech-background';
+import { WEB_BUILDER_PRODUCTS, WEB_BUILDER_PAGE_ADDONS } from '@/lib/stripeProducts';
 import {
   Globe, Sparkles, Wand2, Code2, Palette, Rocket, ArrowRight,
   CheckCircle2, Lock, RefreshCw, Eye, Layers, Smartphone, Monitor,
   Zap, Settings2, Download, ExternalLink, MessageSquare, Image,
-  FileCode, Layout, Box, Send, Crown, Star, Building2
+  FileCode, Layout, Box, Send, Crown, Star, Building2, Users,
+  BarChart3, Shield, Minus, Plus, TrendingUp
 } from 'lucide-react';
 
 interface WebBuilderPanelProps {
   selectedDomain: string | null;
+  whiteLabelHideWebTab?: boolean;
+  onToggleWebTab?: (hidden: boolean) => void;
 }
 
 type BuilderStep = 'describe' | 'generating' | 'preview' | 'editing';
+type PricingTier = 'starter' | 'pro' | 'agency' | 'unlimited';
 
 const SITE_TEMPLATES = [
   { id: 'business', name: 'Business', icon: Building2, description: 'Professional corporate site' },
@@ -33,14 +38,55 @@ const SITE_TEMPLATES = [
 ];
 
 const GENERATION_STEPS = [
-  { label: 'Analyzing requirements', duration: 2000 },
+  { label: 'Analyzing webstack.ceo patterns', duration: 2000 },
   { label: 'Generating structure', duration: 2500 },
   { label: 'Designing components', duration: 3000 },
   { label: 'Optimizing for SEO', duration: 1500 },
   { label: 'Finalizing build', duration: 1000 },
 ];
 
-export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
+const PRICING_TIERS = [
+  {
+    id: 'starter' as PricingTier,
+    name: 'Starter',
+    price: 4900,
+    sites: 1,
+    pages: 10,
+    features: ['1 AI-generated website', 'Up to 10 pages', 'Full reporting dashboard', 'Mobile responsive', 'Export to HTML/React'],
+    popular: false,
+  },
+  {
+    id: 'pro' as PricingTier,
+    name: 'Pro',
+    price: 9900,
+    sites: 3,
+    pages: 25,
+    features: ['3 AI-generated websites', 'Up to 25 pages each', 'Priority AI generation', 'All reporting panels', 'Custom domains'],
+    popular: true,
+  },
+  {
+    id: 'agency' as PricingTier,
+    name: 'Agency',
+    price: 19900,
+    sites: 10,
+    pages: 50,
+    features: ['10 AI-generated websites', 'Up to 50 pages each', 'White-label exports', 'Client dashboard access', 'Bulk generation'],
+    popular: false,
+    discount: '20% off per site',
+  },
+  {
+    id: 'unlimited' as PricingTier,
+    name: 'Unlimited',
+    price: 49900,
+    sites: -1,
+    pages: -1,
+    features: ['Unlimited websites', 'Unlimited pages', 'Dedicated support', 'API access', 'Custom integrations'],
+    popular: false,
+    discount: '60% off per site',
+  },
+];
+
+export function WebBuilderPanel({ selectedDomain, whiteLabelHideWebTab, onToggleWebTab }: WebBuilderPanelProps) {
   const { user } = useAuth();
   const { formatLocalPrice, countryCode } = useGeoCurrency();
   
@@ -57,6 +103,8 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
   const [editPrompt, setEditPrompt] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [selectedTier, setSelectedTier] = useState<PricingTier>('starter');
+  const [siteCount, setSiteCount] = useState(1);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -79,7 +127,6 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
     setGenerationProgress(0);
     
     // Simulate generation steps
-    let totalTime = 0;
     for (let i = 0; i < GENERATION_STEPS.length; i++) {
       const genStep = GENERATION_STEPS[i];
       setGenerationStep(genStep.label);
@@ -87,20 +134,17 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
       const progressStart = (i / GENERATION_STEPS.length) * 100;
       const progressEnd = ((i + 1) / GENERATION_STEPS.length) * 100;
       
-      // Animate progress
       const steps = 20;
       const stepDuration = genStep.duration / steps;
       for (let j = 0; j < steps; j++) {
         await new Promise(r => setTimeout(r, stepDuration));
         setGenerationProgress(progressStart + ((progressEnd - progressStart) * (j / steps)));
       }
-      
-      totalTime += genStep.duration;
     }
     
     setGenerationProgress(100);
     
-    // Simulate generated site data
+    // Simulate generated site data with webstack.ceo architecture
     setGeneratedSite({
       title: `${selectedDomain || 'mysite'}.com`,
       template: selectedTemplate,
@@ -113,6 +157,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
         { name: 'Footer', type: 'footer' },
       ],
       prompt,
+      model: 'webstack.ceo',
     });
     
     setIsGenerating(false);
@@ -127,16 +172,18 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
     }
     
     setIsEditing(true);
-    
-    // Simulate AI editing
     await new Promise(r => setTimeout(r, 3000));
-    
     toast.success('Changes applied successfully!');
     setEditPrompt('');
     setIsEditing(false);
   };
 
-  const handleSubscribe = async () => {
+  const getTierPriceId = (tier: PricingTier): string => {
+    const product = WEB_BUILDER_PRODUCTS.find(p => p.tier === tier);
+    return product?.priceId || WEB_BUILDER_PRODUCTS[0].priceId;
+  };
+
+  const handleSubscribe = async (tier: PricingTier = selectedTier) => {
     if (!user) {
       toast.error('Please sign in to subscribe');
       return;
@@ -146,12 +193,13 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          priceId: 'price_1SvPF2DhwTkpKWXvqgqQcstn',
+          priceId: getTierPriceId(tier),
           mode: 'subscription',
           successUrl: `${window.location.origin}/vi-dashboard?tab=web&success=true`,
           cancelUrl: `${window.location.origin}/vi-dashboard?tab=web&canceled=true`,
           metadata: {
             type: 'web_builder_subscription',
+            tier,
             domain: selectedDomain,
           }
         }
@@ -167,6 +215,14 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
     } finally {
       setIsProcessingPayment(false);
     }
+  };
+
+  // Calculate volume discount pricing
+  const getVolumePrice = (sites: number): number => {
+    if (sites <= 1) return 4900;
+    if (sites <= 3) return 4900 + (sites - 1) * 3900; // $39/additional site
+    if (sites <= 10) return 9900 + (sites - 3) * 2900; // $29/additional site
+    return 19900 + (sites - 10) * 1900; // $19/additional site (bulk)
   };
 
   return (
@@ -188,15 +244,27 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xl font-bold">AI Website Generator</h2>
-                  <LiveBadge label="AI POWERED" color="violet" />
+                  <LiveBadge label="POWERED BY WEBSTACK.CEO" color="violet" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Describe your vision → AI builds your website → Edit inline with AI assistance
+                  Build professional websites using our proven architecture • Domain owners get full reporting
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
+              {onToggleWebTab && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => onToggleWebTab(!whiteLabelHideWebTab)}
+                  className="text-xs text-muted-foreground"
+                >
+                  <Settings2 className="w-3 h-3 mr-1" />
+                  {whiteLabelHideWebTab ? 'Show WEB Tab' : 'Hide WEB Tab'}
+                </Button>
+              )}
+              
               {isSubscribed ? (
                 <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0">
                   <Crown className="w-3 h-3 mr-1" />
@@ -210,7 +278,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
                   className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
                 >
                   <Lock className="w-3 h-3 mr-1" />
-                  Unlock Pro
+                  From {formatLocalPrice(4900)}/mo
                 </Button>
               )}
             </div>
@@ -233,6 +301,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
               <div className="flex items-center gap-2 mb-4">
                 <Layout className="w-4 h-4 text-violet-400" />
                 <h3 className="font-bold">Choose a Template</h3>
+                <Badge variant="outline" className="text-[10px]">Based on webstack.ceo</Badge>
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -272,7 +341,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Sparkles className="w-3 h-3 text-violet-400" />
-                  <span>AI will generate a complete, responsive website from your description</span>
+                  <span>AI builds sites following webstack.ceo architecture for optimal SEO</span>
                 </div>
                 
                 <Button 
@@ -287,13 +356,13 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
               </div>
             </div>
 
-            {/* Features Grid */}
+            {/* Value Propositions */}
             <div className="grid md:grid-cols-4 gap-4">
               {[
                 { icon: Zap, label: 'Instant Generation', desc: 'Full website in under 30 seconds', color: 'text-amber-400' },
-                { icon: Smartphone, label: 'Mobile Responsive', desc: 'Looks perfect on all devices', color: 'text-cyan-400' },
-                { icon: Palette, label: 'AI Design', desc: 'Professional layouts & colors', color: 'text-violet-400' },
-                { icon: Code2, label: 'Clean Code', desc: 'Optimized & production-ready', color: 'text-emerald-400' },
+                { icon: BarChart3, label: 'Full Reporting', desc: 'All analytics panels included', color: 'text-cyan-400' },
+                { icon: TrendingUp, label: 'SEO Optimized', desc: 'webstack.ceo architecture', color: 'text-violet-400' },
+                { icon: Users, label: 'Agency Discounts', desc: 'Up to 60% off for bulk sites', color: 'text-emerald-400' },
               ].map((feature) => (
                 <HighTechCardWrapper key={feature.label}>
                   <div className="glass-card rounded-xl p-4 text-center h-full">
@@ -349,7 +418,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
                 </Button>
                 <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Generated Successfully
+                  Generated with webstack.ceo
                 </Badge>
               </div>
               
@@ -382,6 +451,19 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
                   <ExternalLink className="w-4 h-4 mr-1" />
                   Publish
                 </Button>
+              </div>
+            </div>
+
+            {/* Reporting Access Notice */}
+            <div className="glass-card rounded-xl p-4 border border-cyan-500/30 bg-cyan-500/5">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="w-5 h-5 text-cyan-400" />
+                <div>
+                  <p className="text-sm font-medium">Full Reporting Dashboard Included</p>
+                  <p className="text-xs text-muted-foreground">
+                    Website owners get access to Visitor Intelligence, SEO tracking, and all analytics panels for their domain
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -477,57 +559,141 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
         )}
       </AnimatePresence>
 
-      {/* Paywall Modal */}
+      {/* Paywall Modal with Tiered Pricing */}
       <AnimatePresence>
         {showPaywall && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto"
             onClick={() => setShowPaywall(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="glass-card rounded-2xl p-8 max-w-lg w-full border border-violet-500/30"
+              className="glass-card rounded-2xl p-6 max-w-4xl w-full border border-violet-500/30 my-8"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-violet-500/25">
                   <Crown className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Unlock AI Website Generator</h2>
+                <h2 className="text-2xl font-bold mb-2">AI Website Generator</h2>
                 <p className="text-muted-foreground">
-                  Build unlimited websites and applications with AI assistance
+                  Perfect for web design companies • Volume discounts for multiple sites
                 </p>
               </div>
               
-              <div className="space-y-3 mb-6">
-                {[
-                  'Unlimited AI website generation',
-                  'All templates included',
-                  'Inline AI editing assistant',
-                  'Export to any platform',
-                  'Mobile-responsive designs',
-                  'SEO-optimized code output',
-                  'Priority generation queue',
-                  '24/7 support',
-                ].map((feature) => (
-                  <div key={feature} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-violet-400 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
+              {/* Pricing Tiers Grid */}
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                {PRICING_TIERS.map((tier) => (
+                  <div
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier.id)}
+                    className={`glass-card rounded-xl p-4 cursor-pointer transition-all relative ${
+                      selectedTier === tier.id 
+                        ? 'border-violet-500 ring-2 ring-violet-500/30 bg-violet-500/5' 
+                        : 'border-border/50 hover:border-violet-500/30'
+                    }`}
+                  >
+                    {tier.popular && (
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0 text-[10px]">
+                        <Star className="w-2.5 h-2.5 mr-0.5" />
+                        Most Popular
+                      </Badge>
+                    )}
+                    
+                    {tier.discount && (
+                      <Badge className="absolute -top-2 right-2 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[9px]">
+                        {tier.discount}
+                      </Badge>
+                    )}
+                    
+                    <h3 className="font-bold text-center mt-2">{tier.name}</h3>
+                    <p className="text-2xl font-bold text-center mt-2 gradient-text">
+                      {formatLocalPrice(tier.price)}
+                    </p>
+                    <p className="text-xs text-muted-foreground text-center">/month</p>
+                    
+                    <div className="text-center text-xs text-muted-foreground mt-2 space-y-0.5">
+                      <p>{tier.sites === -1 ? 'Unlimited' : tier.sites} site{tier.sites !== 1 ? 's' : ''}</p>
+                      <p>{tier.pages === -1 ? 'Unlimited' : `Up to ${tier.pages}`} pages</p>
+                    </div>
+                    
+                    <div className="mt-4 space-y-1.5">
+                      {tier.features.slice(0, 3).map((feature) => (
+                        <div key={feature} className="flex items-center gap-1.5 text-[10px]">
+                          <CheckCircle2 className="w-3 h-3 text-violet-400 flex-shrink-0" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
-              
-              <div className="glass-card rounded-xl p-4 mb-6 text-center bg-violet-500/5 border border-violet-500/20">
-                <p className="text-sm text-muted-foreground mb-1">Monthly subscription</p>
-                <p className="text-4xl font-bold gradient-text">{formatLocalPrice(12500)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {countryCode !== 'US' && 'Billed in USD • '}Cancel anytime
+
+              {/* Page-based Pricing Info */}
+              <div className="glass-card rounded-xl p-4 mb-6 bg-amber-500/5 border border-amber-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileCode className="w-4 h-4 text-amber-400" />
+                  <h4 className="font-medium text-sm">Need More Pages?</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Additional pages beyond your tier limit are billed monthly:
                 </p>
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  {WEB_BUILDER_PAGE_ADDONS.map((addon) => (
+                    <div key={addon.pages} className="text-center p-2 bg-background/50 rounded-lg">
+                      <p className="font-medium">{addon.pages} pages</p>
+                      <p className="text-muted-foreground">+{formatLocalPrice(addon.pricePerMonth)}/mo</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* What's Included */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="glass-card rounded-xl p-4">
+                  <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-cyan-400" />
+                    Domain Owner Benefits
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      'Full Visitor Intelligence dashboard',
+                      'SEO tracking & analytics',
+                      'All reporting panels for their domain',
+                      'Real-time visitor monitoring',
+                    ].map((item) => (
+                      <div key={item} className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="glass-card rounded-xl p-4">
+                  <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-violet-400" />
+                    Built on webstack.ceo
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      'Proven architecture for SEO',
+                      'Mobile-first responsive design',
+                      'Optimized Core Web Vitals',
+                      'Production-ready clean code',
+                    ].map((item) => (
+                      <div key={item} className="flex items-center gap-2 text-xs">
+                        <CheckCircle2 className="w-3 h-3 text-violet-400" />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
               
               <div className="flex gap-3">
@@ -540,7 +706,7 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
                 </Button>
                 <Button 
                   className="flex-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
-                  onClick={handleSubscribe}
+                  onClick={() => handleSubscribe(selectedTier)}
                   disabled={isProcessingPayment}
                 >
                   {isProcessingPayment ? (
@@ -551,11 +717,15 @@ export function WebBuilderPanel({ selectedDomain }: WebBuilderPanelProps) {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Subscribe Now
+                      Subscribe to {PRICING_TIERS.find(t => t.id === selectedTier)?.name} - {formatLocalPrice(PRICING_TIERS.find(t => t.id === selectedTier)?.price || 4900)}/mo
                     </>
                   )}
                 </Button>
               </div>
+              
+              <p className="text-[10px] text-center text-muted-foreground mt-4">
+                {countryCode !== 'US' && 'Billed in USD • '}Cancel anytime • 30-day money back guarantee
+              </p>
             </motion.div>
           </motion.div>
         )}

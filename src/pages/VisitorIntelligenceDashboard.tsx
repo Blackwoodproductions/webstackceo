@@ -285,9 +285,7 @@ const MarketingDashboard = () => {
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
-  // Dashboard main tabs
-  type DashboardTab = 'visitor-intelligence' | 'bron' | 'aeo-geo' | 'cade' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages';
-  
+  // Dashboard main tabs - use the exported type from VIDashboardTabs
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
     'bron',
@@ -297,6 +295,7 @@ const MarketingDashboard = () => {
     'social-signals',
     'on-page-seo',
     'landing-pages',
+    'web-builder',
   ];
 
   // Initialize tab from URL hash, and (critically) preserve return-to-tab during OAuth callback
