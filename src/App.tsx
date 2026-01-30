@@ -40,6 +40,7 @@ const AuditResults = lazy(() => import("./pages/AuditResults"));
 const WebsiteAudits = lazy(() => import("./pages/WebsiteAudits"));
 const CaseStudies = lazy(() => import("./pages/CaseStudies"));
 const Tools = lazy(() => import("./pages/Tools"));
+const Documentation = lazy(() => import("./pages/Documentation"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BronCallback = lazy(() => import("./pages/BronCallback"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
@@ -194,6 +195,7 @@ const App = () => (
                       <Route path="/learn/ecommerce-seo-guide" element={<EcommerceSEOGuide />} />
                       <Route path="/sitemap" element={<Sitemap />} />
                       <Route path="/tools" element={<Tools />} />
+                      <Route path="/docs" element={<Documentation />} />
                       <Route path="/analytics" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
                       <Route path="/audits" element={<WebsiteAudits />} />
                       <Route path="/case-studies" element={<CaseStudies />} />
