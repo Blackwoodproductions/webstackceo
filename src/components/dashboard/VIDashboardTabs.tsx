@@ -1,9 +1,10 @@
 import { memo } from 'react';
-import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target } from 'lucide-react';
+import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target, BrainCircuit } from 'lucide-react';
 
 export type DashboardTab = 
   | 'visitor-intelligence' 
   | 'bron' 
+  | 'aeo-geo'
   | 'cade' 
   | 'gmb' 
   | 'social-signals' 
@@ -28,6 +29,13 @@ const tabs = [
     label: 'Bron', 
     description: 'SEO Rankings',
     icon: TrendingUp, 
+    isPaid: true 
+  },
+  { 
+    id: 'aeo-geo' as DashboardTab, 
+    label: 'AEO/GEO', 
+    description: 'AI Engines',
+    icon: BrainCircuit, 
     isPaid: true 
   },
   { 
