@@ -32,13 +32,6 @@ const tabs = [
     isPaid: true 
   },
   { 
-    id: 'aeo-geo' as DashboardTab, 
-    label: 'AEO/GEO', 
-    description: 'AI Engines',
-    icon: BrainCircuit, 
-    isPaid: true 
-  },
-  { 
     id: 'cade' as DashboardTab, 
     label: 'Cade', 
     description: 'AI Content',
@@ -73,6 +66,13 @@ const tabs = [
     icon: Target, 
     isPaid: true 
   },
+  { 
+    id: 'aeo-geo' as DashboardTab, 
+    label: 'AEO/GEO', 
+    description: 'AI Engines',
+    icon: BrainCircuit, 
+    isPaid: true 
+  },
 ];
 
 export const VIDashboardTabs = memo(function VIDashboardTabs({
@@ -80,11 +80,15 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
   setActiveTab,
 }: VIDashboardTabsProps) {
   return (
-    <div 
-      className="absolute left-1/2 -bottom-px flex items-end gap-1.5 z-20" 
-      style={{ transform: 'translateX(calc(-50% + 60px))' }}
-    >
-      {tabs.map((tab, index) => {
+    <div className="absolute inset-x-0 -bottom-px z-20 flex justify-center">
+      <div
+        className="flex items-end gap-1.5 px-2 overflow-x-auto"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+        }}
+      >
+        {tabs.map((tab, index) => {
         const isActive = activeTab === tab.id;
         
         return (
@@ -131,7 +135,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
             )}
           </button>
         );
-      })}
+        })}
+      </div>
     </div>
   );
 });
