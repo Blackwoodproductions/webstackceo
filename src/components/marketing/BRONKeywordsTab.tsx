@@ -448,6 +448,12 @@ export const BRONKeywordsTab = memo(({
     }
   }, [isDomainChanging]);
 
+  // Helper to get report ID in the same way as the date selector
+  const getReportIdFromHistoryItem = useCallback((report: BronSerpListItem): string => {
+    const anyReport = report as any;
+    return String(anyReport.serpid || anyReport.report_id || anyReport.id || '');
+  }, []);
+
   // Fetch initial positions from SERP history (baseline = oldest report)
   useEffect(() => {
     const fetchInitialPositions = async () => {
@@ -465,9 +471,13 @@ export const BRONKeywordsTab = memo(({
         
         console.log('[BRON] Fetching baseline positions from oldest report:', oldestReport.started || oldestReport.created_at);
         
-        const reportId = String(oldestReport.report_id || oldestReport.id);
+        // Use the same ID extraction logic as the date selector for consistency
+        const reportId = getReportIdFromHistoryItem(oldestReport);
         setBaselineReportId(reportId); // Store baseline report ID
-        const oldestReportData = await onFetchSerpDetail(selectedDomain, reportId);
+        
+        // The API uses report_id or id for fetching, try both
+        const apiReportId = String((oldestReport as any).report_id || (oldestReport as any).id || reportId);
+        const oldestReportData = await onFetchSerpDetail(selectedDomain, apiReportId);
         
         if (oldestReportData?.length > 0) {
           const firstPositions: Record<string, InitialPositions> = {};
@@ -488,7 +498,7 @@ export const BRONKeywordsTab = memo(({
           }
           console.log('[BRON] Loaded baseline positions for', Object.keys(firstPositions).length, 'keywords');
           console.log('[BRON] Sample baseline keywords:', Object.keys(firstPositions).slice(0, 10));
-          console.log('[BRON] Baseline report ID:', reportId);
+          console.log('[BRON] Baseline report ID (for matching):', reportId);
           setInitialPositions(firstPositions);
         }
       } catch (err) {
@@ -497,7 +507,7 @@ export const BRONKeywordsTab = memo(({
     };
     
     fetchInitialPositions();
-  }, [selectedDomain, serpHistory, onFetchSerpDetail]);
+  }, [selectedDomain, serpHistory, onFetchSerpDetail, getReportIdFromHistoryItem]);
 
   // Fetch keyword metrics
   // Extract core keyword without location suffixes for national volume lookup
@@ -1013,7 +1023,14 @@ export const BRONKeywordsTab = memo(({
                     inlineEditForms={inlineEditForms}
                     savingIds={savingIds}
                     compactMode={compactMode}
-                    isBaselineReport={selectedHistoryReportId ? String(selectedHistoryReportId) === baselineReportId : false}
+                    isBaselineReport={
+                      // Check if we're viewing the baseline (oldest) report
+                      // When no historical report is selected, we're viewing current (not baseline)
+                      // When a historical report is selected, check if it matches the baseline report ID
+                      selectedHistoryReportId !== null && baselineReportId !== null
+                        ? String(selectedHistoryReportId) === String(baselineReportId)
+                        : false
+                    }
                     onToggleExpand={handleToggleExpand}
                     onUpdateForm={handleUpdateForm}
                     onSave={handleSave}
