@@ -29,6 +29,18 @@ interface SEOIssue {
   suggestion: string;
   autoFixable: boolean;
   status: 'pending' | 'in_progress' | 'fixed' | 'ignored';
+  fixedAt?: string;
+  platform?: string;
+}
+
+interface FixLogEntry {
+  id: string;
+  issueType: string;
+  page: string;
+  description: string;
+  fixedAt: string;
+  platform: string;
+  automatic: boolean;
 }
 
 interface OptimizationStats {
@@ -43,6 +55,7 @@ interface OptimizationStats {
 interface OnPageSEODashboardProps {
   domain?: string;
   isSubscribed?: boolean;
+  connectedPlatform?: string;
 }
 
 const mockIssues: SEOIssue[] = [
@@ -113,7 +126,7 @@ const severityConfig = {
   info: { color: 'text-blue-500', bg: 'bg-blue-500/20', border: 'border-blue-500/30' },
 };
 
-export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODashboardProps) => {
+export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlatform }: OnPageSEODashboardProps) => {
   const [stats, setStats] = useState<OptimizationStats>({
     pagesScanned: 47,
     issuesFound: 23,
@@ -126,6 +139,48 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
   const [isScanning, setIsScanning] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [selectedTab, setSelectedTab] = useState('overview');
+  const [activePlatform, setActivePlatform] = useState<string>(connectedPlatform || '');
+  const [fixLog, setFixLog] = useState<FixLogEntry[]>([
+    {
+      id: '1',
+      issueType: 'meta_title',
+      page: '/services',
+      description: 'Title tag shortened to 58 characters',
+      fixedAt: new Date(Date.now() - 120000).toISOString(),
+      platform: 'lovable',
+      automatic: true,
+    },
+    {
+      id: '2',
+      issueType: 'alt_text',
+      page: '/blog/seo-tips',
+      description: 'Added alt text to 3 images',
+      fixedAt: new Date(Date.now() - 300000).toISOString(),
+      platform: 'wordpress',
+      automatic: true,
+    },
+    {
+      id: '3',
+      issueType: 'schema',
+      page: '/about',
+      description: 'Added Organization schema markup',
+      fixedAt: new Date(Date.now() - 600000).toISOString(),
+      platform: 'lovable',
+      automatic: true,
+    },
+  ]);
+
+  // Auto-enable autopilot for Lovable sites
+  useEffect(() => {
+    if (activePlatform === 'lovable' || activePlatform === 'php-bron') {
+      setStats(prev => ({ ...prev, autopilotActive: true }));
+    }
+  }, [activePlatform]);
+
+  // Check if platform supports auto-fix (all platforms do)
+  const supportsAutoFix = (platform: string): boolean => {
+    return ['lovable', 'php-bron', 'wordpress', 'shopify', 'wix'].includes(platform);
+  };
 
   const handleToggleAutopilot = () => {
     setStats(prev => ({ ...prev, autopilotActive: !prev.autopilotActive }));
@@ -154,31 +209,51 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
     toast.success('Scan complete!', { description: 'Found 2 new issues to optimize' });
   };
 
-  const handleFixIssue = async (issueId: string) => {
-    setIssues(prev => prev.map(issue => 
-      issue.id === issueId ? { ...issue, status: 'in_progress' } : issue
+  const handleFixIssue = async (issueId: string, automatic: boolean = false) => {
+    const issue = issues.find(i => i.id === issueId);
+    if (!issue) return;
+
+    setIssues(prev => prev.map(i => 
+      i.id === issueId ? { ...i, status: 'in_progress' } : i
     ));
 
     // Simulate fix
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    setIssues(prev => prev.map(issue => 
-      issue.id === issueId ? { ...issue, status: 'fixed' } : issue
+    const fixedAt = new Date().toISOString();
+    setIssues(prev => prev.map(i => 
+      i.id === issueId ? { ...i, status: 'fixed', fixedAt } : i
     ));
     setStats(prev => ({ ...prev, issuesFixed: prev.issuesFixed + 1 }));
-    toast.success('Issue fixed!', { description: 'Change has been applied to your website' });
+
+    // Add to fix log
+    const typeConfig = issueTypeConfig[issue.type];
+    setFixLog(prev => [{
+      id: crypto.randomUUID(),
+      issueType: issue.type,
+      page: issue.page,
+      description: `Fixed: ${issue.suggestion.substring(0, 50)}...`,
+      fixedAt,
+      platform: activePlatform || 'lovable',
+      automatic,
+    }, ...prev].slice(0, 50)); // Keep last 50 entries
+
+    toast.success('Issue fixed!', { 
+      description: 'Change has been applied to your website',
+    });
   };
 
   const handleFixAll = async () => {
     const pendingIssues = issues.filter(i => i.status === 'pending' && i.autoFixable);
     
     for (const issue of pendingIssues) {
-      await handleFixIssue(issue.id);
+      await handleFixIssue(issue.id, stats.autopilotActive);
     }
   };
 
   const pendingCount = issues.filter(i => i.status === 'pending').length;
   const criticalCount = issues.filter(i => i.severity === 'critical' && i.status === 'pending').length;
+  const recentFixes = fixLog.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -478,7 +553,16 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
             domain={domain}
             onConnectionComplete={(platform, status) => {
               setIsConnected(true);
-              toast.success('Platform connected!');
+              setActivePlatform(platform);
+              // Auto-enable autopilot for all connected platforms
+              if (supportsAutoFix(platform)) {
+                setStats(prev => ({ ...prev, autopilotActive: true }));
+                toast.success('Auto-fix enabled!', {
+                  description: `${platform} supports automatic SEO fixes. Autopilot is now active.`,
+                });
+              } else {
+                toast.success('Platform connected!');
+              }
             }}
           />
         </TabsContent>
@@ -498,8 +582,85 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false }: OnPageSEODa
           />
         </TabsContent>
       </Tabs>
+
+      {/* Recent Fixes Activity Log - Bottom Panel */}
+      <Card className="border-green-500/20 bg-gradient-to-br from-green-500/5 to-emerald-500/5">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              Recent Fixes Applied
+              <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                {recentFixes.length} changes
+              </Badge>
+            </CardTitle>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Bot className={`w-4 h-4 ${stats.autopilotActive ? 'text-green-500' : 'text-muted-foreground'}`} />
+              {stats.autopilotActive ? 'Auto-fix active' : 'Manual mode'}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {recentFixes.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No fixes applied yet. Run a scan to detect issues.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {recentFixes.map((fix, i) => {
+                const typeConfig = issueTypeConfig[fix.issueType as keyof typeof issueTypeConfig] || issueTypeConfig.meta_title;
+                const Icon = typeConfig.icon;
+                const timeAgo = getTimeAgo(fix.fixedAt);
+                
+                return (
+                  <motion.div
+                    key={fix.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background/50 border border-green-500/10 hover:border-green-500/30 transition-colors"
+                  >
+                    <div className={`w-8 h-8 rounded-lg ${typeConfig.bg} flex items-center justify-center shrink-0`}>
+                      <Icon className={`w-4 h-4 ${typeConfig.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{fix.description}</span>
+                        {fix.automatic && (
+                          <Badge className="bg-violet-500/20 text-violet-500 border-0 text-[10px] shrink-0">
+                            <Bot className="w-2.5 h-2.5 mr-0.5" />
+                            Auto
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{fix.page}</span>
+                        <span>•</span>
+                        <span className="capitalize">{fix.platform}</span>
+                        <span>•</span>
+                        <span>{timeAgo}</span>
+                      </div>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+// Helper function for time ago
+function getTimeAgo(dateString: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+  
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
 
 export default OnPageSEODashboard;
