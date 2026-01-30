@@ -17,6 +17,7 @@ export interface Lead {
   status: string;
   closed_at: string | null;
   closed_amount: number | null;
+  tracking_domain: string | null;
 }
 
 export interface VisitorSession {
@@ -26,6 +27,7 @@ export interface VisitorSession {
   referrer: string | null;
   started_at: string;
   last_activity_at: string;
+  domain: string | null;
 }
 
 export interface PageView {
@@ -34,6 +36,7 @@ export interface PageView {
   page_path: string;
   page_title: string | null;
   created_at: string;
+  domain: string | null;
 }
 
 export interface ToolInteraction {
@@ -44,6 +47,7 @@ export interface ToolInteraction {
   page_path: string | null;
   metadata: unknown;
   created_at: string;
+  domain: string | null;
 }
 
 export interface FunnelStats {
@@ -56,11 +60,17 @@ export interface FunnelStats {
   withCompanyInfo: number;
 }
 
+interface UseDashboardDataOptions {
+  domain?: string | null;
+}
+
 /**
  * Custom hook for fetching and managing dashboard visitor/lead data.
- * Consolidates data fetching logic that was previously scattered across the monolithic dashboard.
+ * Now supports domain-scoped data filtering.
  */
-export const useDashboardData = () => {
+export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
+  const { domain } = options;
+  
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sessions, setSessions] = useState<VisitorSession[]>([]);
   const [pageViews, setPageViews] = useState<PageView[]>([]);
@@ -83,12 +93,44 @@ export const useDashboardData = () => {
 
   const fetchData = useCallback(async () => {
     try {
+      // Build queries with optional domain filtering
+      let sessionsQuery = supabase
+        .from('visitor_sessions')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(500);
+      
+      let pageViewsQuery = supabase
+        .from('page_views')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1000);
+      
+      let toolsQuery = supabase
+        .from('tool_interactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      
+      let leadsQuery = supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Apply domain filter if specified
+      if (domain) {
+        sessionsQuery = sessionsQuery.eq('domain', domain);
+        pageViewsQuery = pageViewsQuery.eq('domain', domain);
+        toolsQuery = toolsQuery.eq('domain', domain);
+        leadsQuery = leadsQuery.eq('tracking_domain', domain);
+      }
+
       // Fetch all data in parallel
       const [leadsRes, sessionsRes, pageViewsRes, toolsRes] = await Promise.all([
-        supabase.from('leads').select('*').order('created_at', { ascending: false }),
-        supabase.from('visitor_sessions').select('*').order('started_at', { ascending: false }).limit(500),
-        supabase.from('page_views').select('*').order('created_at', { ascending: false }).limit(1000),
-        supabase.from('tool_interactions').select('*').order('created_at', { ascending: false }).limit(500),
+        leadsQuery,
+        sessionsQuery,
+        pageViewsQuery,
+        toolsQuery,
       ]);
 
       if (leadsRes.data) setLeads(leadsRes.data);
@@ -136,15 +178,16 @@ export const useDashboardData = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [domain]);
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchData();
   }, [fetchData]);
 
-  // Initial fetch
+  // Initial fetch and re-fetch when domain changes
   useEffect(() => {
+    setIsLoading(true);
     fetchData();
   }, [fetchData]);
 
@@ -166,6 +209,8 @@ export const useDashboardData = () => {
     isRefreshing,
     refresh,
     setLeads,
+    // Expose the current domain for reference
+    activeDomain: domain,
   };
 };
 

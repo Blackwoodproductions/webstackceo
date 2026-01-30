@@ -9,6 +9,7 @@ export { FeatureGate } from './FeatureGate';
 export { WhiteLabelLogo } from './WhiteLabelLogo';
 export { DomainSelectionDialog } from './DomainSelectionDialog';
 export { DomainSearchDropdown } from './DomainSearchDropdown';
+export { TrackingCodeGenerator } from './TrackingCodeGenerator';
 
 // Re-export data hooks
 export { useDashboardData } from '@/hooks/use-dashboard-data';
