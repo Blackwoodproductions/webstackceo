@@ -230,7 +230,7 @@ const PageSpeedGauge = memo(({ score, loading, updating, error }: {
 });
 PageSpeedGauge.displayName = 'PageSpeedGauge';
 
-// Rankings Display Component - memoized (labels are shown in header row, not here)
+// Rankings Display Component - compact with color-coded movement
 const RankingsDisplay = memo(({ 
   googlePos, bingPos, yahooPos, 
   googleMovement, bingMovement, yahooMovement 
@@ -242,37 +242,67 @@ const RankingsDisplay = memo(({
   bingMovement: number;
   yahooMovement: number;
 }) => {
-  const getPositionColor = (movement: ReturnType<typeof getMovementFromDelta>) => {
-    if (movement.type === 'up') return 'text-emerald-400';
-    if (movement.type === 'down') return 'text-red-400';
-    return 'text-muted-foreground';
+  // Color coding: Green = UP, Yellow/Amber = DOWN, Blue = NO MOVEMENT
+  const getMovementStyles = (movement: number) => {
+    if (movement > 0) {
+      return {
+        textColor: 'text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
+        icon: <TrendingUp className="w-3 h-3" />,
+      };
+    }
+    if (movement < 0) {
+      return {
+        textColor: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        icon: <TrendingDown className="w-3 h-3" />,
+      };
+    }
+    return {
+      textColor: 'text-blue-400',
+      bgColor: 'bg-blue-500/5',
+      icon: <Minus className="w-2.5 h-2.5" />,
+    };
   };
 
-  const renderRanking = (pos: number | null, movement: ReturnType<typeof getMovementFromDelta>) => (
-    <div className="flex items-center justify-center gap-1 w-[80px] h-7">
-      <span className={`text-lg font-normal ${pos !== null ? getPositionColor(movement) : 'text-muted-foreground/50'}`}>
-        {pos !== null ? `#${pos}` : '—'}
-      </span>
-      {pos !== null && movement.delta !== 0 && (
-        <div className={`flex items-center gap-0.5 ${movement.color}`}>
-          {movement.type === 'up' && <TrendingUp className="w-3 h-3" />}
-          {movement.type === 'down' && <TrendingDown className="w-3 h-3" />}
+  const renderRanking = (pos: number | null, movement: number) => {
+    const styles = getMovementStyles(movement);
+    
+    if (pos === null) {
+      return (
+        <div className="flex items-center justify-center w-[70px] h-6">
+          <span className="text-sm text-muted-foreground/40">—</span>
         </div>
-      )}
-      {pos !== null && movement.delta === 0 && <Minus className="w-2.5 h-2.5 text-muted-foreground/50" />}
-    </div>
-  );
+      );
+    }
+    
+    return (
+      <div className={`flex items-center justify-center gap-1 w-[70px] h-6 rounded ${styles.bgColor}`}>
+        <span className={`text-sm font-medium ${styles.textColor}`}>
+          #{pos}
+        </span>
+        <div className={`flex items-center ${styles.textColor}`}>
+          {styles.icon}
+        </div>
+        {movement !== 0 && (
+          <span className={`text-[10px] font-medium ${styles.textColor}`}>
+            {movement > 0 ? `+${movement}` : movement}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="flex items-center justify-center gap-2">
-      <div className="w-[80px] flex justify-center">
-        {renderRanking(googlePos, getMovementFromDelta(googleMovement))}
+    <div className="flex items-center justify-center gap-1">
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(googlePos, googleMovement)}
       </div>
-      <div className="w-[80px] flex justify-center">
-        {renderRanking(bingPos, getMovementFromDelta(bingMovement))}
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(bingPos, bingMovement)}
       </div>
-      <div className="w-[80px] flex justify-center">
-        {renderRanking(yahooPos, getMovementFromDelta(yahooMovement))}
+      <div className="w-[70px] flex justify-center">
+        {renderRanking(yahooPos, yahooMovement)}
       </div>
     </div>
   );
@@ -450,12 +480,12 @@ export const BronKeywordCard = memo(({
     return null;
   }, [kw.linkouturl, selectedDomain, keywordText, isTrackingOnly]);
 
-  // Nested/supporting keywords are smaller
+  // Nested/supporting keywords are smaller - tighter padding
   const isCompact = isNested;
-  const rowPadding = isCompact ? 'p-2.5' : 'p-4';
-  const gaugeSize = isCompact ? 'w-10 h-10' : 'w-12 h-12';
-  const textSize = isCompact ? 'text-sm' : 'text-base';
-  const badgeSize = isCompact ? 'text-[8px] h-4 px-1.5' : 'text-[9px] h-5 px-2';
+  const rowPadding = isCompact ? 'px-3 py-1.5' : 'px-4 py-2';
+  const gaugeSize = isCompact ? 'w-9 h-9' : 'w-10 h-10';
+  const textSize = isCompact ? 'text-sm' : 'text-sm';
+  const badgeSize = isCompact ? 'text-[8px] h-4 px-1.5' : 'text-[9px] h-4 px-1.5';
   
   return (
     <div
@@ -482,10 +512,10 @@ export const BronKeywordCard = memo(({
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
           {/* Grid-based layout for consistent columns */}
           <div 
-            className="grid items-center gap-4" 
+            className="grid items-center gap-3" 
             style={{ 
-              gridTemplateColumns: '80px 1fr 160px 260px 160px 100px 48px',
-              minWidth: '1000px'
+              gridTemplateColumns: '56px 1fr 140px 230px 140px 90px 40px',
+              minWidth: '900px'
             }}
           >
             {/* Column 1: Page Speed Gauge */}
