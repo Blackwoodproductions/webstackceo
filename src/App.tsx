@@ -144,6 +144,7 @@ const App = () => (
                       <Route path="/auth/callback" element={<AuthCallback />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/visitor-intelligence-dashboard" element={<VisitorIntelligenceDashboard />} />
+                      <Route path="/dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
                       <Route path="/marketing-dashboard" element={<Navigate to="/visitor-intelligence-dashboard" replace />} />
                       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<Terms />} />
