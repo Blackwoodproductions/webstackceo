@@ -289,10 +289,9 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
   
   return (
     <div 
-      className="grid items-center gap-2 px-4 py-2 rounded-lg bg-card/50 border border-border/30"
+      className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30 w-full"
       style={{ 
-        gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
-        minWidth: '800px',
+        gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 36px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
@@ -310,27 +309,34 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
       
       {/* Intent badge placeholder */}
       <div className="flex justify-center">
-        <div className="h-5 w-16 rounded-full bg-muted/40" />
+        <div className="h-7 w-20 rounded-md bg-muted/40" />
       </div>
       
-      {/* Rankings placeholders */}
-      <div className="flex items-center justify-center gap-1">
-        <div className="w-[70px] h-5 rounded bg-muted/40" />
-        <div className="w-[70px] h-5 rounded bg-muted/35" />
-        <div className="w-[70px] h-5 rounded bg-muted/30" />
+      {/* Google ranking placeholder */}
+      <div className="flex justify-center">
+        <div className="h-8 w-full rounded-md bg-muted/40" />
+      </div>
+      
+      {/* Bing ranking placeholder */}
+      <div className="flex justify-center">
+        <div className="h-8 w-full rounded-md bg-muted/35" />
+      </div>
+      
+      {/* Yahoo ranking placeholder */}
+      <div className="flex justify-center">
+        <div className="h-8 w-full rounded-md bg-muted/30" />
       </div>
       
       {/* Metrics placeholders */}
-      <div className="flex justify-center gap-2">
-        <div className="w-8 h-4 rounded bg-muted/40" />
-        <div className="w-8 h-4 rounded bg-muted/35" />
-        <div className="w-8 h-4 rounded bg-muted/30" />
+      <div className="flex justify-center gap-1">
+        <div className="w-10 h-8 rounded-md bg-muted/40" />
+        <div className="w-10 h-8 rounded-md bg-muted/35" />
+        <div className="w-10 h-8 rounded-md bg-muted/30" />
       </div>
       
       {/* Links placeholders */}
-      <div className="flex justify-center gap-1">
-        <div className="w-6 h-4 rounded bg-muted/40" />
-        <div className="w-6 h-4 rounded bg-muted/35" />
+      <div className="flex justify-center">
+        <div className="w-16 h-7 rounded-lg bg-muted/40" />
       </div>
       
       {/* Expand button placeholder */}
@@ -346,10 +352,9 @@ BronKeywordSkeleton.displayName = 'BronKeywordSkeleton';
  */
 export const BronKeywordTableHeader = memo(() => (
   <div 
-    className="grid items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50" 
+    className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50 w-full" 
     style={{ 
-      gridTemplateColumns: '48px minmax(180px, 380px) 100px 210px 130px 80px 32px',
-      minWidth: '800px',
+      gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 36px',
       contain: 'layout style' 
     }}
   >
@@ -362,16 +367,14 @@ export const BronKeywordTableHeader = memo(() => (
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Intent</span>
     </div>
-    <div className="flex items-center justify-center gap-1">
-      <div className="w-[70px] flex justify-center">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
-      </div>
-      <div className="w-[70px] flex justify-center">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Bing</span>
-      </div>
-      <div className="w-[70px] flex justify-center">
-        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yahoo</span>
-      </div>
+    <div className="flex justify-center">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
+    </div>
+    <div className="flex justify-center">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Bing</span>
+    </div>
+    <div className="flex justify-center">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Yahoo</span>
     </div>
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
