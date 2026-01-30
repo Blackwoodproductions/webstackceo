@@ -515,16 +515,33 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout - proportional columns to fill available space */}
+          {/* Grid-based layout - reordered: Chart first, then PageSpeed, Intent vertical, Keyword, Rankings, Metrics, Links, Expand */}
           <div 
             className="grid items-center gap-3 w-full" 
             style={{ 
-              gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 32px 36px',
+              gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
             }}
           >
-            {/* Column 1: Page Speed Gauge - centered for vertical alignment */}
+            {/* Column 1: Chart/Analysis Button - NOW FIRST */}
             <div className="flex items-center justify-center">
-              {/* PageSpeed gauge - fixed size for alignment */}
+              {onOpenAnalysis && !isNested ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenAnalysis(kw);
+                  }}
+                  className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]`}
+                  title="View Keyword Analysis"
+                >
+                  <BarChart3 className={isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                </button>
+              ) : (
+                <div className={`${isCompact ? 'w-7 h-7' : 'w-8 h-8'}`} />
+              )}
+            </div>
+
+            {/* Column 2: Page Speed Gauge */}
+            <div className="flex items-center justify-center">
               <div className="w-12 h-12 shrink-0 flex items-center justify-center">
                 <PageSpeedGauge 
                   score={pageSpeedScore?.mobileScore || 0}
@@ -535,10 +552,20 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 2: Keyword Text */}
+            {/* Column 3: Intent Badge - VERTICAL on left */}
+            <div className="flex flex-col items-center justify-center gap-0.5">
+              <div className={`${isCompact ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg ${intent.bgColor} border flex items-center justify-center`}>
+                <IntentIcon className={`${isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} ${intent.color}`} />
+              </div>
+              <span className={`text-[7px] font-medium capitalize ${intent.color} whitespace-nowrap leading-none`}>
+                {intent.type.slice(0, 4)}
+              </span>
+            </div>
+
+            {/* Column 4: Keyword Text */}
             <div className="min-w-0 pr-2">
               <div className="flex items-center gap-2">
-                {/* Gold TARGET badge for main keywords - replaces the side indicator */}
+                {/* Gold TARGET badge for main keywords */}
                 {isMainKeyword && !isNested ? (
                   <Badge className={`${badgeSize} bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-amber-500 border-amber-400/50 whitespace-nowrap font-bold uppercase tracking-wide`}>
                     <Target className="w-2.5 h-2.5 mr-0.5" />
@@ -593,19 +620,7 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 3: Intent Badge */}
-            <div className="flex items-center justify-center">
-              <div className={`${isCompact ? 'w-[110px] px-2 py-1' : 'w-[130px] px-3 py-1.5'} bg-card border border-border/60 rounded-md flex items-center gap-2 justify-center`}>
-                <div className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} rounded ${intent.bgColor} border flex items-center justify-center flex-shrink-0`}>
-                  <IntentIcon className={`${isCompact ? 'w-2.5 h-2.5' : 'w-3 h-3'} ${intent.color}`} />
-                </div>
-                <span className={`${isCompact ? 'text-[9px]' : 'text-[10px]'} font-medium capitalize ${intent.color} whitespace-nowrap`}>
-                  {intent.type}
-                </span>
-              </div>
-            </div>
-
-            {/* Columns 4-6: SERP Rankings (Google, Bing, Yahoo as separate columns) */}
+            {/* Columns 5-7: SERP Rankings (Google, Bing, Yahoo) */}
             <RankingsDisplay
               googlePos={googlePos}
               bingPos={bingPos}
@@ -615,7 +630,7 @@ export const BronKeywordCard = memo(({
               yahooMovement={yahooMovement}
             />
 
-            {/* Column 5: Keyword Metrics */}
+            {/* Column 8: Keyword Metrics */}
             <div className="flex items-center justify-center">
               <MetricsDisplay 
                 metrics={metrics} 
@@ -624,7 +639,7 @@ export const BronKeywordCard = memo(({
               />
             </div>
 
-            {/* Column 6: Links Display */}
+            {/* Column 9: Links Display */}
             <div className="flex items-center justify-center">
               <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-2.5 py-1.5'} rounded-lg bg-card/80 border border-border/40`}>
                 <div className="flex items-center gap-1">
@@ -639,23 +654,7 @@ export const BronKeywordCard = memo(({
               </div>
             </div>
 
-            {/* Column 7: Chart/Analysis Button */}
-            <div className="flex items-center justify-center">
-              {onOpenAnalysis && !isNested && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenAnalysis(kw);
-                  }}
-                  className={`${isCompact ? 'w-6 h-6' : 'w-7 h-7'} rounded-lg flex items-center justify-center bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 border border-violet-500/30 transition-colors`}
-                  title="View Keyword Analysis"
-                >
-                  <BarChart3 className={isCompact ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-                </button>
-              )}
-            </div>
-
-            {/* Column 8: Expand/Collapse */}
+            {/* Column 10: Expand/Collapse */}
             <div className="flex items-center justify-center">
               <div className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-full flex items-center justify-center ${
                 isExpanded 
