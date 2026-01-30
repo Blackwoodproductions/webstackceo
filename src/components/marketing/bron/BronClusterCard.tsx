@@ -111,6 +111,7 @@ function ClusterKeywordRowImpl({
   metricsLoadingKeys,
   inlineEditForms,
   savingIds,
+  isBaselineReport,
   onToggleExpand,
   onUpdateForm,
   onSave,
@@ -134,6 +135,7 @@ function ClusterKeywordRowImpl({
   metricsLoadingKeys: Set<string>;
   inlineEditForms: Record<string | number, Record<string, string>>;
   savingIds: Set<number | string>;
+  isBaselineReport?: boolean;
   onToggleExpand: (kw: BronKeyword) => void;
   onUpdateForm: (id: number | string, field: string, value: string) => void;
   onSave: (kw: BronKeyword) => void;
@@ -281,6 +283,7 @@ function ClusterKeywordRowImpl({
             bingMovement={bingMovement}
             yahooMovement={yahooMovement}
             metricsLoading={metricsLoadingKeys.has(keywordText.toLowerCase())}
+            isBaselineReport={isBaselineReport}
             onToggleExpand={handleToggle}
             onOpenAnalysis={onOpenAnalysis ? handleOpenAnalysis : undefined}
           />
@@ -328,6 +331,7 @@ export const BronClusterCard = memo(({
   inlineEditForms,
   savingIds,
   compactMode,
+  isBaselineReport,
   onToggleExpand,
   onUpdateForm,
   onSave,
@@ -357,6 +361,7 @@ export const BronClusterCard = memo(({
           metricsLoadingKeys={metricsLoadingKeys}
           inlineEditForms={inlineEditForms}
           savingIds={savingIds}
+          isBaselineReport={isBaselineReport}
           onToggleExpand={onToggleExpand}
           onUpdateForm={onUpdateForm}
           onSave={onSave}
@@ -389,6 +394,7 @@ export const BronClusterCard = memo(({
         metricsLoadingKeys={metricsLoadingKeys}
         inlineEditForms={inlineEditForms}
         savingIds={savingIds}
+        isBaselineReport={isBaselineReport}
         onToggleExpand={onToggleExpand}
         onUpdateForm={onUpdateForm}
         onSave={onSave}
@@ -418,6 +424,7 @@ export const BronClusterCard = memo(({
               metricsLoadingKeys={metricsLoadingKeys}
               inlineEditForms={inlineEditForms}
               savingIds={savingIds}
+              isBaselineReport={isBaselineReport}
               onToggleExpand={onToggleExpand}
               onUpdateForm={onUpdateForm}
               onSave={onSave}
