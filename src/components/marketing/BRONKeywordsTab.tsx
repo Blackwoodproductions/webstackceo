@@ -226,6 +226,41 @@ export const BRONKeywordsTab = memo(({
   // Derive "has data" - only show skeleton if we truly have no data for current domain
   const hasReceivedData = keywords.length > 0;
   
+  // Loading timeout: if skeleton shows for too long, assume no data
+  // This prevents "stuck" skeleton when domain switch fails or has no keywords
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  const loadingTimeoutRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    // Reset timeout when domain changes or data arrives
+    if (isDomainChanging || hasReceivedData) {
+      setLoadingTimedOut(false);
+      if (loadingTimeoutRef.current) {
+        window.clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    }
+    
+    // Start timeout if we're in loading state (no data)
+    if (!hasReceivedData && selectedDomain && !loadingTimedOut) {
+      loadingTimeoutRef.current = window.setTimeout(() => {
+        // If still no data after 8 seconds, consider loading "complete" (no data)
+        setLoadingTimedOut(true);
+        console.log('[BRON] Loading timeout - treating as no keywords found');
+      }, 8000);
+    }
+    
+    return () => {
+      if (loadingTimeoutRef.current) {
+        window.clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    };
+  }, [hasReceivedData, selectedDomain, isDomainChanging, loadingTimedOut]);
+  
+  // Effective "has data" flag - true if we have data OR loading timed out
+  const effectiveHasReceivedData = hasReceivedData || loadingTimedOut;
+  
   const fetchedUrlsRef = useRef<Set<string>>(new Set());
 
   // Keep latest Set/object state in refs so callbacks can stay stable (prevents
@@ -902,7 +937,7 @@ export const BRONKeywordsTab = memo(({
     <div style={{ contain: 'layout' }}>
       <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5">
         {/* Hide header while loading animation is shown */}
-        {!(displayClusters.length === 0 && !hasReceivedData) && (
+        {!(displayClusters.length === 0 && !effectiveHasReceivedData) && (
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -1030,10 +1065,10 @@ export const BRONKeywordsTab = memo(({
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>Select a domain to view keywords</p>
             </div>
-          ) : displayClusters.length === 0 && !hasReceivedData ? (
+          ) : displayClusters.length === 0 && !effectiveHasReceivedData ? (
             // Show static skeleton rows while loading - no animate-pulse to prevent flickering
             <BronKeywordSkeletonList count={8} />
-          ) : displayClusters.length === 0 && hasReceivedData ? (
+          ) : displayClusters.length === 0 && effectiveHasReceivedData ? (
             <div className="text-center py-12 text-muted-foreground">
               <Key className="w-12 h-12 mx-auto mb-4 opacity-30" />
               <p>No keywords found</p>
