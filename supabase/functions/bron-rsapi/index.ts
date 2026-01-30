@@ -520,34 +520,31 @@ serve(async (req) => {
         result = await readResponseBody(response);
         
         const domainData = result as Record<string, unknown>;
-        const serviceType = String(domainData?.servicetype || domainData?.service_type || "");
-        const numericServiceType = parseInt(serviceType, 10);
         
-        // CADE-enabled service types - must be in the CADE tier range (380-389)
-        // Other service types (like BRON-only plans) should NOT grant CADE access
-        const CADE_SERVICE_TYPES = [380, 381, 382, 383, 384, 385, 386, 387, 388, 389];
-        const hasCade = !isNaN(numericServiceType) && CADE_SERVICE_TYPES.includes(numericServiceType);
+        // CADE access is determined by the cade_level field (0 = no access, 1+ = access)
+        const cadeLevel = parseInt(String(domainData?.cade_level ?? domainData?.cadelevel ?? "0"), 10);
+        const hasCade = !isNaN(cadeLevel) && cadeLevel > 0;
         
-        const planNames: Record<string, string> = {
-          "380": "CADE Starter",
-          "381": "CADE Basic",
-          "382": "CADE Standard",
-          "383": "CADE Pro",
-          "384": "CADE Premium",
-          "385": "CADE Enterprise",
-          "386": "CADE Agency",
-          "387": "CADE White Label",
-          "388": "CADE Reseller",
-          "389": "CADE Ultimate",
+        const planNames: Record<number, string> = {
+          0: "Free",
+          1: "CADE Starter",
+          2: "CADE Basic",
+          3: "CADE Standard",
+          4: "CADE Pro",
+          5: "CADE Premium",
+          6: "CADE Enterprise",
+          7: "CADE Agency",
+          8: "CADE White Label",
         };
-        const planName = planNames[serviceType] || (hasCade ? `CADE Plan ${serviceType}` : "Free");
+        const planName = planNames[cadeLevel] || (hasCade ? `CADE Level ${cadeLevel}` : "Free");
         
         return new Response(
           JSON.stringify({ 
             success: true, 
             data: {
               domain,
-              servicetype: serviceType,
+              cade_level: cadeLevel,
+              servicetype: String(domainData?.servicetype || domainData?.service_type || ""),
               plan: planName,
               status: domainData?.deleted === 1 ? "inactive" : "active",
               has_cade: hasCade,
