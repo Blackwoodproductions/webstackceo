@@ -3661,11 +3661,9 @@ f.parentNode.insertBefore(j,f);
 
       {/* GMB (Google My Business) Tab Content */}
       {activeTab === 'gmb' && (
-        <FeatureGate feature="gmb">
         <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
           <GMBPanel selectedDomain={selectedTrackedDomain || selectedDomainKey} />
         </div>
-        </FeatureGate>
       )}
 
       {/* Social Signals Tab Content */}
