@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useLayoutEffect, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Link2, Globe, Trophy, AlertTriangle, Zap, ArrowDownRight, ArrowUpRight, Target, Gauge, DollarSign, BarChart3, LinkIcon, CheckCircle2, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -245,41 +245,52 @@ const NodeTooltip = memo(({
   const yahooPos = getPosition(data.serpData?.yahoo);
   
   const tips = useMemo(() => generateSEOTips(data), [data]);
-  
-  // Calculate tooltip position - ensure it stays within viewport
-  const tooltipWidth = 380;
-  const tooltipHeight = 480;
-  const padding = 30;
-  
-  // Use more conservative edge detection
+
+  // Measure tooltip so we can clamp it within the viewport (no hardcoded height assumptions)
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const [tooltipSize, setTooltipSize] = useState<{ w: number; h: number }>({ w: 380, h: 480 });
+
+  useLayoutEffect(() => {
+    const el = tooltipRef.current;
+    if (!el) return;
+
+    // Measure after layout
+    const rect = el.getBoundingClientRect();
+    const w = Math.ceil(rect.width);
+    const h = Math.ceil(rect.height);
+    if (w && h && (w !== tooltipSize.w || h !== tooltipSize.h)) {
+      setTooltipSize({ w, h });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, tips.mainTip, tips.improvement, tips.actionItems.length]);
+
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+  const padding = 16;
+  const offsetX = 24;
+  const offsetY = 40;
+
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  
-  const isNearRightEdge = position.x > viewportWidth - tooltipWidth - 100;
-  const isNearBottomEdge = position.y > viewportHeight - tooltipHeight - 100;
-  const isNearTopEdge = position.y < tooltipHeight / 2;
-  
-  // Position tooltip to the left of cursor when near right edge
-  let left: number;
-  if (isNearRightEdge) {
-    left = Math.max(padding, position.x - tooltipWidth - 40);
-  } else {
-    left = Math.min(position.x + 25, viewportWidth - tooltipWidth - padding);
-  }
-  
-  // Keep tooltip within vertical bounds
-  let top: number;
-  if (isNearBottomEdge) {
-    top = Math.max(padding, viewportHeight - tooltipHeight - padding);
-  } else if (isNearTopEdge) {
-    top = padding;
-  } else {
-    top = Math.max(padding, position.y - 50);
-  }
+
+  const maxLeft = Math.max(padding, viewportWidth - tooltipSize.w - padding);
+  const maxTop = Math.max(padding, viewportHeight - tooltipSize.h - padding);
+
+  // Prefer right of cursor, but flip left when it would overflow
+  const shouldFlipLeft = position.x + offsetX + tooltipSize.w > viewportWidth - padding;
+  const rawLeft = shouldFlipLeft
+    ? position.x - offsetX - tooltipSize.w
+    : position.x + offsetX;
+  const left = clamp(rawLeft, padding, maxLeft);
+
+  // Prefer above the cursor a bit; clamp into viewport
+  const rawTop = position.y - offsetY;
+  const top = clamp(rawTop, padding, maxTop);
   
   return (
     <div
       className="fixed z-[100] bg-background/98 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl p-4 min-w-[340px] max-w-[400px] pointer-events-none"
+      ref={tooltipRef}
       style={{ left, top }}
     >
       {/* Header */}
