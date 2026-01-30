@@ -11,13 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Check, Globe, Star, Lock, Sparkles, Crown } from 'lucide-react';
+import { Check, Globe, Star, Lock, Sparkles, Crown, FlaskConical } from 'lucide-react';
 import { UserDomain } from '@/hooks/use-user-domains';
 
 interface DomainSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   domains: UserDomain[];
+  gscSites?: { siteUrl: string }[];
   onSelectPrimary: (domainId: string) => Promise<boolean>;
   isLoading?: boolean;
 }
@@ -26,6 +27,7 @@ export function DomainSelectionDialog({
   open,
   onOpenChange,
   domains,
+  gscSites = [],
   onSelectPrimary,
   isLoading = false,
 }: DomainSelectionDialogProps) {
@@ -45,6 +47,25 @@ export function DomainSelectionDialog({
   };
 
   const hasPrimary = domains.some(d => d.is_primary);
+  
+  // Build normalized GSC domain set for filtering
+  const gscDomainSet = new Set(
+    gscSites.map(site => 
+      site.siteUrl.toLowerCase().trim()
+        .replace('sc-domain:', '')
+        .replace(/^(https?:\/\/)?(www\.)?/, '')
+        .replace(/\/$/, '')
+        .split('/')[0]
+    )
+  );
+  
+  // Only show domains that are verified in GSC (not demos)
+  const verifiedDomains = domains.filter(d => {
+    const normalized = d.domain.toLowerCase().trim()
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .split('/')[0];
+    return gscDomainSet.has(normalized) || d.source === 'gsc';
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +78,7 @@ export function DomainSelectionDialog({
             Select Your Free Domain
           </DialogTitle>
           <DialogDescription>
-            Choose one domain to use for free. Additional domains require an upgrade.
+            Choose one domain from your Google Search Console to use for free.
           </DialogDescription>
         </DialogHeader>
 
@@ -66,14 +87,14 @@ export function DomainSelectionDialog({
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
-          ) : domains.length === 0 ? (
+          ) : verifiedDomains.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Globe className="w-12 h-12 mx-auto mb-4 opacity-40" />
-              <p>No domains found</p>
-              <p className="text-sm mt-1">Connect your Google Search Console to import domains</p>
+              <p>No verified domains found</p>
+              <p className="text-sm mt-1">Connect your Google Search Console to import your domains</p>
             </div>
           ) : (
-            domains.map((domain, index) => (
+            verifiedDomains.map((domain, index) => (
               <motion.div
                 key={domain.id}
                 initial={{ opacity: 0, y: 10 }}

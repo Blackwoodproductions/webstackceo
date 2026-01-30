@@ -6,11 +6,13 @@ export interface UserDomain {
   id: string;
   user_id: string;
   domain: string;
-  source: 'manual' | 'gsc' | 'gmb';
+  source: 'manual' | 'gsc' | 'gmb' | 'demo';
   is_primary: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Client-side computed property
+  isDemo?: boolean;
 }
 
 interface UseUserDomainsReturn {
