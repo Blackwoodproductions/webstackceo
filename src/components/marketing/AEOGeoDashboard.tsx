@@ -556,23 +556,18 @@ const TrendSummaryCard = memo(({
     };
   }, [historicalStats]);
 
-  if (isLoading) {
-    return (
-      <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30">
-        <CardContent className="py-6 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-emerald-400 mr-3" />
-          <span className="text-base text-muted-foreground">Loading trend data...</span>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Show nothing during loading - prevents flash
+  if (isLoading) return null;
 
   if (!improvements) {
     return (
-      <Card className="bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-violet-500/10 border-blue-500/30">
+      <Card 
+        className="bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-violet-500/10 border-blue-500/30"
+        style={{ contain: 'layout style paint' }}
+      >
         <CardContent className="py-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
               <Zap className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -588,10 +583,13 @@ const TrendSummaryCard = memo(({
   }
 
   return (
-    <Card className="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 border-emerald-500/40 shadow-lg">
+    <Card 
+      className="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 border-emerald-500/40"
+      style={{ contain: 'layout style paint' }}
+    >
       <CardContent className="py-5">
         <div className="flex items-start gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/40">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
             {improvements.totalVisibilityChange > 0 ? (
               <TrendingUp className="w-8 h-8 text-white" />
             ) : improvements.totalVisibilityChange < 0 ? (
@@ -610,7 +608,7 @@ const TrendSummaryCard = memo(({
             </div>
             
             <div className="grid grid-cols-3 gap-5">
-              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-emerald-500/20 shadow-md">
+              <div className="text-center p-4 bg-background/60 rounded-xl border border-emerald-500/20">
                 <div className="flex items-center justify-center gap-2">
                   {improvements.prominentChange > 0 ? (
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -629,7 +627,7 @@ const TrendSummaryCard = memo(({
                 <p className="text-sm text-muted-foreground mt-1 font-medium">Prominent</p>
               </div>
               
-              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-amber-500/20 shadow-md">
+              <div className="text-center p-4 bg-background/60 rounded-xl border border-amber-500/20">
                 <div className="flex items-center justify-center gap-2">
                   {improvements.mentionedChange > 0 ? (
                     <TrendingUp className="w-5 h-5 text-amber-400" />
@@ -648,7 +646,7 @@ const TrendSummaryCard = memo(({
                 <p className="text-sm text-muted-foreground mt-1 font-medium">Mentioned</p>
               </div>
               
-              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-cyan-500/20 shadow-md">
+              <div className="text-center p-4 bg-background/60 rounded-xl border border-cyan-500/20">
                 <div className="flex items-center justify-center gap-2">
                   {improvements.totalVisibilityChange > 0 ? (
                     <TrendingUp className="w-5 h-5 text-cyan-400" />
@@ -1234,18 +1232,16 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
   }, [availableDates]);
 
   return (
-    <div className="space-y-6">
-      {/* Header with Date Selector */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-fuchsia-500/20 border border-violet-500/30 p-6">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl" />
-        </div>
-        
+    <div className="space-y-6" style={{ contain: 'layout style' }}>
+      {/* Header with Date Selector - Static, no blur effects */}
+      <div 
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-fuchsia-500/20 border border-violet-500/30 p-6"
+        style={{ contain: 'layout style paint', transform: 'translateZ(0)' }}
+      >
         <div className="relative z-10 flex flex-col gap-4">
           {/* Title row */}
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
               <BrainCircuit className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
@@ -1282,7 +1278,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
             <div className="flex flex-wrap items-center gap-4">
               {/* Training Status Indicator */}
               {stats.trainingInProgress && (
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/20 border border-violet-500/40 rounded-xl animate-pulse">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/20 border border-violet-500/40 rounded-xl">
                   <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
                   <div>
                     <p className="text-sm font-bold text-violet-300">Training Active</p>
@@ -1294,33 +1290,33 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               {/* Main Stats Grid - LARGER */}
               <div className="flex items-center gap-3">
                 {/* Checked Count */}
-                <div className="text-center px-5 py-3 bg-background/60 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg min-w-[90px]">
+                <div className="text-center px-5 py-3 bg-background/60 rounded-xl border border-border/50 min-w-[90px]">
                   <p className="text-2xl font-bold text-foreground">{stats.checked}/{stats.totalKeywords}</p>
                   <p className="text-xs text-muted-foreground font-medium">Checked</p>
                 </div>
                 
                 {/* Main + Support */}
                 {stats.supportingCount > 0 && (
-                  <div className="text-center px-4 py-3 bg-cyan-500/15 backdrop-blur-sm rounded-xl border border-cyan-500/40 shadow-lg shadow-cyan-500/10">
+                  <div className="text-center px-4 py-3 bg-cyan-500/15 rounded-xl border border-cyan-500/40">
                     <p className="text-xl font-bold text-cyan-400">{stats.mainCount} + {stats.supportingCount}</p>
                     <p className="text-[10px] text-cyan-400/80 font-medium">Main + Support</p>
                   </div>
                 )}
                 
                 {/* Prominent Count */}
-                <div className="text-center px-5 py-3 bg-emerald-500/15 backdrop-blur-sm rounded-xl border border-emerald-500/40 shadow-lg shadow-emerald-500/10 min-w-[85px]">
+                <div className="text-center px-5 py-3 bg-emerald-500/15 rounded-xl border border-emerald-500/40 min-w-[85px]">
                   <p className="text-2xl font-bold text-emerald-400">{stats.prominent}</p>
                   <p className="text-xs text-emerald-400/80 font-medium">Prominent</p>
                 </div>
                 
                 {/* Mentioned Count */}
-                <div className="text-center px-5 py-3 bg-amber-500/15 backdrop-blur-sm rounded-xl border border-amber-500/40 shadow-lg shadow-amber-500/10 min-w-[85px]">
+                <div className="text-center px-5 py-3 bg-amber-500/15 rounded-xl border border-amber-500/40 min-w-[85px]">
                   <p className="text-2xl font-bold text-amber-400">{stats.mentioned}</p>
                   <p className="text-xs text-amber-400/80 font-medium">Mentioned</p>
                 </div>
                 
                 {/* Training Stats */}
-                <div className="text-center px-4 py-3 bg-violet-500/15 backdrop-blur-sm rounded-xl border border-violet-500/40 shadow-lg shadow-violet-500/10">
+                <div className="text-center px-4 py-3 bg-violet-500/15 rounded-xl border border-violet-500/40">
                   <p className="text-xl font-bold text-violet-400">{stats.totalRoundsTrained}</p>
                   <p className="text-[10px] text-violet-400/80 font-medium">Rounds Trained</p>
                 </div>
