@@ -390,16 +390,8 @@ BronKeywordTableHeader.displayName = 'BronKeywordTableHeader';
  */
 export const BronKeywordSkeletonList = memo(({ count = 8 }: { count?: number }) => (
   <div style={{ contain: 'layout style paint' }}>
-    {/* AI Animation hero - using shared component for consistency with CADE */}
+    {/* AI Animation hero only - no skeleton rows below */}
     <AIMetricsAnimation title="Analyzing Keywords" />
-    
-    {/* Faded skeleton rows below - no extra margin */}
-    <div className="space-y-2 opacity-40">
-      <BronKeywordTableHeader />
-      {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
-        <BronKeywordSkeleton key={i} index={i} />
-      ))}
-    </div>
   </div>
 ));
 
