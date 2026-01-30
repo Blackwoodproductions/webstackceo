@@ -553,9 +553,9 @@ const TrendSummaryCard = memo(({
   if (isLoading) {
     return (
       <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30">
-        <CardContent className="py-4 flex items-center justify-center">
-          <Loader2 className="w-5 h-5 animate-spin text-emerald-400 mr-2" />
-          <span className="text-sm text-muted-foreground">Loading trend data...</span>
+        <CardContent className="py-6 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-emerald-400 mr-3" />
+          <span className="text-base text-muted-foreground">Loading trend data...</span>
         </CardContent>
       </Card>
     );
@@ -563,15 +563,15 @@ const TrendSummaryCard = memo(({
 
   if (!improvements) {
     return (
-      <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30">
-        <CardContent className="py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-blue-400" />
+      <Card className="bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-violet-500/10 border-blue-500/30">
+        <CardContent className="py-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Zap className="w-7 h-7 text-white" />
             </div>
             <div>
-              <p className="text-sm font-medium">LLM Training Active</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-lg font-semibold">LLM Training Active</p>
+              <p className="text-sm text-muted-foreground">
                 Automated checks run 3x weekly (Mon, Wed, Fri). More data needed to show trends.
               </p>
             </div>
@@ -582,87 +582,88 @@ const TrendSummaryCard = memo(({
   }
 
   return (
-    <Card className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-cyan-500/10 border-emerald-500/30">
-      <CardContent className="py-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+    <Card className="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-cyan-500/15 border-emerald-500/40 shadow-lg">
+      <CardContent className="py-5">
+        <div className="flex items-start gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-xl shadow-emerald-500/40">
             {improvements.totalVisibilityChange > 0 ? (
-              <TrendingUp className="w-6 h-6 text-white" />
+              <TrendingUp className="w-8 h-8 text-white" />
             ) : improvements.totalVisibilityChange < 0 ? (
-              <TrendingDown className="w-6 h-6 text-white" />
+              <TrendingDown className="w-8 h-8 text-white" />
             ) : (
-              <Minus className="w-6 h-6 text-white" />
+              <Minus className="w-8 h-8 text-white" />
             )}
           </div>
           
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-sm">LLM Visibility Trend</h3>
-              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+            <div className="flex items-center gap-3 mb-3">
+              <h3 className="font-bold text-lg">LLM Visibility Trend</h3>
+              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30 px-3 py-1">
                 {improvements.checksCompleted} checks over {improvements.daysDiff} days
               </Badge>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-2 bg-background/50 rounded-lg">
-                <div className="flex items-center justify-center gap-1">
+            <div className="grid grid-cols-3 gap-5">
+              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-emerald-500/20 shadow-md">
+                <div className="flex items-center justify-center gap-2">
                   {improvements.prominentChange > 0 ? (
-                    <TrendingUp className="w-3 h-3 text-emerald-400" />
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
                   ) : improvements.prominentChange < 0 ? (
-                    <TrendingDown className="w-3 h-3 text-red-400" />
+                    <TrendingDown className="w-5 h-5 text-red-400" />
                   ) : (
-                    <Minus className="w-3 h-3 text-muted-foreground" />
+                    <Minus className="w-5 h-5 text-muted-foreground" />
                   )}
-                  <span className={`text-lg font-bold ${
+                  <span className={`text-3xl font-bold ${
                     improvements.prominentChange > 0 ? 'text-emerald-400' : 
                     improvements.prominentChange < 0 ? 'text-red-400' : 'text-muted-foreground'
                   }`}>
                     {improvements.prominentChange > 0 ? '+' : ''}{improvements.prominentChange}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">Prominent</p>
+                <p className="text-sm text-muted-foreground mt-1 font-medium">Prominent</p>
               </div>
               
-              <div className="text-center p-2 bg-background/50 rounded-lg">
-                <div className="flex items-center justify-center gap-1">
+              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-amber-500/20 shadow-md">
+                <div className="flex items-center justify-center gap-2">
                   {improvements.mentionedChange > 0 ? (
-                    <TrendingUp className="w-3 h-3 text-amber-400" />
+                    <TrendingUp className="w-5 h-5 text-amber-400" />
                   ) : improvements.mentionedChange < 0 ? (
-                    <TrendingDown className="w-3 h-3 text-red-400" />
+                    <TrendingDown className="w-5 h-5 text-red-400" />
                   ) : (
-                    <Minus className="w-3 h-3 text-muted-foreground" />
+                    <Minus className="w-5 h-5 text-muted-foreground" />
                   )}
-                  <span className={`text-lg font-bold ${
+                  <span className={`text-3xl font-bold ${
                     improvements.mentionedChange > 0 ? 'text-amber-400' : 
                     improvements.mentionedChange < 0 ? 'text-red-400' : 'text-muted-foreground'
                   }`}>
                     {improvements.mentionedChange > 0 ? '+' : ''}{improvements.mentionedChange}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">Mentioned</p>
+                <p className="text-sm text-muted-foreground mt-1 font-medium">Mentioned</p>
               </div>
               
-              <div className="text-center p-2 bg-background/50 rounded-lg">
-                <div className="flex items-center justify-center gap-1">
+              <div className="text-center p-4 bg-background/60 backdrop-blur-sm rounded-xl border border-cyan-500/20 shadow-md">
+                <div className="flex items-center justify-center gap-2">
                   {improvements.totalVisibilityChange > 0 ? (
-                    <TrendingUp className="w-3 h-3 text-cyan-400" />
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />
                   ) : improvements.totalVisibilityChange < 0 ? (
-                    <TrendingDown className="w-3 h-3 text-red-400" />
+                    <TrendingDown className="w-5 h-5 text-red-400" />
                   ) : (
-                    <Minus className="w-3 h-3 text-muted-foreground" />
+                    <Minus className="w-5 h-5 text-muted-foreground" />
                   )}
-                  <span className={`text-lg font-bold ${
+                  <span className={`text-3xl font-bold ${
                     improvements.totalVisibilityChange > 0 ? 'text-cyan-400' : 
                     improvements.totalVisibilityChange < 0 ? 'text-red-400' : 'text-muted-foreground'
                   }`}>
                     {improvements.totalVisibilityChange > 0 ? '+' : ''}{improvements.totalVisibilityChange}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground">Total Visibility</p>
+                <p className="text-sm text-muted-foreground mt-1 font-medium">Total Visibility</p>
               </div>
             </div>
             
-            <p className="text-[10px] text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5" />
               Comparing {format(new Date(improvements.oldestDate), 'MMM d')} → {format(new Date(improvements.newestDate), 'MMM d, yyyy')}
             </p>
           </div>
@@ -1139,7 +1140,39 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     const mainCount = bronKeywords.filter(k => !k.isNested).length;
     const supportingCount = bronKeywords.filter(k => k.isNested).length;
     
-    return { checked, prominent, mentioned, mainCount, supportingCount };
+    // Count training sessions and last trained date
+    const allResults = Object.values(keywordResults);
+    const trainedKeywords = allResults.filter(r => 
+      r.suggestions?.some(s => s.includes('Training session completed') || s.includes('rounds trained'))
+    );
+    const trainingInProgress = allResults.some(r => 
+      r.suggestions?.some(s => s.includes('Training in progress'))
+    );
+    
+    // Get most recent training timestamp
+    const timestamps = allResults
+      .filter(r => r.timestamp)
+      .map(r => new Date(r.timestamp!).getTime())
+      .filter(t => !isNaN(t));
+    const lastTrainedAt = timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null;
+    
+    // Count total rounds trained across all keywords
+    const totalRoundsTrained = allResults.reduce((acc, r) => {
+      const rounds = [...new Set(r.results.filter(res => res.roundNumber).map(res => res.roundNumber))];
+      return acc + rounds.length;
+    }, 0);
+    
+    return { 
+      checked, 
+      prominent, 
+      mentioned, 
+      mainCount, 
+      supportingCount,
+      trainedCount: trainedKeywords.length,
+      trainingInProgress,
+      lastTrainedAt,
+      totalRoundsTrained,
+    };
   }, [keywordResults, bronKeywords]);
 
   // Date options for selector
@@ -1203,47 +1236,90 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
             </div>
             
             {/* Stats & Controls */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="text-center px-3 py-1.5 bg-background/50 rounded-lg border border-border/50">
-                  <p className="text-lg font-bold text-foreground">{stats.checked}/{bronKeywords.length}</p>
-                  <p className="text-[9px] text-muted-foreground">Checked</p>
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Training Status Indicator */}
+              {stats.trainingInProgress && (
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/20 border border-violet-500/40 rounded-xl animate-pulse">
+                  <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                  <div>
+                    <p className="text-sm font-bold text-violet-300">Training Active</p>
+                    <p className="text-[10px] text-violet-400/80">LLM optimization in progress</p>
+                  </div>
                 </div>
+              )}
+              
+              {/* Main Stats Grid - LARGER */}
+              <div className="flex items-center gap-3">
+                {/* Checked Count */}
+                <div className="text-center px-5 py-3 bg-background/60 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg min-w-[90px]">
+                  <p className="text-2xl font-bold text-foreground">{stats.checked}/{bronKeywords.length}</p>
+                  <p className="text-xs text-muted-foreground font-medium">Checked</p>
+                </div>
+                
+                {/* Main + Support */}
                 {stats.supportingCount > 0 && (
-                  <div className="text-center px-2 py-1.5 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
-                    <p className="text-sm font-bold text-cyan-400">{stats.mainCount} + {stats.supportingCount}</p>
-                    <p className="text-[8px] text-cyan-400/70">Main + Support</p>
+                  <div className="text-center px-4 py-3 bg-cyan-500/15 backdrop-blur-sm rounded-xl border border-cyan-500/40 shadow-lg shadow-cyan-500/10">
+                    <p className="text-xl font-bold text-cyan-400">{stats.mainCount} + {stats.supportingCount}</p>
+                    <p className="text-[10px] text-cyan-400/80 font-medium">Main + Support</p>
                   </div>
                 )}
-                <div className="text-center px-3 py-1.5 bg-emerald-500/10 rounded-lg border border-emerald-500/30">
-                  <p className="text-lg font-bold text-emerald-400">{stats.prominent}</p>
-                  <p className="text-[9px] text-emerald-400/70">Prominent</p>
+                
+                {/* Prominent Count */}
+                <div className="text-center px-5 py-3 bg-emerald-500/15 backdrop-blur-sm rounded-xl border border-emerald-500/40 shadow-lg shadow-emerald-500/10 min-w-[85px]">
+                  <p className="text-2xl font-bold text-emerald-400">{stats.prominent}</p>
+                  <p className="text-xs text-emerald-400/80 font-medium">Prominent</p>
                 </div>
-                <div className="text-center px-3 py-1.5 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                  <p className="text-lg font-bold text-amber-400">{stats.mentioned}</p>
-                  <p className="text-[9px] text-amber-400/70">Mentioned</p>
+                
+                {/* Mentioned Count */}
+                <div className="text-center px-5 py-3 bg-amber-500/15 backdrop-blur-sm rounded-xl border border-amber-500/40 shadow-lg shadow-amber-500/10 min-w-[85px]">
+                  <p className="text-2xl font-bold text-amber-400">{stats.mentioned}</p>
+                  <p className="text-xs text-amber-400/80 font-medium">Mentioned</p>
+                </div>
+                
+                {/* Training Stats */}
+                <div className="text-center px-4 py-3 bg-violet-500/15 backdrop-blur-sm rounded-xl border border-violet-500/40 shadow-lg shadow-violet-500/10">
+                  <p className="text-xl font-bold text-violet-400">{stats.totalRoundsTrained}</p>
+                  <p className="text-[10px] text-violet-400/80 font-medium">Rounds Trained</p>
                 </div>
               </div>
               
+              {/* Last Trained Badge */}
+              {stats.lastTrainedAt && !stats.trainingInProgress && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg border border-border/50">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Last trained: </span>
+                    <span className="font-medium text-foreground">
+                      {differenceInDays(new Date(), stats.lastTrainedAt) === 0 
+                        ? 'Today'
+                        : differenceInDays(new Date(), stats.lastTrainedAt) === 1
+                          ? 'Yesterday'
+                          : format(stats.lastTrainedAt, 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Action Button */}
               {bronKeywords.length > 0 && selectedDate === 'today' && (
                 <Button 
                   onClick={isAutoRunning ? stopAutoRun : startAutoRun}
                   disabled={isLoadingKeywords}
-                  size="sm"
+                  size="lg"
                   className={isAutoRunning 
-                    ? "bg-red-500 hover:bg-red-600" 
-                    : "bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+                    ? "bg-red-500 hover:bg-red-600 px-6" 
+                    : "bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 px-6 shadow-lg shadow-violet-500/30"
                   }
                 >
                   {isAutoRunning ? (
                     <>
-                      <Pause className="w-4 h-4 mr-1" />
+                      <Pause className="w-5 h-5 mr-2" />
                       Pause
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 mr-1" />
-                      {stats.checked > 0 ? 'Resume' : 'Start'}
+                      <Play className="w-5 h-5 mr-2" />
+                      {stats.checked > 0 ? 'Resume' : 'Start Training'}
                     </>
                   )}
                 </Button>
@@ -1253,12 +1329,15 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
           
           {/* Progress bar during auto-run */}
           {isAutoRunning && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                <span>Checking: {bronKeywords[currentCheckIndex]?.keyword || '...'}</span>
-                <span>{currentCheckIndex + 1} of {bronKeywords.length}</span>
+            <div className="mt-4 p-3 bg-background/40 rounded-xl">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+                  <span className="font-medium">Checking: <span className="text-violet-300">{bronKeywords[currentCheckIndex]?.keyword || '...'}</span></span>
+                </div>
+                <span className="font-medium">{currentCheckIndex + 1} of {bronKeywords.length}</span>
               </div>
-              <Progress value={((currentCheckIndex + 1) / bronKeywords.length) * 100} className="h-2" />
+              <Progress value={((currentCheckIndex + 1) / bronKeywords.length) * 100} className="h-2.5" />
             </div>
           )}
         </div>
