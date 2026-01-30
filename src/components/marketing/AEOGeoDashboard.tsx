@@ -311,13 +311,19 @@ const KeywordAEOCard = memo(({
     : 0;
 
   return (
-    <Card className={`overflow-hidden ${
-      isNested 
-        ? 'bg-muted/20 border-border/30 ml-6 border-l-2 border-l-cyan-500/30' 
-        : isMainKeyword
-          ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 border-violet-500/30'
-          : 'bg-card/80 border-border/50'
-    }`} style={{ contain: 'layout style' }}>
+    <Card 
+      className={`overflow-hidden ${
+        isNested 
+          ? 'bg-muted/20 border-border/30 ml-6 border-l-2 border-l-cyan-500/30' 
+          : isMainKeyword
+            ? 'bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 border-violet-500/30'
+            : 'bg-card/80 border-border/50'
+      }`} 
+      style={{ 
+        contain: 'layout style paint',
+        transform: 'translateZ(0)',
+      }}
+    >
       <Collapsible open={isExpanded} onOpenChange={onToggle}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-muted/20 py-3">
@@ -1387,10 +1393,17 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         availableDates={availableDates} 
       />
       
-      {/* Keywords List - No loading screen, render immediately */}
-      <div className="space-y-2" style={{ contain: 'layout style' }}>
-        {bronKeywords.length > 0 ? (
-          bronKeywords.map((kw, idx) => (
+      {/* Keywords List - Render only when keywords exist, no empty states */}
+      {bronKeywords.length > 0 && (
+        <div 
+          className="space-y-2" 
+          style={{ 
+            contain: 'layout style paint',
+            willChange: 'auto',
+            transform: 'translateZ(0)',
+          }}
+        >
+          {bronKeywords.map((kw, idx) => (
             <KeywordAEOCard
               key={`${kw.keyword}-${idx}`}
               data={keywordResults[kw.keyword] || { keyword: kw.keyword, isLoading: false, results: [], suggestions: [] }}
@@ -1402,15 +1415,9 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               isMainKeyword={kw.isMainKeyword}
               childCount={kw.childCount}
             />
-          ))
-        ) : isLoadingKeywords || bronApi.isLoading ? (
-          // Only show minimal placeholder during initial load - no heavy animations
-          <div className="text-center py-8 text-muted-foreground">
-            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-            <p className="text-sm">Loading keywords...</p>
-          </div>
-        ) : null}
-      </div>
+          ))}
+        </div>
+      )}
       
       {/* Info Card */}
       <Card className="bg-gradient-to-r from-muted/30 to-muted/10 border-muted-foreground/20">
