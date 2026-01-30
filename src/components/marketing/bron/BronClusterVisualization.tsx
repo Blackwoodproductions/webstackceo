@@ -6,6 +6,29 @@ import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
 import { findSerpForKeyword } from "./utils";
 
+function normalizeUrlKey(url: string): string {
+  // Stable, fast key for matching URLs across different API fields.
+  // NOTE: Intentionally does not use URL() to avoid exceptions/overhead.
+  return url
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/$/, "");
+}
+
+function getLinkTargetKey(link: BronLink, kind: "in" | "out"): string | null {
+  // Inbound links typically have target_url pointing to OUR page.
+  // Outbound links typically have link pointing to OUR page.
+  const raw =
+    kind === "in"
+      ? (link.target_url || link.link || link.source_url)
+      : (link.link || link.source_url || link.target_url);
+
+  if (!raw) return null;
+  return normalizeUrlKey(raw);
+}
+
 interface InitialPositions {
   google: number | null;
   bing: number | null;
@@ -462,6 +485,27 @@ export const BronClusterVisualization = memo(({
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
 
+  // Pre-index link counts by target URL to avoid O(nodes * links) filtering (major perf win).
+  const linkCountsByUrl = useMemo(() => {
+    const map = new Map<string, { in: number; out: number }>();
+    const bump = (key: string, dir: "in" | "out") => {
+      const prev = map.get(key) || { in: 0, out: 0 };
+      if (dir === "in") prev.in += 1;
+      else prev.out += 1;
+      map.set(key, prev);
+    };
+
+    for (const l of linksIn) {
+      const key = getLinkTargetKey(l, "in");
+      if (key) bump(key, "in");
+    }
+    for (const l of linksOut) {
+      const key = getLinkTargetKey(l, "out");
+      if (key) bump(key, "out");
+    }
+    return map;
+  }, [linksIn, linksOut]);
+
   // Keep refs in sync for rAF-driven updates (avoids stale closures)
   useEffect(() => {
     panRef.current = pan;
@@ -521,6 +565,17 @@ export const BronClusterVisualization = memo(({
     const baseRadius = Math.min(containerSize.width, containerSize.height) * 0.35;
     const clusterRadius = clusters.length <= 5 ? baseRadius : baseRadius * Math.min(1.5, clusters.length / 5);
     
+    // Cache expensive lookups for this computation pass
+    const serpCache = new Map<string, BronSerpReport | null>();
+    const getSerp = (keywordText: string) => {
+      const key = keywordText.toLowerCase().trim();
+      const cached = serpCache.get(key);
+      if (cached !== undefined) return cached;
+      const found = findSerpForKeyword(keywordText, serpReports);
+      serpCache.set(key, found);
+      return found;
+    };
+
     clusters.forEach((cluster, clusterIndex) => {
       // Position main clusters in a circle
       const clusterAngle = (clusterIndex / Math.max(clusters.length, 1)) * 2 * Math.PI - Math.PI / 2;
@@ -528,8 +583,9 @@ export const BronClusterVisualization = memo(({
       const clusterY = centerY + Math.sin(clusterAngle) * clusterRadius;
       
       const parentKeywordText = getKeywordDisplayText(cluster.parent);
-      const parentSerpData = findSerpForKeyword(parentKeywordText, serpReports);
-      const parentInitial = initialPositions[parentKeywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
+      const parentSerpData = getSerp(parentKeywordText);
+      const parentKey = parentKeywordText.toLowerCase();
+      const parentInitial = initialPositions[parentKey] || { google: null, bing: null, yahoo: null };
       const parentGooglePos = getPosition(parentSerpData?.google);
       
       // Get page speed URL
@@ -538,18 +594,9 @@ export const BronClusterVisualization = memo(({
         const slug = parentKeywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         parentUrl = `https://${selectedDomain}/${slug}`;
       }
-      
-      // Filter links for parent - check link or domain fields
-      const parentLinksIn = linksIn.filter(l => {
-        const linkUrl = l.link?.toLowerCase() || '';
-        const parentUrl = cluster.parent.linkouturl?.toLowerCase() || '';
-        return parentUrl && linkUrl.includes(parentUrl.replace(/https?:\/\//, ''));
-      });
-      const parentLinksOut = linksOut.filter(l => {
-        const linkUrl = l.link?.toLowerCase() || '';
-        const parentUrl = cluster.parent.linkouturl?.toLowerCase() || '';
-        return parentUrl && linkUrl.includes(parentUrl.replace(/https?:\/\//, ''));
-      });
+
+      const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
+      const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
       
       // Add parent node
       result.push({
@@ -561,15 +608,15 @@ export const BronClusterVisualization = memo(({
         clusterIndex,
         keywordText: parentKeywordText,
         serpData: parentSerpData,
-        metrics: keywordMetrics[parentKeywordText.toLowerCase()],
+        metrics: keywordMetrics[parentKey],
         pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
         movement: {
           google: parentInitial.google && parentGooglePos ? parentInitial.google - parentGooglePos : 0,
           bing: parentInitial.bing && getPosition(parentSerpData?.bing) ? parentInitial.bing - getPosition(parentSerpData?.bing)! : 0,
           yahoo: parentInitial.yahoo && getPosition(parentSerpData?.yahoo) ? parentInitial.yahoo - getPosition(parentSerpData?.yahoo)! : 0,
         },
-        linksInCount: parentLinksIn.length,
-        linksOutCount: parentLinksOut.length,
+        linksInCount: parentLinkCounts?.in ?? 0,
+        linksOutCount: parentLinkCounts?.out ?? 0,
       });
       
       // Position children around parent - scale based on number of children
@@ -580,8 +627,9 @@ export const BronClusterVisualization = memo(({
         const childY = clusterY + Math.sin(childAngle) * childRadius;
         
         const childKeywordText = getKeywordDisplayText(child);
-        const childSerpData = findSerpForKeyword(childKeywordText, serpReports);
-        const childInitial = initialPositions[childKeywordText.toLowerCase()] || { google: null, bing: null, yahoo: null };
+        const childSerpData = getSerp(childKeywordText);
+        const childKey = childKeywordText.toLowerCase();
+        const childInitial = initialPositions[childKey] || { google: null, bing: null, yahoo: null };
         const childGooglePos = getPosition(childSerpData?.google);
         
         let childUrl = child.linkouturl;
@@ -589,17 +637,9 @@ export const BronClusterVisualization = memo(({
           const slug = childKeywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
           childUrl = `https://${selectedDomain}/${slug}`;
         }
-        
-        const childLinksIn = linksIn.filter(l => {
-          const linkUrl = l.link?.toLowerCase() || '';
-          const childUrl = child.linkouturl?.toLowerCase() || '';
-          return childUrl && linkUrl.includes(childUrl.replace(/https?:\/\//, ''));
-        });
-        const childLinksOut = linksOut.filter(l => {
-          const linkUrl = l.link?.toLowerCase() || '';
-          const childUrl = child.linkouturl?.toLowerCase() || '';
-          return childUrl && linkUrl.includes(childUrl.replace(/https?:\/\//, ''));
-        });
+
+        const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
+        const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
         
         result.push({
           id: child.id,
@@ -611,32 +651,38 @@ export const BronClusterVisualization = memo(({
           childIndex,
           keywordText: childKeywordText,
           serpData: childSerpData,
-          metrics: keywordMetrics[childKeywordText.toLowerCase()],
+          metrics: keywordMetrics[childKey],
           pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
           movement: {
             google: childInitial.google && childGooglePos ? childInitial.google - childGooglePos : 0,
             bing: childInitial.bing && getPosition(childSerpData?.bing) ? childInitial.bing - getPosition(childSerpData?.bing)! : 0,
             yahoo: childInitial.yahoo && getPosition(childSerpData?.yahoo) ? childInitial.yahoo - getPosition(childSerpData?.yahoo)! : 0,
           },
-          linksInCount: childLinksIn.length,
-          linksOutCount: childLinksOut.length,
+          linksInCount: childLinkCounts?.in ?? 0,
+          linksOutCount: childLinkCounts?.out ?? 0,
         });
       });
     });
     
     return result;
-  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, linksIn, linksOut, selectedDomain, initialPositions, containerSize]);
+  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl]);
+
+  const nodeById = useMemo(() => {
+    const map = new Map<string, NodeData>();
+    for (const n of nodes) map.set(String(n.id), n);
+    return map;
+  }, [nodes]);
   
   // Generate connection lines
   const connections = useMemo(() => {
     const result: { from: NodeData; to: NodeData }[] = [];
     
     clusters.forEach((cluster, clusterIndex) => {
-      const parentNode = nodes.find(n => n.id === cluster.parent.id);
+      const parentNode = nodeById.get(String(cluster.parent.id));
       if (!parentNode) return;
       
       cluster.children.forEach(child => {
-        const childNode = nodes.find(n => n.id === child.id);
+        const childNode = nodeById.get(String(child.id));
         if (childNode) {
           result.push({ from: parentNode, to: childNode });
         }
@@ -644,7 +690,7 @@ export const BronClusterVisualization = memo(({
     });
     
     return result;
-  }, [clusters, nodes]);
+  }, [clusters, nodeById]);
   
   // Handle hover with AI tip generation
   const handleNodeHover = useCallback(async (node: NodeData | null) => {
