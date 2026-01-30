@@ -357,8 +357,8 @@ export const BronKeywordTableHeader = memo(() => (
   <div 
     className="grid items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50 w-full" 
     style={{ 
-      // Must match BronKeywordCard grid: chart(44) + speed(52) + type(44) + keyword(1fr) + google(80) + bing(80) + yahoo(80) + metrics(120) + links(100)
-      gridTemplateColumns: '44px 52px 44px 1fr 80px 80px 80px 120px 100px',
+      // Must match BronKeywordCard grid: chart(44) + speed(52) + type(44) + keyword(minmax) + google(90) + bing(90) + yahoo(90) + metrics(140) + links(110)
+      gridTemplateColumns: '44px 52px 44px minmax(100px, 1fr) 90px 90px 90px 140px 110px',
       contain: 'layout style' 
     }}
   >
