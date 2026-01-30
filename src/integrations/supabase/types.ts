@@ -285,6 +285,57 @@ export type Database = {
           },
         ]
       }
+      auto_remediation_logs: {
+        Row: {
+          action_description: string | null
+          action_type: string
+          alert_id: string | null
+          check_id: string | null
+          completed_at: string | null
+          id: string
+          result_message: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["remediation_status"]
+        }
+        Insert: {
+          action_description?: string | null
+          action_type: string
+          alert_id?: string | null
+          check_id?: string | null
+          completed_at?: string | null
+          id?: string
+          result_message?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["remediation_status"]
+        }
+        Update: {
+          action_description?: string | null
+          action_type?: string
+          alert_id?: string | null
+          check_id?: string | null
+          completed_at?: string | null
+          id?: string
+          result_message?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["remediation_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_remediation_logs_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "system_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_remediation_logs_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "system_health_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cade_crawl_events: {
         Row: {
           created_at: string
@@ -793,6 +844,47 @@ export type Database = {
         }
         Relationships: []
       }
+      health_check_results: {
+        Row: {
+          check_id: string
+          checked_at: string | null
+          error_message: string | null
+          id: string
+          response_body: string | null
+          response_time_ms: number | null
+          status: Database["public"]["Enums"]["health_check_status"]
+          status_code: number | null
+        }
+        Insert: {
+          check_id: string
+          checked_at?: string | null
+          error_message?: string | null
+          id?: string
+          response_body?: string | null
+          response_time_ms?: number | null
+          status: Database["public"]["Enums"]["health_check_status"]
+          status_code?: number | null
+        }
+        Update: {
+          check_id?: string
+          checked_at?: string | null
+          error_message?: string | null
+          id?: string
+          response_body?: string | null
+          response_time_ms?: number | null
+          status?: Database["public"]["Enums"]["health_check_status"]
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_check_results_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "system_health_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indexation_reports: {
         Row: {
           blocked_count: number
@@ -1289,6 +1381,114 @@ export type Database = {
         }
         Relationships: []
       }
+      system_alerts: {
+        Row: {
+          auto_remediation_attempted: boolean | null
+          check_id: string | null
+          created_at: string | null
+          id: string
+          is_resolved: boolean | null
+          message: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          title: string
+        }
+        Insert: {
+          auto_remediation_attempted?: boolean | null
+          check_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          title: string
+        }
+        Update: {
+          auto_remediation_attempted?: boolean | null
+          check_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "system_health_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_health_checks: {
+        Row: {
+          check_interval_minutes: number | null
+          check_type: Database["public"]["Enums"]["health_check_type"]
+          consecutive_failures: number | null
+          created_at: string | null
+          description: string | null
+          endpoint_url: string | null
+          expected_status: number | null
+          id: string
+          is_active: boolean | null
+          last_check_at: string | null
+          last_status: Database["public"]["Enums"]["health_check_status"] | null
+          name: string
+          test_payload: Json | null
+          timeout_ms: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          check_interval_minutes?: number | null
+          check_type: Database["public"]["Enums"]["health_check_type"]
+          consecutive_failures?: number | null
+          created_at?: string | null
+          description?: string | null
+          endpoint_url?: string | null
+          expected_status?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_check_at?: string | null
+          last_status?:
+            | Database["public"]["Enums"]["health_check_status"]
+            | null
+          name: string
+          test_payload?: Json | null
+          timeout_ms?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          check_interval_minutes?: number | null
+          check_type?: Database["public"]["Enums"]["health_check_type"]
+          consecutive_failures?: number | null
+          created_at?: string | null
+          description?: string | null
+          endpoint_url?: string | null
+          expected_status?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_check_at?: string | null
+          last_status?:
+            | Database["public"]["Enums"]["health_check_status"]
+            | null
+          name?: string
+          test_payload?: Json | null
+          timeout_ms?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tool_interactions: {
         Row: {
           created_at: string
@@ -1660,6 +1860,7 @@ export type Database = {
       user_has_primary_domain: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
+      alert_severity: "info" | "warning" | "critical"
       app_role:
         | "admin"
         | "moderator"
@@ -1680,7 +1881,20 @@ export type Database = {
         | "nonprofit"
         | "technology"
         | "other"
+      health_check_status: "healthy" | "degraded" | "failing" | "unknown"
+      health_check_type:
+        | "form"
+        | "endpoint"
+        | "edge_function"
+        | "database"
+        | "external_api"
       partner_status: "pending" | "approved" | "rejected" | "suspended"
+      remediation_status:
+        | "pending"
+        | "in_progress"
+        | "success"
+        | "failed"
+        | "skipped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1808,6 +2022,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["info", "warning", "critical"],
       app_role: [
         "admin",
         "moderator",
@@ -1830,7 +2045,22 @@ export const Constants = {
         "technology",
         "other",
       ],
+      health_check_status: ["healthy", "degraded", "failing", "unknown"],
+      health_check_type: [
+        "form",
+        "endpoint",
+        "edge_function",
+        "database",
+        "external_api",
+      ],
       partner_status: ["pending", "approved", "rejected", "suspended"],
+      remediation_status: [
+        "pending",
+        "in_progress",
+        "success",
+        "failed",
+        "skipped",
+      ],
     },
   },
 } as const
