@@ -912,7 +912,7 @@ export const BRONKeywordsTab = memo(({
               {/* Column Headers Row - extracted to shared component */}
               <BronKeywordTableHeader />
               {/* Keyword list with containment for scroll performance */}
-              <div className="space-y-4" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+              <div className="space-y-4" style={{ contain: 'layout style' }}>
                 {displayClusters.map((cluster) => (
                   <BronClusterCard
                     key={cluster.parentId}
