@@ -1006,25 +1006,6 @@ export const BRONKeywordsTab = memo(({
               >
                 <RefreshCw className="w-4 h-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={saveRankingSnapshot}
-                disabled={savingSnapshot || keywords.length === 0}
-                className="border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-400"
-                title="Save current rankings as historical snapshot"
-              >
-                <Save className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => setShowAddModal(true)}
-                disabled={!selectedDomain}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </Button>
             </div>
           </CardHeader>
         )}
