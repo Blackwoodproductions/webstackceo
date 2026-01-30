@@ -1,6 +1,6 @@
 import { memo, useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, ExternalLink, TrendingUp, TrendingDown, Minus, Sparkles, Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { X, ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
@@ -8,8 +8,6 @@ import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } fr
 import { findSerpForKeyword } from "./utils";
 
 function normalizeUrlKey(url: string): string {
-  // Stable, fast key for matching URLs across different API fields.
-  // NOTE: Intentionally does not use URL() to avoid exceptions/overhead.
   return url
     .trim()
     .toLowerCase()
@@ -19,8 +17,6 @@ function normalizeUrlKey(url: string): string {
 }
 
 function getLinkTargetKey(link: BronLink, kind: "in" | "out"): string | null {
-  // Inbound links typically have target_url pointing to OUR page.
-  // Outbound links typically have link pointing to OUR page.
   const raw =
     kind === "in"
       ? (link.target_url || link.link || link.source_url)
@@ -53,7 +49,7 @@ interface BronClusterVisualizationProps {
   linksOut: BronLink[];
   selectedDomain?: string;
   initialPositions: Record<string, InitialPositions>;
-  isBaselineReport?: boolean; // True when viewing the baseline (oldest) report - suppress movements
+  isBaselineReport?: boolean;
 }
 
 interface NodeData {
@@ -71,6 +67,7 @@ interface NodeData {
   movement: { google: number; bing: number; yahoo: number };
   linksInCount: number;
   linksOutCount: number;
+  linkoutUrl: string | null;
 }
 
 interface TooltipData extends NodeData {
@@ -78,64 +75,42 @@ interface TooltipData extends NodeData {
   isLoadingTip?: boolean;
 }
 
-// AI tip generation (mock for now - can be connected to real AI)
+// AI tip generation
 const generateSEOTip = async (node: NodeData): Promise<string> => {
-  // Simulate AI processing
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const tips: string[] = [];
   const googlePos = getPosition(node.serpData?.google);
   const pageSpeedScore = node.pageSpeed?.mobileScore;
-  const searchVol = node.metrics?.search_volume;
-  const cpc = node.metrics?.cpc;
   
-  // Position-based tips
   if (googlePos === null) {
     tips.push("⚠️ Not ranking yet. Focus on building topical authority with supporting content.");
   } else if (googlePos > 50) {
-    tips.push("📈 Outside top 50. Prioritize on-page optimization and internal linking from stronger pages.");
+    tips.push("📈 Outside top 50. Prioritize on-page optimization and internal linking.");
   } else if (googlePos > 20) {
-    tips.push("🎯 Almost there! Add more comprehensive content and build 2-3 quality backlinks.");
+    tips.push("🎯 Almost there! Add more comprehensive content and build quality backlinks.");
   } else if (googlePos > 10) {
-    tips.push("🔥 Top 20! Optimize for featured snippets and improve user engagement signals.");
+    tips.push("🔥 Top 20! Optimize for featured snippets and improve engagement.");
   } else if (googlePos > 3) {
     tips.push("⭐ Top 10! Focus on CTR optimization with compelling meta descriptions.");
   } else {
-    tips.push("🏆 Top 3! Maintain position with fresh content updates and user experience improvements.");
+    tips.push("🏆 Top 3! Maintain position with fresh content updates.");
   }
   
-  // PageSpeed tips
-  if (pageSpeedScore !== undefined) {
-    if (pageSpeedScore < 50) {
-      tips.push("🐌 Poor page speed. Optimize images, reduce JS, and enable caching.");
-    } else if (pageSpeedScore < 80) {
-      tips.push("⚡ Good speed, but room for improvement. Check Core Web Vitals.");
-    }
+  if (pageSpeedScore !== undefined && pageSpeedScore < 50) {
+    tips.push("🐌 Poor page speed. Optimize images and reduce JS.");
   }
   
-  // Movement-based tips
   if (node.movement.google > 5) {
     tips.push("📊 Great momentum! Continue current strategy.");
   } else if (node.movement.google < -5) {
-    tips.push("📉 Rankings dropping. Check for algorithm updates or technical issues.");
-  }
-  
-  // Link-based tips
-  if (node.linksInCount < 3 && !node.isMainNode) {
-    tips.push("🔗 Low internal links. Add contextual links from related content.");
-  }
-  
-  // Volume/CPC tips
-  if (searchVol && cpc) {
-    if (searchVol > 1000 && cpc > 5) {
-      tips.push("💰 High-value keyword! Prioritize ranking for maximum ROI.");
-    }
+    tips.push("📉 Rankings dropping. Check for algorithm updates.");
   }
   
   return tips.slice(0, 3).join("\n\n");
 };
 
-// Single Node Component
+// Single Node Component - Hierarchical layout version
 const ClusterNode = memo(({
   node,
   isHovered,
@@ -154,39 +129,48 @@ const ClusterNode = memo(({
   const googlePos = getPosition(node.serpData?.google);
   const movement = node.movement.google;
   
-  // Node sizing
-  const baseSize = node.isMainNode ? 80 : 50;
+  // Main nodes are larger (money pages), supporting nodes are smaller
+  const baseSize = node.isMainNode ? 100 : 70;
   const size = baseSize * zoom;
   
-  // Get actual colors for SVG (not Tailwind classes)
-  let fillColor = "rgba(120, 120, 120, 0.3)"; // muted
-  let strokeColor = "rgba(150, 150, 150, 0.5)"; // muted-foreground
+  // Color coding: Money pages use ranking colors, supporting pages use violet/purple
+  let fillColor = "rgba(120, 120, 120, 0.3)";
+  let strokeColor = "rgba(150, 150, 150, 0.5)";
   let glowStroke = "";
   
-  if (googlePos !== null) {
-    if (googlePos <= 3) {
-      fillColor = "rgba(16, 185, 129, 0.25)"; // emerald-500/25
-      strokeColor = "rgb(52, 211, 153)"; // emerald-400
-      glowStroke = "rgba(16, 185, 129, 0.4)";
-    } else if (googlePos <= 10) {
-      fillColor = "rgba(34, 211, 238, 0.25)"; // cyan-500/25
-      strokeColor = "rgb(34, 211, 238)"; // cyan-400
-      glowStroke = "rgba(34, 211, 238, 0.35)";
-    } else if (googlePos <= 20) {
-      fillColor = "rgba(245, 158, 11, 0.25)"; // amber-500/25
-      strokeColor = "rgb(251, 191, 36)"; // amber-400
-    } else if (googlePos <= 50) {
-      fillColor = "rgba(249, 115, 22, 0.25)"; // orange-500/25
-      strokeColor = "rgb(251, 146, 60)"; // orange-400
-    } else {
-      fillColor = "rgba(244, 63, 94, 0.25)"; // rose-500/25
-      strokeColor = "rgb(251, 113, 133)"; // rose-400
+  if (node.isMainNode) {
+    // Money page - color by ranking
+    if (googlePos !== null) {
+      if (googlePos <= 3) {
+        fillColor = "rgba(16, 185, 129, 0.25)";
+        strokeColor = "rgb(52, 211, 153)";
+        glowStroke = "rgba(16, 185, 129, 0.4)";
+      } else if (googlePos <= 10) {
+        fillColor = "rgba(34, 211, 238, 0.25)";
+        strokeColor = "rgb(34, 211, 238)";
+        glowStroke = "rgba(34, 211, 238, 0.35)";
+      } else if (googlePos <= 20) {
+        fillColor = "rgba(245, 158, 11, 0.25)";
+        strokeColor = "rgb(251, 191, 36)";
+      } else if (googlePos <= 50) {
+        fillColor = "rgba(249, 115, 22, 0.25)";
+        strokeColor = "rgb(251, 146, 60)";
+      } else {
+        fillColor = "rgba(244, 63, 94, 0.25)";
+        strokeColor = "rgb(251, 113, 133)";
+      }
+    }
+  } else {
+    // Supporting page - violet/purple color scheme
+    fillColor = "rgba(139, 92, 246, 0.2)";
+    strokeColor = "rgb(167, 139, 250)";
+    if (googlePos !== null && googlePos <= 10) {
+      glowStroke = "rgba(139, 92, 246, 0.35)";
     }
   }
   
-  // Hover/selected state
-  const hoverScale = isHovered || isSelected ? 1.15 : 1;
-  const finalOpacity = isHovered || isSelected ? 1 : 0.85;
+  const hoverScale = isHovered || isSelected ? 1.1 : 1;
+  const finalOpacity = isHovered || isSelected ? 1 : 0.9;
   
   return (
     <g
@@ -196,15 +180,15 @@ const ClusterNode = memo(({
       onClick={() => onClick(node)}
       style={{ cursor: 'pointer' }}
     >
-      {/* Glow effect for top rankings */}
+      {/* Glow effect */}
       {glowStroke && (
         <circle
-          r={size / 2 + 10}
+          r={size / 2 + 12}
           fill="none"
           stroke={glowStroke}
-          strokeWidth={6}
+          strokeWidth={8}
           style={{
-            filter: 'blur(8px)',
+            filter: 'blur(10px)',
             opacity: isHovered || isSelected ? 0.9 : 0.5,
           }}
         />
@@ -215,7 +199,7 @@ const ClusterNode = memo(({
         r={(size / 2) * hoverScale}
         fill={fillColor}
         stroke={strokeColor}
-        strokeWidth={node.isMainNode ? 3 : 2}
+        strokeWidth={node.isMainNode ? 4 : 2.5}
         style={{
           opacity: finalOpacity,
           transition: 'all 0.2s ease',
@@ -225,12 +209,12 @@ const ClusterNode = memo(({
       
       {/* Position badge */}
       {googlePos !== null && (
-        <g transform={`translate(0, ${-size / 6})`}>
+        <g transform={`translate(0, ${-size / 8})`}>
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="hsl(var(--foreground))"
-            fontSize={node.isMainNode ? 18 * zoom : 14 * zoom}
+            fontSize={node.isMainNode ? 22 * zoom : 16 * zoom}
             fontWeight={700}
           >
             #{googlePos}
@@ -240,16 +224,16 @@ const ClusterNode = memo(({
       
       {/* Movement indicator */}
       {movement !== 0 && (
-        <g transform={`translate(${size / 2 - 8}, ${-size / 2 + 8})`}>
+        <g transform={`translate(${size / 2 - 10}, ${-size / 2 + 10})`}>
           <circle
-            r={10}
+            r={12}
             fill={movement > 0 ? "rgba(16, 185, 129, 0.95)" : "rgba(244, 63, 94, 0.95)"}
           />
           <text
             textAnchor="middle"
             dominantBaseline="middle"
             fill="white"
-            fontSize={10}
+            fontSize={11}
             fontWeight="bold"
           >
             {movement > 0 ? `+${movement}` : movement}
@@ -258,34 +242,54 @@ const ClusterNode = memo(({
       )}
       
       {/* Keyword label */}
-      <g transform={`translate(0, ${size / 2 + 16})`}>
+      <g transform={`translate(0, ${size / 2 + 18})`}>
         <text
           textAnchor="middle"
           dominantBaseline="hanging"
-          fill="hsl(var(--foreground) / 0.8)"
-          fontSize={11 * zoom}
-          style={{
-            maxWidth: 120,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
+          fill="hsl(var(--foreground) / 0.85)"
+          fontSize={12 * zoom}
+          fontWeight={node.isMainNode ? 600 : 400}
         >
-          {node.keywordText.length > 20 
-            ? node.keywordText.substring(0, 18) + '...' 
+          {node.keywordText.length > 25 
+            ? node.keywordText.substring(0, 23) + '...' 
             : node.keywordText}
         </text>
       </g>
       
-      {/* Main keyword indicator */}
+      {/* Money page badge */}
       {node.isMainNode && (
-        <g transform={`translate(0, ${size / 2 + 32})`}>
+        <g transform={`translate(0, ${size / 2 + 38})`}>
           <rect
-            x={-25}
+            x={-30}
             y={0}
-            width={50}
+            width={60}
+            height={18}
+            rx={9}
+            fill="rgba(245, 158, 11, 0.9)"
+          />
+          <text
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="white"
+            fontSize={10}
+            fontWeight="700"
+            y={9}
+          >
+            MONEY
+          </text>
+        </g>
+      )}
+      
+      {/* Supporting badge */}
+      {!node.isMainNode && (
+        <g transform={`translate(0, ${size / 2 + 38})`}>
+          <rect
+            x={-38}
+            y={0}
+            width={76}
             height={16}
             rx={8}
-            fill="rgba(245, 158, 11, 0.85)"
+            fill="rgba(139, 92, 246, 0.8)"
           />
           <text
             textAnchor="middle"
@@ -295,7 +299,7 @@ const ClusterNode = memo(({
             fontWeight="600"
             y={8}
           >
-            MONEY
+            SUPPORTING
           </text>
         </g>
       )}
@@ -309,14 +313,19 @@ const ConnectionLine = memo(({
   from,
   to,
   isHighlighted,
+  isUrlConnection,
 }: {
   from: { x: number; y: number };
   to: { x: number; y: number };
   isHighlighted: boolean;
+  isUrlConnection: boolean;
 }) => {
-  const stroke = isHighlighted
-    ? "rgba(251, 191, 36, 0.95)"
-    : "hsl(var(--muted-foreground) / 0.30)";
+  // URL connections are solid amber, regular connections are dashed gray
+  const stroke = isUrlConnection
+    ? "rgba(251, 191, 36, 0.9)"
+    : isHighlighted
+      ? "rgba(167, 139, 250, 0.8)"
+      : "hsl(var(--muted-foreground) / 0.25)";
 
   return (
     <line
@@ -325,8 +334,8 @@ const ConnectionLine = memo(({
       x2={to.x}
       y2={to.y}
       stroke={stroke}
-      strokeWidth={isHighlighted ? 2 : 1}
-      strokeDasharray={isHighlighted ? undefined : "4,4"}
+      strokeWidth={isUrlConnection ? 3 : isHighlighted ? 2 : 1.5}
+      strokeDasharray={isUrlConnection ? undefined : "6,4"}
       style={{ transition: "stroke 200ms ease, stroke-width 200ms ease" }}
     />
   );
@@ -354,7 +363,6 @@ const NodeTooltip = memo(({
         transform: position.x > window.innerWidth / 2 ? 'translateX(-100%)' : 'none',
       }}
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
           <h4 className="font-semibold text-foreground">{data.keywordText}</h4>
@@ -370,14 +378,14 @@ const NodeTooltip = memo(({
             </a>
           )}
         </div>
-        {data.isMainNode && (
-          <Badge className="bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs">
-            Money Page
-          </Badge>
-        )}
+        <Badge className={data.isMainNode 
+          ? "bg-amber-500/20 text-amber-400 border-amber-400/50 text-xs"
+          : "bg-violet-500/20 text-violet-400 border-violet-400/50 text-xs"
+        }>
+          {data.isMainNode ? "Money Page" : "Supporting"}
+        </Badge>
       </div>
       
-      {/* Rankings */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-muted/50 rounded-lg p-2 text-center">
           <div className="text-xs text-muted-foreground mb-1">Google</div>
@@ -399,7 +407,6 @@ const NodeTooltip = memo(({
         </div>
       </div>
       
-      {/* Metrics */}
       <div className="grid grid-cols-4 gap-2 mb-3">
         <div className="text-center">
           <div className="text-xs text-muted-foreground">Speed</div>
@@ -429,7 +436,6 @@ const NodeTooltip = memo(({
         </div>
       </div>
       
-      {/* AI Tips */}
       <div className="border-t border-border/50 pt-3">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
@@ -469,26 +475,17 @@ export const BronClusterVisualization = memo(({
   initialPositions,
   isBaselineReport = false,
 }: BronClusterVisualizationProps) => {
-  const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const rafMoveRef = useRef<number | null>(null);
-  const pendingMoveRef = useRef<{ x: number; y: number } | null>(null);
-  const panRef = useRef({ x: 0, y: 0 });
-  const panStartRef = useRef({ x: 0, y: 0 });
-  const isPanningRef = useRef(false);
   
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<NodeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeData | null>(null);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [currentClusterIndex, setCurrentClusterIndex] = useState(0);
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
 
-  // Pre-index link counts by target URL to avoid O(nodes * links) filtering (major perf win).
+  // Pre-index link counts by target URL
   const linkCountsByUrl = useMemo(() => {
     const map = new Map<string, { in: number; out: number }>();
     const bump = (key: string, dir: "in" | "out") => {
@@ -509,42 +506,17 @@ export const BronClusterVisualization = memo(({
     return map;
   }, [linksIn, linksOut]);
 
-  // Keep refs in sync for rAF-driven updates (avoids stale closures)
-  useEffect(() => {
-    panRef.current = pan;
-  }, [pan]);
-
-  useEffect(() => {
-    panStartRef.current = panStart;
-  }, [panStart]);
-
-  useEffect(() => {
-    isPanningRef.current = isPanning;
-  }, [isPanning]);
-
-  // Reset view state on open (prevents “blank map” from stale pan/zoom)
+  // Reset on open
   useEffect(() => {
     if (!isOpen) return;
-    // Auto-calculate zoom to fit all clusters
-    const clusterCount = clusters?.length || 0;
-    let initialZoom = 1;
-    if (clusterCount > 20) {
-      initialZoom = 0.5;
-    } else if (clusterCount > 12) {
-      initialZoom = 0.65;
-    } else if (clusterCount > 8) {
-      initialZoom = 0.8;
-    }
-    setZoom(initialZoom);
-    setPan({ x: 0, y: 0 });
-    setIsPanning(false);
-    setPanStart({ x: 0, y: 0 });
+    setZoom(1);
     setHoveredNode(null);
     setSelectedNode(null);
     setTooltipData(null);
-  }, [isOpen, clusters?.length]);
+    setCurrentClusterIndex(0);
+  }, [isOpen]);
   
-  // Measure container size (robust inside fixed/fullscreen modals)
+  // Measure container size
   useEffect(() => {
     if (!isOpen) return;
     const el = containerRef.current;
@@ -554,7 +526,7 @@ export const BronClusterVisualization = memo(({
       const rect = el.getBoundingClientRect();
       setContainerSize({
         width: Math.max(rect.width, 800),
-        height: Math.max(rect.height - 64, 600), // keep nodes away from header
+        height: Math.max(rect.height - 64, 600),
       });
     };
 
@@ -564,46 +536,31 @@ export const BronClusterVisualization = memo(({
     ro.observe(el);
     return () => ro.disconnect();
   }, [isOpen]);
+
+  // Current cluster to display
+  const currentCluster = clusters[currentClusterIndex];
   
-  // Generate node positions using a grid-based cluster layout
-  // Each cluster is arranged in a grid pattern, with main nodes in the center
-  // and child nodes arranged around them
+  // Generate hierarchical node positions for current cluster
+  // Money page at top center, supporting pages at bottom left/right
   const nodes = useMemo(() => {
     const result: NodeData[] = [];
     
-    // Exit early if no clusters
-    if (!clusters || clusters.length === 0) return result;
+    if (!currentCluster) return result;
     
-    // Helper: Calculate movement using position 1000 as baseline for unranked keywords
     const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
-      // Both unranked = no movement
       if (baseline === null && current === null) return 0;
-      
       const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
       const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
-      
       return effectiveBaseline - effectiveCurrent;
     };
     
-    // Grid layout configuration
-    const padding = 80;
-    const clusterSpacing = 280; // Space between cluster centers
-    const childRadius = 90; // Distance of children from parent
+    const centerX = containerSize.width / 2;
+    const topY = containerSize.height * 0.25;
+    const bottomY = containerSize.height * 0.65;
+    const horizontalSpread = containerSize.width * 0.3;
     
-    // Calculate grid dimensions based on number of clusters
-    const cols = Math.ceil(Math.sqrt(clusters.length * 1.5)); // Slightly wider than tall
-    const rows = Math.ceil(clusters.length / cols);
-    
-    // Calculate total grid size
-    const gridWidth = cols * clusterSpacing;
-    const gridHeight = rows * clusterSpacing;
-    
-    // Center offset - position grid in center of container
-    const offsetX = (containerSize.width - gridWidth) / 2 + clusterSpacing / 2;
-    const offsetY = padding + clusterSpacing / 2;
-    
-    // Cache expensive lookups for this computation pass
+    // Cache SERP lookups
     const serpCache = new Map<string, BronSerpReport | null>();
     const getSerp = (keywordText: string) => {
       const key = keywordText.toLowerCase().trim();
@@ -614,104 +571,107 @@ export const BronClusterVisualization = memo(({
       return found;
     };
 
-    clusters.forEach((cluster, clusterIndex) => {
-      // Calculate grid position for this cluster
-      const col = clusterIndex % cols;
-      const row = Math.floor(clusterIndex / cols);
-      
-      // Position cluster center
-      const clusterX = offsetX + col * clusterSpacing;
-      const clusterY = offsetY + row * clusterSpacing;
-      
-      const parentKeywordText = getKeywordDisplayText(cluster.parent);
-      const parentSerpData = getSerp(parentKeywordText);
-      const parentKey = parentKeywordText.toLowerCase();
-      const parentInitial = initialPositions[parentKey] || { google: null, bing: null, yahoo: null };
-      const parentGooglePos = getPosition(parentSerpData?.google);
-      
-      // Get page speed URL
-      let parentUrl = cluster.parent.linkouturl;
-      if (!parentUrl && selectedDomain) {
-        const slug = parentKeywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        parentUrl = `https://${selectedDomain}/${slug}`;
+    const getUrlForKeyword = (kw: BronKeyword, kwText: string) => {
+      if (kw.linkouturl) return kw.linkouturl;
+      if (selectedDomain) {
+        const slug = kwText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        return `https://${selectedDomain}/${slug}`;
       }
+      return null;
+    };
 
-      const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
-      const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
+    // Parent (Money Page) - centered at top
+    const parentKeywordText = getKeywordDisplayText(currentCluster.parent);
+    const parentSerpData = getSerp(parentKeywordText);
+    const parentKey = parentKeywordText.toLowerCase();
+    const parentInitial = initialPositions[parentKey] || { google: null, bing: null, yahoo: null };
+    const parentGooglePos = getPosition(parentSerpData?.google);
+    const parentUrl = getUrlForKeyword(currentCluster.parent, parentKeywordText);
+    const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
+    const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
+    
+    result.push({
+      id: currentCluster.parent.id,
+      keyword: currentCluster.parent,
+      x: centerX,
+      y: topY,
+      isMainNode: true,
+      clusterIndex: currentClusterIndex,
+      keywordText: parentKeywordText,
+      serpData: parentSerpData,
+      metrics: keywordMetrics[parentKey],
+      pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
+      movement: isBaselineReport
+        ? { google: 0, bing: 0, yahoo: 0 }
+        : {
+            google: calculateMovement(parentInitial.google, parentGooglePos),
+            bing: calculateMovement(parentInitial.bing, getPosition(parentSerpData?.bing)),
+            yahoo: calculateMovement(parentInitial.yahoo, getPosition(parentSerpData?.yahoo)),
+          },
+      linksInCount: parentLinkCounts?.in ?? 0,
+      linksOutCount: parentLinkCounts?.out ?? 0,
+      linkoutUrl: parentUrl,
+    });
+    
+    // Children (Supporting Pages) - positioned below, left and right
+    const numChildren = currentCluster.children.length;
+    currentCluster.children.forEach((child, childIndex) => {
+      // Position: first child bottom-left, second bottom-right, others spread below
+      let childX: number;
+      let childY: number;
       
-      // Add parent node
+      if (numChildren === 1) {
+        childX = centerX;
+        childY = bottomY;
+      } else if (numChildren === 2) {
+        childX = centerX + (childIndex === 0 ? -horizontalSpread : horizontalSpread);
+        childY = bottomY;
+      } else {
+        // More than 2: spread them in an arc below
+        const spreadAngle = Math.PI * 0.6; // 108 degrees
+        const startAngle = Math.PI / 2 - spreadAngle / 2;
+        const angle = startAngle + (childIndex / (numChildren - 1)) * spreadAngle;
+        const radius = containerSize.width * 0.35;
+        childX = centerX + Math.cos(angle) * radius * (childIndex % 2 === 0 ? -1 : 1);
+        childY = bottomY + (childIndex > 1 ? 80 : 0);
+      }
+      
+      const childKeywordText = getKeywordDisplayText(child);
+      const childSerpData = getSerp(childKeywordText);
+      const childKey = childKeywordText.toLowerCase();
+      const childInitial = initialPositions[childKey] || { google: null, bing: null, yahoo: null };
+      const childGooglePos = getPosition(childSerpData?.google);
+      const childUrl = getUrlForKeyword(child, childKeywordText);
+      const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
+      const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
+      
       result.push({
-        id: cluster.parent.id,
-        keyword: cluster.parent,
-        x: clusterX,
-        y: clusterY,
-        isMainNode: true,
-        clusterIndex,
-        keywordText: parentKeywordText,
-        serpData: parentSerpData,
-        metrics: keywordMetrics[parentKey],
-        pageSpeed: parentUrl ? pageSpeedScores[parentUrl] : undefined,
+        id: child.id,
+        keyword: child,
+        x: childX,
+        y: childY,
+        isMainNode: false,
+        clusterIndex: currentClusterIndex,
+        childIndex,
+        keywordText: childKeywordText,
+        serpData: childSerpData,
+        metrics: keywordMetrics[childKey],
+        pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
         movement: isBaselineReport
-          ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
+          ? { google: 0, bing: 0, yahoo: 0 }
           : {
-              google: calculateMovement(parentInitial.google, parentGooglePos),
-              bing: calculateMovement(parentInitial.bing, getPosition(parentSerpData?.bing)),
-              yahoo: calculateMovement(parentInitial.yahoo, getPosition(parentSerpData?.yahoo)),
+              google: calculateMovement(childInitial.google, childGooglePos),
+              bing: calculateMovement(childInitial.bing, getPosition(childSerpData?.bing)),
+              yahoo: calculateMovement(childInitial.yahoo, getPosition(childSerpData?.yahoo)),
             },
-        linksInCount: parentLinkCounts?.in ?? 0,
-        linksOutCount: parentLinkCounts?.out ?? 0,
-      });
-      
-      // Position children around parent in a circle
-      const numChildren = cluster.children.length;
-      cluster.children.forEach((child, childIndex) => {
-        // Distribute children evenly around the parent
-        const childAngle = (childIndex / Math.max(numChildren, 1)) * 2 * Math.PI - Math.PI / 2;
-        const childX = clusterX + Math.cos(childAngle) * childRadius;
-        const childY = clusterY + Math.sin(childAngle) * childRadius;
-        
-        const childKeywordText = getKeywordDisplayText(child);
-        const childSerpData = getSerp(childKeywordText);
-        const childKey = childKeywordText.toLowerCase();
-        const childInitial = initialPositions[childKey] || { google: null, bing: null, yahoo: null };
-        const childGooglePos = getPosition(childSerpData?.google);
-        
-        let childUrl = child.linkouturl;
-        if (!childUrl && selectedDomain) {
-          const slug = childKeywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-          childUrl = `https://${selectedDomain}/${slug}`;
-        }
-
-        const childUrlKey = childUrl ? normalizeUrlKey(childUrl) : null;
-        const childLinkCounts = childUrlKey ? linkCountsByUrl.get(childUrlKey) : undefined;
-        
-        result.push({
-          id: child.id,
-          keyword: child,
-          x: childX,
-          y: childY,
-          isMainNode: false,
-          clusterIndex,
-          childIndex,
-          keywordText: childKeywordText,
-          serpData: childSerpData,
-          metrics: keywordMetrics[childKey],
-          pageSpeed: childUrl ? pageSpeedScores[childUrl] : undefined,
-          movement: isBaselineReport
-            ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
-            : {
-                google: calculateMovement(childInitial.google, childGooglePos),
-                bing: calculateMovement(childInitial.bing, getPosition(childSerpData?.bing)),
-                yahoo: calculateMovement(childInitial.yahoo, getPosition(childSerpData?.yahoo)),
-              },
-          linksInCount: childLinkCounts?.in ?? 0,
-          linksOutCount: childLinkCounts?.out ?? 0,
-        });
+        linksInCount: childLinkCounts?.in ?? 0,
+        linksOutCount: childLinkCounts?.out ?? 0,
+        linkoutUrl: childUrl,
       });
     });
     
     return result;
-  }, [clusters, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl, isBaselineReport]);
+  }, [currentCluster, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, containerSize, linkCountsByUrl, isBaselineReport, currentClusterIndex]);
 
   const nodeById = useMemo(() => {
     const map = new Map<string, NodeData>();
@@ -719,24 +679,49 @@ export const BronClusterVisualization = memo(({
     return map;
   }, [nodes]);
   
-  // Generate connection lines
+  // Generate connection lines - check for URL-based connections
   const connections = useMemo(() => {
-    const result: { from: NodeData; to: NodeData }[] = [];
+    const result: { from: NodeData; to: NodeData; isUrlConnection: boolean }[] = [];
     
-    clusters.forEach((cluster, clusterIndex) => {
-      const parentNode = nodeById.get(String(cluster.parent.id));
-      if (!parentNode) return;
-      
-      cluster.children.forEach(child => {
-        const childNode = nodeById.get(String(child.id));
-        if (childNode) {
-          result.push({ from: parentNode, to: childNode });
+    if (!currentCluster) return result;
+    
+    const parentNode = nodeById.get(String(currentCluster.parent.id));
+    if (!parentNode) return result;
+    
+    const parentUrlKey = parentNode.linkoutUrl ? normalizeUrlKey(parentNode.linkoutUrl) : null;
+    
+    currentCluster.children.forEach(child => {
+      const childNode = nodeById.get(String(child.id));
+      if (childNode) {
+        // Check if child's linkouturl matches parent's URL (URL connection)
+        let isUrlConnection = false;
+        if (childNode.linkoutUrl && parentUrlKey) {
+          const childUrlKey = normalizeUrlKey(childNode.linkoutUrl);
+          // Check if the child links TO the parent
+          isUrlConnection = childUrlKey === parentUrlKey;
         }
-      });
+        
+        // Also check linksOut for connections to parent
+        if (!isUrlConnection && childNode.linkoutUrl) {
+          const childUrlKey = normalizeUrlKey(childNode.linkoutUrl);
+          for (const link of linksOut) {
+            const linkTarget = getLinkTargetKey(link, "out");
+            if (linkTarget && parentUrlKey && linkTarget === parentUrlKey) {
+              const linkSource = link.source_url ? normalizeUrlKey(link.source_url) : null;
+              if (linkSource === childUrlKey) {
+                isUrlConnection = true;
+                break;
+              }
+            }
+          }
+        }
+        
+        result.push({ from: parentNode, to: childNode, isUrlConnection });
+      }
     });
     
     return result;
-  }, [clusters, nodeById]);
+  }, [currentCluster, nodeById, linksOut]);
   
   // Handle hover with AI tip generation
   const handleNodeHover = useCallback(async (node: NodeData | null) => {
@@ -764,35 +749,9 @@ export const BronClusterVisualization = memo(({
     setSelectedNode(prev => prev?.id === node.id ? null : node);
   }, []);
   
-  // Pan handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    setIsPanning(true);
-    setPanStart({ x: e.clientX - panRef.current.x, y: e.clientY - panRef.current.y });
-  }, []);
-  
+  // Mouse move for tooltip positioning
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    pendingMoveRef.current = { x: e.clientX, y: e.clientY };
-    if (rafMoveRef.current != null) return;
-
-    rafMoveRef.current = window.requestAnimationFrame(() => {
-      rafMoveRef.current = null;
-      const pending = pendingMoveRef.current;
-      if (!pending) return;
-
-      setMousePos({ x: pending.x, y: pending.y });
-      if (isPanningRef.current) {
-        setPan({
-          x: pending.x - panStartRef.current.x,
-          y: pending.y - panStartRef.current.y,
-        });
-      }
-    });
-  }, []);
-  
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
+    setMousePos({ x: e.clientX, y: e.clientY });
   }, []);
   
   // Zoom handlers
@@ -801,54 +760,35 @@ export const BronClusterVisualization = memo(({
   }, []);
   
   const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev - 0.2, 0.4));
+    setZoom(prev => Math.max(prev - 0.2, 0.5));
   }, []);
   
   const handleReset = useCallback(() => {
     setZoom(1);
-    setPan({ x: 0, y: 0 });
   }, []);
 
-  // Wheel/trackpad support: pan normally, zoom with Ctrl/Cmd
-  useEffect(() => {
-    if (!isOpen) return;
-    const el = containerRef.current;
-    if (!el) return;
+  // Navigation handlers
+  const handlePrevCluster = useCallback(() => {
+    setCurrentClusterIndex(prev => prev > 0 ? prev - 1 : clusters.length - 1);
+    setHoveredNode(null);
+    setTooltipData(null);
+  }, [clusters.length]);
 
-    const onWheel = (ev: WheelEvent) => {
-      // Only handle wheel when pointer is over the canvas
-      // (keeps other UI interactions predictable)
-      const target = ev.target as HTMLElement | null;
-      if (!target) return;
-      if (!el.contains(target)) return;
+  const handleNextCluster = useCallback(() => {
+    setCurrentClusterIndex(prev => prev < clusters.length - 1 ? prev + 1 : 0);
+    setHoveredNode(null);
+    setTooltipData(null);
+  }, [clusters.length]);
 
-      // Prevent the underlying page from stealing scroll
-      ev.preventDefault();
-
-      const isZoomGesture = ev.ctrlKey || ev.metaKey;
-      if (isZoomGesture) {
-        const delta = ev.deltaY;
-        setZoom((prev) => {
-          const next = prev + (delta > 0 ? -0.08 : 0.08);
-          return Math.max(0.4, Math.min(2, next));
-        });
-        return;
-      }
-
-      const dx = ev.shiftKey ? ev.deltaY : ev.deltaX;
-      const dy = ev.deltaY;
-      setPan((prev) => ({ x: prev.x - dx, y: prev.y - dy }));
-    };
-
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel as any);
-  }, [isOpen]);
-  
   // Keyboard handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevCluster();
+      } else if (e.key === 'ArrowRight') {
+        handleNextCluster();
       }
     };
     
@@ -861,38 +801,41 @@ export const BronClusterVisualization = memo(({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
-
-  // Cleanup any pending rAF
-  useEffect(() => {
-    return () => {
-      if (rafMoveRef.current != null) {
-        cancelAnimationFrame(rafMoveRef.current);
-        rafMoveRef.current = null;
-      }
-    };
-  }, []);
+  }, [isOpen, onClose, handlePrevCluster, handleNextCluster]);
   
   if (!isOpen) return null;
 
-  // IMPORTANT: Render in a portal so this fullscreen overlay is never clipped by
-  // any parent stacking context / transforms / scroll containers.
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] bg-background overflow-hidden"
       style={{ isolation: "isolate" }}
-      onClick={(e) => e.target === e.currentTarget && e.stopPropagation()}
+      onMouseMove={handleMouseMove}
     >
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 h-16 bg-background border-b border-border/50 flex items-center justify-between px-6 z-20">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold text-foreground">Keyword Cluster Map</h2>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-            {clusters.length} Clusters · {nodes.length} Keywords
+            {clusters.length} Clusters
           </Badge>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          {/* Cluster navigation */}
+          {clusters.length > 1 && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrevCluster}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm min-w-[60px] text-center">
+                {currentClusterIndex + 1} / {clusters.length}
+              </span>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNextCluster}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+          
           {/* Zoom controls */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}>
@@ -915,43 +858,31 @@ export const BronClusterVisualization = memo(({
       
       {/* Legend */}
       <div className="absolute top-20 left-6 z-20 bg-card border border-border/50 rounded-xl p-4 shadow-lg">
-        <h4 className="text-sm font-medium mb-3 text-foreground">Ranking Legend</h4>
+        <h4 className="text-sm font-medium mb-3 text-foreground">Legend</h4>
         <div className="space-y-2 text-xs">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-emerald-500/40 border-2 border-emerald-400" />
-            <span className="text-muted-foreground">Top 3</span>
+            <div className="w-5 h-5 rounded-full bg-emerald-500/40 border-2 border-emerald-400" />
+            <span className="text-muted-foreground">Money Page (by rank)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-cyan-500/40 border-2 border-cyan-400" />
-            <span className="text-muted-foreground">4-10</span>
+            <div className="w-4 h-4 rounded-full bg-violet-500/30 border-2 border-violet-400" />
+            <span className="text-muted-foreground">Supporting Page</span>
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <div className="w-6 h-0.5 bg-amber-400" />
+            <span className="text-muted-foreground">URL Link</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-amber-500/40 border-2 border-amber-400" />
-            <span className="text-muted-foreground">11-20</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-orange-500/40 border-2 border-orange-400" />
-            <span className="text-muted-foreground">21-50</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-rose-500/40 border-2 border-rose-400" />
-            <span className="text-muted-foreground">51+</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-muted/50 border-2 border-muted-foreground/30" />
-            <span className="text-muted-foreground">Not Ranking</span>
+            <div className="w-6 h-0.5 border-t-2 border-dashed border-muted-foreground/40" />
+            <span className="text-muted-foreground">Cluster Relation</span>
           </div>
         </div>
       </div>
       
-      {/* Canvas */}
+      {/* Canvas (Static - no panning) */}
       <div
         ref={containerRef}
-        className="w-full h-full pt-16 cursor-grab active:cursor-grabbing overflow-hidden relative"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        className="w-full h-full pt-16 overflow-hidden relative"
         style={{ contain: 'layout style paint' }}
       >
         {nodes.length === 0 ? (
@@ -963,16 +894,14 @@ export const BronClusterVisualization = memo(({
           </div>
         ) : (
           <svg
-            ref={svgRef}
             width="100%"
             height="100%"
             viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
             className="select-none block"
             preserveAspectRatio="xMidYMid meet"
             style={{
-              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transform: `scale(${zoom})`,
               transformOrigin: 'center center',
-              willChange: 'transform',
             }}
           >
             {/* Connection lines */}
@@ -987,6 +916,7 @@ export const BronClusterVisualization = memo(({
                   selectedNode?.id === conn.from.id ||
                   selectedNode?.id === conn.to.id
                 }
+                isUrlConnection={conn.isUrlConnection}
               />
             ))}
             
@@ -1011,9 +941,21 @@ export const BronClusterVisualization = memo(({
         <NodeTooltip data={tooltipData} position={mousePos} />
       )}
       
+      {/* Current cluster name */}
+      {currentCluster && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-card border border-border/50 rounded-xl px-6 py-3 shadow-lg">
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground mb-1">Current Cluster</div>
+            <div className="font-semibold text-foreground">
+              {getKeywordDisplayText(currentCluster.parent)}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Instructions */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 bg-card border border-border/50 rounded-full px-4 py-2 text-sm text-muted-foreground shadow-lg">
-        Click & drag to pan · Hover for details · Click node to open URL · Press ESC to close
+        Hover for details · Click node to open URL · ← → to navigate · ESC to close
       </div>
     </div>
   , document.body);
