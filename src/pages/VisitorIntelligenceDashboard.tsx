@@ -80,6 +80,7 @@ import { VIDashboardTabs, type DashboardTab } from '@/components/dashboard/VIDas
 import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
 import { FeatureGate } from '@/components/dashboard/FeatureGate';
 import { DomainSelectionDialog } from '@/components/dashboard/DomainSelectionDialog';
+import { DomainSearchDropdown } from '@/components/dashboard/DomainSearchDropdown';
 
 // Import optimized hooks
 import { useVIAuth } from '@/hooks/use-vi-auth';
@@ -1985,131 +1986,48 @@ const MarketingDashboard = () => {
         >
           {/* Left: Domain Selector & Time Range */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Domain Selector */}
+            {/* Domain Selector with Search */}
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10">
                 <Globe className="w-4 h-4 text-primary" />
               </div>
 
-              <Select 
-                value={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''} 
-                onValueChange={(value) => {
+              <DomainSearchDropdown
+                domains={(() => {
+                  // Build normalized GSC domain list for comparison
+                  const gscDomainSet = new Set(
+                    gscSites.map(site => 
+                      site.siteUrl.toLowerCase().trim()
+                        .replace('sc-domain:', '')
+                        .replace(/^(https?:\/\/)?(www\.)?/, '')
+                        .replace(/\/$/, '')
+                        .split('/')[0]
+                    )
+                  );
+                  
+                  return userOwnedDomains
+                    .map(d => {
+                      const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                      const isInGsc = gscDomainSet.has(normalized);
+                      return {
+                        ...d,
+                        normalized,
+                        isDemo: !isInGsc && d.source !== 'gsc'
+                      };
+                    })
+                    .filter(d => isSuperAdmin || !d.isDemo);
+                })()}
+                selectedDomain={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''}
+                onSelectDomain={(value) => {
                   setSelectedTrackedDomain(value);
                   setSelectedDomainKey(value);
                   const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
                   setGscDomainHasTracking(hasTracking);
                 }}
-              >
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative z-[130]">
-                  <SelectValue placeholder="Select domain" />
-                </SelectTrigger>
-                <SelectContent
-                  className="bg-popover border border-border shadow-2xl max-w-[400px] pointer-events-auto"
-                  style={{ zIndex: 9999 }}
-                  sideOffset={4}
-                >
-                  {(() => {
-                    // Build normalized GSC domain list for comparison
-                    const gscDomainSet = new Set(
-                      gscSites.map(site => 
-                        site.siteUrl.toLowerCase().trim()
-                          .replace('sc-domain:', '')
-                          .replace(/^(https?:\/\/)?(www\.)?/, '')
-                          .replace(/\/$/, '')
-                          .split('/')[0]
-                      )
-                    );
-                    
-                    // Use user-owned domains from database (multi-tenant isolation)
-                    // For normal users: only show domains that are in their GSC
-                    // For super admins: show all domains, mark non-GSC as demo
-                    const ownedDomains = userOwnedDomains
-                      .map(d => {
-                        const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                        const isInGsc = gscDomainSet.has(normalized);
-                        return {
-                          ...d,
-                          normalized,
-                          isDemo: !isInGsc && d.source !== 'gsc'
-                        };
-                      })
-                      // Normal users only see GSC-verified domains
-                      // Super admins see everything
-                      .filter(d => isSuperAdmin || !d.isDemo);
-                    
-                    return (
-                      <>
-                        {isLoadingUserDomains ? (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground flex items-center gap-2">
-                            <RefreshCw className="w-3 h-3 animate-spin" />
-                            Loading domains...
-                          </div>
-                        ) : ownedDomains.length === 0 ? (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                            No domains yet - connect GSC to import
-                          </div>
-                        ) : (
-                          ownedDomains.map((userDomain) => {
-                            const isPrimary = userDomain.is_primary;
-                            const isDemo = userDomain.isDemo;
-                            // Super admins can access all, normal users only primary
-                            const canAccess = isSuperAdmin || isPrimary;
-                            
-                            return (
-                              <div key={userDomain.id} className="flex items-center justify-between group">
-                                <SelectItem
-                                  value={userDomain.normalized}
-                                  className={`text-xs flex-1 ${!canAccess ? 'opacity-60' : ''}`}
-                                  disabled={!canAccess}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {isPrimary ? (
-                                      <Star className="w-3.5 h-3.5 text-amber-500" />
-                                    ) : isDemo ? (
-                                      <FlaskConical className="w-3.5 h-3.5 text-violet-400" />
-                                    ) : (
-                                      <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-                                    )}
-                                    <span className="truncate max-w-[200px]" title={userDomain.domain}>
-                                      {userDomain.domain}
-                                    </span>
-                                    {isDemo && (
-                                      <Badge className="text-[8px] px-1 py-0 bg-violet-500/20 text-violet-400 border-violet-500/30">
-                                        DEMO
-                                      </Badge>
-                                    )}
-                                    {isPrimary && !isDemo && (
-                                      <Badge className="text-[8px] px-1 py-0 bg-amber-500/20 text-amber-600 border-amber-500/30">
-                                        FREE
-                                      </Badge>
-                                    )}
-                                    {!canAccess && !isDemo && (
-                                      <Badge variant="outline" className="text-[8px] px-1 py-0">
-                                        Upgrade
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              </div>
-                            );
-                          })
-                        )}
-                        <SelectSeparator />
-                        <div 
-                          className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddDomainDialogOpen(true);
-                          }}
-                        >
-                          <Plus className="w-3 h-3" />
-                          Add domain
-                        </div>
-                      </>
-                    );
-                  })()}
-                </SelectContent>
-              </Select>
+                onAddDomain={() => setAddDomainDialogOpen(true)}
+                isLoading={isLoadingUserDomains}
+                isSuperAdmin={isSuperAdmin}
+              />
               
               {/* Live indicator */}
               <span className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
