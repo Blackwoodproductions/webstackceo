@@ -165,6 +165,12 @@ const Admin = () => {
     );
   }
 
+  const initialTab = (() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'super-admin' && isSuperAdmin) return 'super-admin';
+    return 'applications';
+  })();
+
   return (
     <div className="min-h-screen bg-background relative animate-fade-in">
       {/* VI Dashboard Background Effects */}
@@ -220,7 +226,7 @@ const Admin = () => {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="applications" className="space-y-6">
+        <Tabs defaultValue={initialTab} className="space-y-6">
           <TabsList className={`grid w-full ${isSuperAdmin ? 'grid-cols-4' : 'grid-cols-3'} lg:w-auto lg:inline-grid`}>
             <TabsTrigger value="applications" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />

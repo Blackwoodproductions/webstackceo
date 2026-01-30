@@ -8,7 +8,7 @@ import {
   Menu, X, Moon, Sun, Volume2, VolumeX, ChevronDown,
   Search, Link2, PenTool, HelpCircle, Headset, UserCheck, Eye,
   MousePointerClick, TrendingUp, BarChart3, MapPin, Activity, Server, Shield,
-  FileText, Target, Zap, LogOut, User as UserIcon, Settings
+  FileText, Target, Zap, LogOut, User as UserIcon, Settings, Crown
 } from "lucide-react";
 import GetStartedDialog from "@/components/GetStartedDialog";
 import { useSoundContext } from "@/contexts/SoundContext";
@@ -82,6 +82,7 @@ const Navbar = () => {
   // Auth state
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<{ avatar_url: string | null; full_name: string | null } | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Check auth state on mount
   useEffect(() => {
@@ -99,9 +100,19 @@ const Navbar = () => {
             .then(({ data }) => {
               if (data) setUserProfile(data);
             });
+
+          void (async () => {
+            try {
+              const { data } = await supabase.rpc('is_super_admin', { _user_id: session.user.id });
+              setIsSuperAdmin(Boolean(data));
+            } catch {
+              setIsSuperAdmin(false);
+            }
+          })();
         }, 0);
       } else {
         setUserProfile(null);
+        setIsSuperAdmin(false);
       }
     });
 
@@ -116,6 +127,15 @@ const Navbar = () => {
           .then(({ data }) => {
             if (data) setUserProfile(data);
           });
+
+        void (async () => {
+          try {
+            const { data } = await supabase.rpc('is_super_admin', { _user_id: session.user.id });
+            setIsSuperAdmin(Boolean(data));
+          } catch {
+            setIsSuperAdmin(false);
+          }
+        })();
       }
     });
 
@@ -126,6 +146,7 @@ const Navbar = () => {
     await supabase.auth.signOut();
     setUser(null);
     setUserProfile(null);
+    setIsSuperAdmin(false);
     
     // Clear all Google service tokens
     localStorage.removeItem('unified_google_token');
@@ -888,6 +909,16 @@ const Navbar = () => {
                     Settings
                   </a>
                 </DropdownMenuItem>
+
+                {isSuperAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin?tab=super-admin" className="flex items-center gap-2 cursor-pointer">
+                      <Crown className="w-4 h-4" />
+                      Super Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" />
@@ -1212,6 +1243,16 @@ const Navbar = () => {
                       Dashboard
                     </a>
                   </Button>
+
+                  {isSuperAdmin && (
+                    <Button variant="heroOutline" className="w-full" asChild>
+                      <Link to="/admin?tab=super-admin" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Crown className="w-4 h-4 mr-2" />
+                        Super Admin
+                      </Link>
+                    </Button>
+                  )}
+
                   <Button 
                     variant="ghost" 
                     className="w-full text-red-500 hover:text-red-500 hover:bg-red-500/10" 

@@ -225,6 +225,7 @@ const MarketingDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [funnelStats, setFunnelStats] = useState<FunnelStats>({
     visitors: 0,
@@ -1600,21 +1601,18 @@ const MarketingDashboard = () => {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+      const [adminRes, superRes] = await Promise.all([
+        supabase.rpc('is_admin', { _user_id: userId }),
+        supabase.rpc('is_super_admin', { _user_id: userId }),
+      ]);
 
-      if (error) throw error;
-      
-      const adminStatus = !!data;
+      const superStatus = Boolean(superRes.data);
+      const adminStatus = Boolean(adminRes.data) || superStatus;
+
+      setIsSuperAdmin(superStatus);
       setIsAdmin(adminStatus);
-      
-      if (adminStatus) {
-        await fetchAllData();
-      }
+
+      if (adminStatus) await fetchAllData();
     } catch (error) {
       console.error('Error checking admin role:', error);
     } finally {
@@ -1914,6 +1912,25 @@ const MarketingDashboard = () => {
                     Home
                   </a>
                 </DropdownMenuItem>
+
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                      <Users className="w-4 h-4" />
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
+                {isSuperAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin?tab=super-admin" className="flex items-center gap-2 cursor-pointer">
+                      <Shield className="w-4 h-4" />
+                      Super Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={handleLogout}
