@@ -254,8 +254,11 @@ serve(async (req) => {
     let location: string | undefined;
     let singleKeyword = false;
     
+    let action: string | null = null;
+    
     try {
       const body = await req.json();
+      if (body.action) action = body.action;
       if (body.domain) targetDomain = body.domain;
       if (body.keywords) targetKeywords = body.keywords;
       if (body.keyword) {
@@ -265,6 +268,71 @@ serve(async (req) => {
       if (body.location) location = body.location;
     } catch {
       // No body - scheduled run
+    }
+    
+    // Quick training action for single keyword (3 rounds, ~30 seconds)
+    if (action === 'train_keyword' && targetDomain && targetKeywords.length === 1) {
+      const keyword = targetKeywords[0];
+      console.log(`[AEO Quick Training] Starting 3-round session for "${keyword}" on ${targetDomain}`);
+      
+      const quickRounds = 3;
+      const allResults: LLMResult[] = [];
+      
+      for (let round = 0; round < quickRounds; round++) {
+        const roundResults = await runTrainingRound(round, targetDomain, keyword, location, LOVABLE_API_KEY);
+        allResults.push(...roundResults);
+        
+        // Brief delay between rounds
+        if (round < quickRounds - 1) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+      
+      // Calculate improvements
+      const prominentCount = allResults.filter(r => r.position === 'prominent').length;
+      const mentionedCount = allResults.filter(r => r.position === 'mentioned').length;
+      const totalChecks = allResults.filter(r => !r.error).length;
+      
+      // Generate training suggestions
+      const suggestions: string[] = [];
+      if (prominentCount > 0) {
+        suggestions.push(`Training session completed with ${prominentCount}/${totalChecks} prominent placements`);
+        if (prominentCount === totalChecks) {
+          suggestions.push('Achieved #1 prominence across all models!');
+        }
+      } else if (mentionedCount > 0) {
+        suggestions.push(`Improved visibility with ${mentionedCount}/${totalChecks} mentions`);
+      } else {
+        suggestions.push('Initial training complete - more sessions recommended for visibility');
+      }
+      
+      // Save to database
+      const today = new Date().toISOString().split('T')[0];
+      await supabase
+        .from('aeo_check_results')
+        .upsert({
+          domain: targetDomain,
+          keyword,
+          check_date: today,
+          checked_at: new Date().toISOString(),
+          results: allResults,
+          suggestions,
+          prominent_count: prominentCount,
+          mentioned_count: mentionedCount,
+        }, {
+          onConflict: 'domain,keyword,check_date',
+        });
+      
+      return new Response(JSON.stringify({
+        success: true,
+        keyword,
+        domain: targetDomain,
+        results: allResults,
+        suggestions,
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Get domains with recent AEO checks if not specified
