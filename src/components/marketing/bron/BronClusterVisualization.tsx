@@ -1,12 +1,6 @@
-import { memo, useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2 } from "lucide-react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
+import { ExternalLink, TrendingUp, TrendingDown, Sparkles, Loader2, Link2, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BronKeyword, BronSerpReport, BronLink } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition, KeywordMetrics, PageSpeedScore } from "./BronKeywordCard";
@@ -164,6 +158,29 @@ const MiniClusterCard = memo(({
   const parentUrl = getUrlForKeyword(cluster.parent, parentKeywordText);
   const parentUrlKey = parentUrl ? normalizeUrlKey(parentUrl) : null;
   const parentLinkCounts = parentUrlKey ? linkCountsByUrl.get(parentUrlKey) : undefined;
+  
+  // Check if this cluster links to an external money page (client's site)
+  const hasExternalLinkout = !!cluster.parent.linkouturl;
+  const linkoutDomain = hasExternalLinkout 
+    ? (() => {
+        try {
+          const url = new URL(cluster.parent.linkouturl!);
+          return url.hostname.replace(/^www\./, '');
+        } catch {
+          return cluster.parent.linkouturl?.split('/')[2]?.replace(/^www\./, '') || '';
+        }
+      })()
+    : null;
+  const linkoutPath = hasExternalLinkout
+    ? (() => {
+        try {
+          const url = new URL(cluster.parent.linkouturl!);
+          return url.pathname.length > 1 ? url.pathname : '';
+        } catch {
+          return '';
+        }
+      })()
+    : null;
 
   const parentNode: NodeData = {
     id: cluster.parent.id,
@@ -306,18 +323,38 @@ const MiniClusterCard = memo(({
 
   return (
     <div 
-      className="bg-card/30 border border-border/30 rounded p-1.5 hover:border-primary/30 transition-colors"
+      className={`bg-card/30 border rounded p-1.5 hover:border-primary/30 transition-colors ${hasExternalLinkout ? 'border-cyan-500/40' : 'border-border/30'}`}
       style={{ minWidth: 0 }}
     >
       {/* Cluster title */}
-      <div className="text-[8px] font-medium text-foreground mb-1.5 truncate text-center leading-tight" title={parentKeywordText}>
+      <div className="text-[8px] font-medium text-foreground mb-1 truncate text-center leading-tight" title={parentKeywordText}>
         {parentKeywordText.length > 20 ? parentKeywordText.substring(0, 18) + '…' : parentKeywordText}
       </div>
       
+      {/* External linkout destination indicator */}
+      {hasExternalLinkout && linkoutPath && (
+        <div 
+          className="flex items-center justify-center gap-0.5 mb-1 px-1 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20"
+          title={`Links to: ${cluster.parent.linkouturl}`}
+        >
+          <Globe className="w-2 h-2 text-cyan-400 flex-shrink-0" />
+          <span className="text-[6px] text-cyan-400 truncate max-w-[60px]">
+            {linkoutPath.length > 15 ? linkoutPath.substring(0, 13) + '…' : linkoutPath}
+          </span>
+        </div>
+      )}
+      
       {/* Visual layout: Parent on top, children below */}
       <div className="flex flex-col items-center gap-0.5">
-        {/* Parent (Money Page) */}
-        {renderNode(parentNode, 28)}
+        {/* Parent (Money Page) - with external indicator */}
+        <div className="relative">
+          {renderNode(parentNode, 28)}
+          {hasExternalLinkout && (
+            <div className="absolute -top-1 -left-1 w-3 h-3 rounded-full bg-cyan-500 flex items-center justify-center" title="Client's Money Page">
+              <Link2 className="w-1.5 h-1.5 text-white" />
+            </div>
+          )}
+        </div>
         
         {/* Connection lines (simplified as a visual indicator) */}
         {childNodes.length > 0 && (
@@ -347,7 +384,6 @@ const MiniClusterCard = memo(({
     </div>
   );
 });
-MiniClusterCard.displayName = 'MiniClusterCard';
 MiniClusterCard.displayName = 'MiniClusterCard';
 
 // Tooltip Component
@@ -513,12 +549,21 @@ export const BronClusterVisualization = memo(({
     clusters.reduce((sum, c) => sum + c.children.length, 0), 
     [clusters]
   );
+  
+  // Count clusters with external linkout
+  const externalLinkoutCount = useMemo(() => 
+    clusters.filter(c => !!c.parent.linkouturl).length, 
+    [clusters]
+  );
+
+  // Don't render if not open
+  if (!isOpen) return null;
 
   return (
     <div className="relative">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-card/50">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-sm font-semibold text-foreground">Keyword Cluster Map</h3>
           <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-[10px] px-1.5 py-0">
             {clusters.length} Money Pages
@@ -526,7 +571,13 @@ export const BronClusterVisualization = memo(({
           <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/30 text-[10px] px-1.5 py-0">
             {totalSupportingKeywords} Supporting
           </Badge>
-          <span className="text-[10px] text-muted-foreground">
+          {externalLinkoutCount > 0 && (
+            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30 text-[10px] px-1.5 py-0">
+              <Link2 className="w-2.5 h-2.5 mr-0.5" />
+              {externalLinkoutCount} Client Pages
+            </Badge>
+          )}
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">
             Hover for details · Click to open URL
           </span>
         </div>
