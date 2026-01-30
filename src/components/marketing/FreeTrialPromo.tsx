@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, BarChart3, Zap, ChevronRight, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,20 +17,73 @@ export function FreeTrialPromo({ variant = 'popup', onClose }: FreeTrialPromoPro
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
+  // Side tab scroll positioning (staggered at 40% - higher than beta tab)
+  const [topPosition, setTopPosition] = useState('40%');
+  const [tabOpacity, setTabOpacity] = useState(1);
+  const throttleRef = useRef(false);
+
   // Show popup after delay (only for popup variant)
   useEffect(() => {
     if (variant === 'popup') {
-      // Check if user has dismissed the popup before
       const dismissed = sessionStorage.getItem('free_trial_promo_dismissed');
       if (dismissed || user) return;
 
       const timer = setTimeout(() => {
         setIsVisible(true);
-      }, 5000); // Show after 5 seconds
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
   }, [variant, user]);
+
+  // Handle scroll to stop above footer and fade out
+  useEffect(() => {
+    if (variant !== 'side-tab') return;
+    
+    const handleScroll = () => {
+      if (throttleRef.current) return;
+      throttleRef.current = true;
+      
+      requestAnimationFrame(() => {
+        const footer = document.querySelector('footer');
+        if (!footer) {
+          throttleRef.current = false;
+          return;
+        }
+
+        const footerRect = footer.getBoundingClientRect();
+        const elementHeight = 56;
+        const buffer = 40;
+        const defaultTop = window.innerHeight * 0.40;
+        const fadeStartDistance = 150;
+        
+        const maxTop = footerRect.top - elementHeight - buffer;
+        const distanceToFooter = footerRect.top - defaultTop - elementHeight;
+        
+        if (distanceToFooter < fadeStartDistance) {
+          const fadeProgress = Math.max(0, distanceToFooter / fadeStartDistance);
+          setTabOpacity(fadeProgress);
+        } else {
+          setTabOpacity(1);
+        }
+        
+        if (defaultTop > maxTop) {
+          setTopPosition(`${maxTop}px`);
+        } else {
+          setTopPosition('40%');
+        }
+        throttleRef.current = false;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
+    handleScroll();
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [variant]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -61,8 +114,13 @@ export function FreeTrialPromo({ variant = 'popup', onClose }: FreeTrialPromoPro
 
   // Side tab variant (left side of screen)
   if (variant === 'side-tab') {
+    if (tabOpacity === 0) return null;
+    
     return (
-      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-[100] flex items-center">
+      <div 
+        className="fixed left-0 z-[100] flex items-center transition-opacity duration-300"
+        style={{ top: topPosition, opacity: tabOpacity }}
+      >
         {/* Tab handle */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
