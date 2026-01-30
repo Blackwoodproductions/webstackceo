@@ -1361,6 +1361,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1613,6 +1646,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_analytics: { Args: never; Returns: number }
+      get_user_primary_domain: { Args: { p_user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1623,6 +1657,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_white_label_admin: { Args: { _user_id: string }; Returns: boolean }
+      user_has_primary_domain: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:

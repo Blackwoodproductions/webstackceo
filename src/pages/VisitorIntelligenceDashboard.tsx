@@ -79,11 +79,13 @@ import { VIDashboardHeader } from '@/components/dashboard/VIDashboardHeader';
 import { VIDashboardTabs, type DashboardTab } from '@/components/dashboard/VIDashboardTabs';
 import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
 import { FeatureGate } from '@/components/dashboard/FeatureGate';
+import { DomainSelectionDialog } from '@/components/dashboard/DomainSelectionDialog';
 
 // Import optimized hooks
 import { useVIAuth } from '@/hooks/use-vi-auth';
 import { useVIChat } from '@/hooks/use-vi-chat';
 import { useDomainCache } from '@/hooks/use-domain-cache';
+import { useUserDomains } from '@/hooks/use-user-domains';
 
 interface Lead {
   id: string;
@@ -589,7 +591,22 @@ const MarketingDashboard = () => {
     isCacheFresh,
   } = useDomainCache();
   
+  // Multi-tenant user domains system
+  const {
+    domains: userOwnedDomains,
+    primaryDomain: userPrimaryDomain,
+    isLoading: isLoadingUserDomains,
+    hasPrimaryDomain,
+    addDomain: addUserOwnedDomain,
+    removeDomain: removeUserOwnedDomain,
+    setPrimaryDomain,
+    importFromGsc,
+    refreshDomains: refreshUserDomains,
+    canAccessDomain,
+  } = useUserDomains();
+  
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
+  const [domainSelectionDialogOpen, setDomainSelectionDialogOpen] = useState(false);
   const [newDomainInput, setNewDomainInput] = useState('');
   const [newlyAddedDomain, setNewlyAddedDomain] = useState<string | null>(null);
   
@@ -1004,33 +1021,51 @@ const MarketingDashboard = () => {
     setPrevChatCount(sidebarChats.length);
   }, [sidebarChats.length]);
 
-  // Fetch tracked domains from visitor_sessions (domains with tracking code installed)
-  const fetchTrackedDomains = async () => {
+  // Fetch tracked domains from user_domains table (multi-tenant isolation)
+  const fetchTrackedDomains = useCallback(async () => {
     try {
-      // Only include production domains with Visitor Intelligence installed
-      // Filter out Lovable preview URLs, lovable.app, and lovableproject.com domains
-      const allowedDomains = ['webstack.ceo'];
+      // User-owned domains are now fetched by useUserDomains hook
+      // Only populate trackedDomains cache from user's own domains
+      const ownedDomainNames = userOwnedDomains.map(d => d.domain);
+      setTrackedDomains(ownedDomainNames);
       
-      setTrackedDomains(allowedDomains);
-      
-      // Auto-select first domain if none selected and no GSC sites
-      // IMPORTANT: Prioritize tracked domains - they should always be the default
-      if (allowedDomains.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
-        setSelectedTrackedDomain(allowedDomains[0]);
-        setSelectedGscDomain(allowedDomains[0]);
-        setSelectedDomainKey(allowedDomains[0]);
-        // Ensure tracking status is TRUE for known tracked domains
+      // Auto-select primary (free) domain if none selected
+      if (ownedDomainNames.length > 0 && !selectedTrackedDomain && !selectedGscSiteUrl) {
+        const primaryDomainName = userPrimaryDomain?.domain || ownedDomainNames[0];
+        setSelectedTrackedDomain(primaryDomainName);
+        setSelectedGscDomain(primaryDomainName);
+        setSelectedDomainKey(primaryDomainName);
         setGscDomainHasTracking(true);
       }
     } catch (err) {
-      console.error('Error fetching tracked domains:', err);
+      console.error('Error syncing tracked domains:', err);
     }
-  };
+  }, [userOwnedDomains, userPrimaryDomain, selectedTrackedDomain, selectedGscSiteUrl, setTrackedDomains, setSelectedTrackedDomain, setSelectedDomainKey]);
 
-  // Fetch tracked domains on mount
+  // Sync tracked domains when user domains change
   useEffect(() => {
-    fetchTrackedDomains();
-  }, []);
+    if (!isLoadingUserDomains) {
+      fetchTrackedDomains();
+    }
+  }, [isLoadingUserDomains, userOwnedDomains, fetchTrackedDomains]);
+  
+  // Auto-import GSC sites when first loaded and user has no domains yet
+  const handleGscSitesLoaded = useCallback(async (sites: { siteUrl: string; permissionLevel: string }[]) => {
+    setGscSites(sites);
+    console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
+    
+    // If user has no domains yet, import from GSC and prompt selection
+    if (userOwnedDomains.length === 0 && sites.length > 0) {
+      console.log('[Domain Import] User has no domains, importing from GSC...');
+      const imported = await importFromGsc(sites);
+      
+      if (imported > 0) {
+        await refreshUserDomains();
+        // Show domain selection dialog if no primary selected
+        setDomainSelectionDialogOpen(true);
+      }
+    }
+  }, [userOwnedDomains.length, importFromGsc, refreshUserDomains, setGscSites]);
 
   const selectedDomainLabel = useMemo(() => {
     // VI domain selector is the source of truth for VI panels
@@ -1974,59 +2009,60 @@ const MarketingDashboard = () => {
                   sideOffset={4}
                 >
                   {(() => {
-                    const trackedSet = new Set(trackedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
-                    const userAddedSet = new Set(userAddedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
-                    const viDomains = [...new Set([...trackedSet, ...userAddedSet])].filter(Boolean);
+                    // Use user-owned domains from database (multi-tenant isolation)
+                    const ownedDomains = userOwnedDomains.map(d => ({
+                      ...d,
+                      normalized: d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]
+                    }));
                     
                     return (
                       <>
-                        {viDomains.length === 0 && (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                            No domains yet
+                        {isLoadingUserDomains ? (
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground flex items-center gap-2">
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            Loading domains...
                           </div>
-                        )}
-                        {viDomains.map((domain) => {
-                          const hasViTracking = trackedSet.has(domain);
-                          const isUserAdded = userAddedSet.has(domain) && !hasViTracking;
-                          return (
-                            <div key={domain} className="flex items-center justify-between group">
-                              <SelectItem
-                                value={domain}
-                                className="text-xs flex-1"
-                              >
-                                <div className="flex items-center gap-2">
-                                  {hasViTracking && <Globe className="w-3.5 h-3.5 text-primary" />}
-                                  <span className="truncate max-w-[250px]" title={domain}>
-                                    {domain}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                              {isUserAdded && (
-                                <button
-                                  type="button"
-                                  className="p-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 rounded"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    if (confirm(`Remove "${domain}" and all its cached data?`)) {
-                                      removeUserDomain(domain);
-                                      // If this was the selected domain, clear selection
-                                      if (selectedTrackedDomain === domain || selectedGscDomain === domain) {
-                                        setSelectedTrackedDomain('');
-                                        setSelectedGscDomain(null);
-                                        setSelectedDomainKey('');
-                                      }
-                                      toast.success(`Removed ${domain} and all cached data`);
-                                    }
-                                  }}
-                                  title="Remove domain and all cached data"
+                        ) : ownedDomains.length === 0 ? (
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                            No domains yet - connect GSC to import
+                          </div>
+                        ) : (
+                          ownedDomains.map((userDomain) => {
+                            const isPrimary = userDomain.is_primary;
+                            const canAccess = isPrimary; // For now, only primary is free
+                            
+                            return (
+                              <div key={userDomain.id} className="flex items-center justify-between group">
+                                <SelectItem
+                                  value={userDomain.normalized}
+                                  className={`text-xs flex-1 ${!canAccess ? 'opacity-60' : ''}`}
+                                  disabled={!canAccess}
                                 >
-                                  <X className="w-3 h-3 text-destructive" />
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
+                                  <div className="flex items-center gap-2">
+                                    {isPrimary ? (
+                                      <Star className="w-3.5 h-3.5 text-amber-500" />
+                                    ) : (
+                                      <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                                    )}
+                                    <span className="truncate max-w-[200px]" title={userDomain.domain}>
+                                      {userDomain.domain}
+                                    </span>
+                                    {isPrimary && (
+                                      <Badge className="text-[8px] px-1 py-0 bg-amber-500/20 text-amber-600 border-amber-500/30">
+                                        FREE
+                                      </Badge>
+                                    )}
+                                    {!canAccess && (
+                                      <Badge variant="outline" className="text-[8px] px-1 py-0">
+                                        Upgrade
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              </div>
+                            );
+                          })
+                        )}
                         <SelectSeparator />
                         <div 
                           className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer hover:bg-accent rounded-sm"
@@ -2868,10 +2904,7 @@ f.parentNode.insertBefore(j,f);
               setGscTrackingByDomain((prev) => ({ ...prev, [cleanDomain]: hasTracking }));
               console.log(`Tracking status for ${cleanDomain}: ${hasTracking ? 'installed' : 'not installed'}`);
             }}
-            onSitesLoaded={(sites) => {
-              setGscSites(sites);
-              console.log('[GSC] Sites loaded:', sites.map(s => normalizeDomain(s.siteUrl)));
-            }}
+            onSitesLoaded={handleGscSitesLoaded}
             onAuthStatusChange={(isAuth) => {
               setGscAuthenticated(isAuth);
               console.log('[GSC] Auth status changed:', isAuth);
@@ -4110,6 +4143,28 @@ f.parentNode.insertBefore(j,f);
         </DialogContent>
       </Dialog>
 
+      {/* Domain Selection Dialog - For new users to select their free domain */}
+      <DomainSelectionDialog
+        open={domainSelectionDialogOpen}
+        onOpenChange={setDomainSelectionDialogOpen}
+        domains={userOwnedDomains}
+        onSelectPrimary={async (domainId) => {
+          const success = await setPrimaryDomain(domainId);
+          if (success) {
+            await refreshUserDomains();
+            // Auto-select the primary domain
+            const selectedDomain = userOwnedDomains.find(d => d.id === domainId);
+            if (selectedDomain) {
+              setSelectedTrackedDomain(selectedDomain.domain);
+              setSelectedDomainKey(selectedDomain.domain);
+              toast.success(`${selectedDomain.domain} is now your free domain!`);
+            }
+          }
+          return success;
+        }}
+        isLoading={isLoadingUserDomains}
+      />
+
       {/* Add Domain Dialog */}
       <Dialog open={addDomainDialogOpen} onOpenChange={setAddDomainDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -4124,21 +4179,28 @@ f.parentNode.insertBefore(j,f);
                 placeholder="example.com"
                 value={newDomainInput}
                 onChange={(e) => setNewDomainInput(e.target.value)}
-                onKeyDown={(e) => {
+                onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     const domain = normalizeDomain(newDomainInput.trim());
-                    if (domain && !userAddedDomains.includes(domain) && !trackedDomains.includes(domain)) {
-                      setUserAddedDomains([...userAddedDomains, domain]);
-                      setSelectedDomainKey(domain);
-                      setSelectedTrackedDomain(domain);
-                      setSelectedGscDomain(domain);
-                      setGscDomainHasTracking(false);
-                      setNewDomainInput('');
-                      setAddDomainDialogOpen(false);
-                      setNewlyAddedDomain(domain);
-                      // Trigger auto SEO audit
-                      triggerAutoAudit(domain);
+                    if (domain) {
+                      const added = await addUserOwnedDomain(domain, 'manual');
+                      if (added) {
+                        setSelectedDomainKey(domain);
+                        setSelectedTrackedDomain(domain);
+                        setSelectedGscDomain(domain);
+                        setNewDomainInput('');
+                        setAddDomainDialogOpen(false);
+                        setNewlyAddedDomain(domain);
+                        triggerAutoAudit(domain);
+                        toast.success(`Added ${domain}`);
+                        
+                        // If this is their first domain, prompt to set as primary
+                        if (!hasPrimaryDomain) {
+                          await refreshUserDomains();
+                          setDomainSelectionDialogOpen(true);
+                        }
+                      }
                     }
                   }
                 }}
@@ -4155,19 +4217,26 @@ f.parentNode.insertBefore(j,f);
             }}>
               Cancel
             </Button>
-            <Button onClick={() => {
+            <Button onClick={async () => {
               const domain = normalizeDomain(newDomainInput.trim());
-              if (domain && !userAddedDomains.includes(domain) && !trackedDomains.includes(domain)) {
-                setUserAddedDomains([...userAddedDomains, domain]);
-                setSelectedDomainKey(domain);
-                setSelectedTrackedDomain(domain);
-                setSelectedGscDomain(domain);
-                setGscDomainHasTracking(false);
-                setNewDomainInput('');
-                setAddDomainDialogOpen(false);
-                setNewlyAddedDomain(domain);
-                // Trigger auto SEO audit
-                triggerAutoAudit(domain);
+              if (domain) {
+                const added = await addUserOwnedDomain(domain, 'manual');
+                if (added) {
+                  setSelectedDomainKey(domain);
+                  setSelectedTrackedDomain(domain);
+                  setSelectedGscDomain(domain);
+                  setNewDomainInput('');
+                  setAddDomainDialogOpen(false);
+                  setNewlyAddedDomain(domain);
+                  triggerAutoAudit(domain);
+                  toast.success(`Added ${domain}`);
+                  
+                  // If this is their first domain, prompt to set as primary
+                  if (!hasPrimaryDomain) {
+                    await refreshUserDomains();
+                    setDomainSelectionDialogOpen(true);
+                  }
+                }
               }
             }}>
               Add Domain
