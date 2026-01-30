@@ -111,10 +111,10 @@ export function DomainSelectorBar({
               </div>
 
               <Select value={selectedValue} onValueChange={onDomainChange}>
-                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto">
+                <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative z-[130]">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[200] max-w-[400px] pointer-events-auto">
+                <SelectContent className="bg-popover border border-border shadow-2xl z-[500] max-w-[400px] pointer-events-auto">
                   {viDomains.length === 0 && (
                     <div className="px-2 py-1.5 text-xs text-muted-foreground">
                       No domains yet
