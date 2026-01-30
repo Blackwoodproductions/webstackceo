@@ -2,7 +2,7 @@ import { useState, useEffect, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FlaskConical, X, MessageSquarePlus, Bug, Lightbulb, 
-  AlertTriangle, Send, ChevronDown, Loader2, Check
+  AlertTriangle, Send, Loader2, Check, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ interface PageError {
 }
 
 const BetaNoticeBanner = memo(() => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<string>("feedback");
   const [title, setTitle] = useState("");
@@ -81,24 +81,6 @@ const BetaNoticeBanner = memo(() => {
       window.removeEventListener('unhandledrejection', rejectionHandler);
       console.error = originalError;
     };
-  }, []);
-
-  // Check for dismissed state
-  useEffect(() => {
-    const dismissed = sessionStorage.getItem('beta_banner_collapsed');
-    if (dismissed === 'true') {
-      setIsCollapsed(true);
-    }
-  }, []);
-
-  const handleCollapse = useCallback(() => {
-    setIsCollapsed(true);
-    sessionStorage.setItem('beta_banner_collapsed', 'true');
-  }, []);
-
-  const handleExpand = useCallback(() => {
-    setIsCollapsed(false);
-    sessionStorage.removeItem('beta_banner_collapsed');
   }, []);
 
   const openFeedbackDialog = useCallback((type: string) => {
@@ -163,101 +145,71 @@ const BetaNoticeBanner = memo(() => {
 
   return (
     <>
-      {/* Collapsed pill */}
-      <AnimatePresence>
-        {isCollapsed && (
-          <motion.button
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            onClick={handleExpand}
-            className="fixed top-2 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/90 to-cyan-500/90 text-white text-xs font-medium shadow-lg hover:shadow-xl transition-shadow backdrop-blur-sm border border-white/20"
-          >
-            <FlaskConical className="w-3.5 h-3.5" />
-            <span>Beta</span>
-            <ChevronDown className="w-3 h-3" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Full banner */}
-      <AnimatePresence>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-violet-600/95 via-purple-600/95 to-cyan-600/95 backdrop-blur-sm border-b border-white/10 shadow-lg"
-          >
-            <div className="container mx-auto px-4 py-2">
-              <div className="flex items-center justify-between gap-4">
-                {/* Left: Beta badge and message */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/15 border border-white/20">
-                    <FlaskConical className="w-4 h-4 text-white" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Beta</span>
-                  </div>
-                  <p className="text-sm text-white/90 hidden sm:block truncate">
-                    We're still building! Help us improve with your feedback.
-                  </p>
-                </div>
-
-                {/* Center: Action buttons */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("feedback")}
-                    className="text-white hover:bg-white/20 hover:text-white text-xs h-7 px-2.5"
-                  >
-                    <MessageSquarePlus className="w-3.5 h-3.5 mr-1.5" />
-                    <span className="hidden md:inline">Feedback</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("feature_request")}
-                    className="text-white hover:bg-white/20 hover:text-white text-xs h-7 px-2.5"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5 mr-1.5" />
-                    <span className="hidden md:inline">Ideas</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openFeedbackDialog("bug_report")}
-                    className="text-white hover:bg-white/20 hover:text-white text-xs h-7 px-2.5"
-                  >
-                    <Bug className="w-3.5 h-3.5 mr-1.5" />
-                    <span className="hidden md:inline">Bug</span>
-                  </Button>
-                  {pageErrors.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => openFeedbackDialog("error_report")}
-                      className="text-orange-200 hover:bg-orange-500/20 hover:text-orange-100 text-xs h-7 px-2.5 animate-pulse"
-                    >
-                      <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
-                      <span className="hidden md:inline">{pageErrors.length} Error{pageErrors.length > 1 ? 's' : ''}</span>
-                    </Button>
-                  )}
-                </div>
-
-                {/* Right: Close button */}
+      {/* Right side vertical tab */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] flex items-center">
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="mr-1 bg-gradient-to-b from-violet-600/95 via-purple-600/95 to-cyan-600/95 backdrop-blur-sm border border-white/10 rounded-l-xl shadow-lg p-3"
+            >
+              <div className="flex flex-col gap-2">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={handleCollapse}
-                  className="text-white/70 hover:text-white hover:bg-white/10 h-7 w-7 p-0"
+                  onClick={() => openFeedbackDialog("feedback")}
+                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
                 >
-                  <X className="w-4 h-4" />
+                  <MessageSquarePlus className="w-4 h-4 mr-2" />
+                  Feedback
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openFeedbackDialog("feature_request")}
+                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
+                >
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Ideas
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => openFeedbackDialog("bug_report")}
+                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
+                >
+                  <Bug className="w-4 h-4 mr-2" />
+                  Bug
+                </Button>
+                {pageErrors.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openFeedbackDialog("error_report")}
+                    className="text-orange-200 hover:bg-orange-500/20 hover:text-orange-100 text-xs h-8 px-2 justify-start animate-pulse"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    {pageErrors.length} Error{pageErrors.length > 1 ? 's' : ''}
+                  </Button>
+                )}
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tab handle */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex flex-col items-center gap-1 py-3 px-1.5 bg-gradient-to-b from-violet-500/90 to-cyan-500/90 text-white text-xs font-medium shadow-lg hover:shadow-xl transition-shadow backdrop-blur-sm rounded-l-lg border border-white/20 border-r-0"
+          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+        >
+          <FlaskConical className="w-4 h-4 mb-1 rotate-90" />
+          <span className="tracking-wider">BETA</span>
+          <ChevronLeft className={`w-3 h-3 mt-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
 
       {/* Feedback Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -380,9 +332,6 @@ const BetaNoticeBanner = memo(() => {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Spacer when banner is visible */}
-      {!isCollapsed && <div className="h-10" />}
     </>
   );
 });
