@@ -94,7 +94,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
 
   return (
     <div 
-      className="absolute inset-x-0 -bottom-px z-20 flex justify-center"
+      className="absolute inset-x-0 -bottom-px z-[150] flex justify-center pointer-events-auto"
       style={{ contain: 'layout style' }}
     >
       <div
