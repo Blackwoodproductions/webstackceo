@@ -252,7 +252,7 @@ const MiniClusterCard = memo(({
     return false;
   };
 
-  // Render a mini node
+  // Render a mini node - LARGER sizes for better visibility
   const renderNode = (node: NodeData, size: number) => {
     const googlePos = getPosition(node.serpData?.google);
     const movement = node.movement.google;
@@ -291,32 +291,42 @@ const MiniClusterCard = memo(({
     return (
       <div
         key={node.id}
-        className={`relative flex flex-col items-center cursor-pointer transition-transform ${isHovered ? 'scale-110' : ''}`}
-        onMouseEnter={(e) => onNodeHover(node, e)}
-        onMouseLeave={(e) => onNodeHover(null, e)}
-        onClick={() => onNodeClick(node)}
+        className={`relative flex flex-col items-center cursor-pointer transition-all duration-150 ${isHovered ? 'scale-110 z-10' : ''}`}
+        onMouseEnter={(e) => {
+          e.stopPropagation();
+          onNodeHover(node, e);
+        }}
+        onMouseLeave={(e) => {
+          e.stopPropagation();
+          onNodeHover(null, e);
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onNodeClick(node);
+        }}
+        style={{ pointerEvents: 'auto' }}
       >
         <div 
-          className={`${bgColor} ${borderColor} border-2 rounded-full flex items-center justify-center relative`}
+          className={`${bgColor} ${borderColor} border-2 rounded-full flex items-center justify-center relative shadow-lg ${isHovered ? 'ring-2 ring-primary/50' : ''}`}
           style={{ width: size, height: size }}
         >
-          <span className={`font-bold text-xs ${textColor}`}>
+          <span className={`font-bold ${size >= 48 ? 'text-sm' : 'text-xs'} ${textColor}`}>
             {googlePos !== null ? `#${googlePos}` : '—'}
           </span>
           
-          {/* Movement badge */}
+          {/* Movement badge - larger */}
           {movement !== 0 && (
             <div 
-              className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              className={`absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-md ${movement > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}
             >
               {movement > 0 ? '+' : ''}{movement > 99 ? '99' : movement < -99 ? '-99' : movement}
             </div>
           )}
         </div>
         
-        {/* Label */}
-        <span className="text-[8px] text-muted-foreground mt-1 max-w-[55px] truncate text-center leading-tight">
-          {node.keywordText.length > 10 ? node.keywordText.substring(0, 8) + '…' : node.keywordText}
+        {/* Label - larger text */}
+        <span className="text-[10px] text-muted-foreground mt-1.5 max-w-[70px] truncate text-center leading-tight font-medium">
+          {node.keywordText.length > 12 ? node.keywordText.substring(0, 10) + '…' : node.keywordText}
         </span>
       </div>
     );
@@ -324,59 +334,59 @@ const MiniClusterCard = memo(({
 
   return (
     <div 
-      className={`bg-card/30 border rounded p-1.5 hover:border-primary/30 transition-colors ${hasExternalLinkout ? 'border-cyan-500/40' : 'border-border/30'}`}
-      style={{ minWidth: 0 }}
+      className={`bg-card/30 border rounded-lg p-3 hover:border-primary/30 transition-colors ${hasExternalLinkout ? 'border-cyan-500/40' : 'border-border/30'}`}
+      style={{ minWidth: 140 }}
     >
-      {/* Cluster title */}
-      <div className="text-[8px] font-medium text-foreground mb-1 truncate text-center leading-tight" title={parentKeywordText}>
-        {parentKeywordText.length > 20 ? parentKeywordText.substring(0, 18) + '…' : parentKeywordText}
+      {/* Cluster title - larger */}
+      <div className="text-xs font-semibold text-foreground mb-2 truncate text-center leading-tight" title={parentKeywordText}>
+        {parentKeywordText.length > 22 ? parentKeywordText.substring(0, 20) + '…' : parentKeywordText}
       </div>
       
       {/* External linkout destination indicator */}
       {hasExternalLinkout && linkoutPath && (
         <div 
-          className="flex items-center justify-center gap-0.5 mb-1 px-1 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20"
+          className="flex items-center justify-center gap-1 mb-2 px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/20"
           title={`Links to: ${cluster.parent.linkouturl}`}
         >
-          <Globe className="w-2 h-2 text-cyan-400 flex-shrink-0" />
-          <span className="text-[6px] text-cyan-400 truncate max-w-[60px]">
-            {linkoutPath.length > 15 ? linkoutPath.substring(0, 13) + '…' : linkoutPath}
+          <Globe className="w-3 h-3 text-cyan-400 flex-shrink-0" />
+          <span className="text-[9px] text-cyan-400 truncate max-w-[80px]">
+            {linkoutPath.length > 18 ? linkoutPath.substring(0, 16) + '…' : linkoutPath}
           </span>
         </div>
       )}
       
       {/* Visual layout: Parent on top, children below */}
-      <div className="flex flex-col items-center gap-1">
-        {/* Parent (Money Page) - with external indicator */}
+      <div className="flex flex-col items-center gap-2">
+        {/* Parent (Money Page) - LARGER size (48px) */}
         <div className="relative">
-          {renderNode(parentNode, 36)}
+          {renderNode(parentNode, 48)}
           {hasExternalLinkout && (
-            <div className="absolute -top-1 -left-1 w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center" title="Client's Money Page">
-              <Link2 className="w-2 h-2 text-white" />
+            <div className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center shadow-md" title="Client's Money Page">
+              <Link2 className="w-2.5 h-2.5 text-white" />
             </div>
           )}
         </div>
         
         {/* Connection lines (simplified as a visual indicator) */}
         {childNodes.length > 0 && (
-          <div className="flex items-center justify-center gap-1 h-3">
-            {childNodes.slice(0, 2).map((child, i) => (
+          <div className="flex items-center justify-center gap-2 h-4">
+            {childNodes.slice(0, 3).map((child, i) => (
               <div 
                 key={`line-${i}`}
-                className={`w-px h-3 ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
-                style={{ transform: `rotate(${childNodes.length > 1 ? (i - 0.5) * 20 : 0}deg)` }}
+                className={`w-0.5 h-4 rounded ${getUrlConnection(child) ? 'bg-amber-400' : 'bg-muted-foreground/30'}`}
+                style={{ transform: `rotate(${childNodes.length > 1 ? (i - 1) * 15 : 0}deg)` }}
               />
             ))}
           </div>
         )}
         
-        {/* Children (Supporting Pages) - max 2 shown */}
+        {/* Children (Supporting Pages) - LARGER size (36px), show up to 3 */}
         {childNodes.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-1">
-            {childNodes.slice(0, 2).map(child => renderNode(child, 28))}
-            {childNodes.length > 2 && (
-              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted/50 border border-muted-foreground/20">
-                <span className="text-[8px] text-muted-foreground">+{childNodes.length - 2}</span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {childNodes.slice(0, 3).map(child => renderNode(child, 36))}
+            {childNodes.length > 3 && (
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 border border-muted-foreground/20">
+                <span className="text-[10px] text-muted-foreground font-medium">+{childNodes.length - 3}</span>
               </div>
             )}
           </div>
@@ -632,10 +642,10 @@ export const BronClusterVisualization = memo(({
         </div>
       </div>
       
-      {/* Content - fit all in view without scroll */}
-      <div className="p-3">
+      {/* Content - expanded layout, no scrolling */}
+      <div className="p-4" style={{ minHeight: '400px' }}>
         {clusters.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-12">
             <div className="text-center text-muted-foreground">
               <p className="text-sm mb-1">No clusters to display</p>
               <p className="text-xs">Add keywords with parent-child relationships</p>
@@ -643,9 +653,9 @@ export const BronClusterVisualization = memo(({
           </div>
         ) : (
           <div 
-            className="grid gap-2"
+            className="grid gap-4"
             style={{
-              gridTemplateColumns: `repeat(auto-fill, minmax(100px, 1fr))`,
+              gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))`,
             }}
           >
             {sortedClusters.map((cluster) => (
