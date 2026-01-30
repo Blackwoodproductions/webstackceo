@@ -481,6 +481,10 @@ export function decodeHtmlContent(html: string): string {
 //   - The URL contains a slug derived from the keyword/topic
 // - Links In (to our domain): `link` contains URL on the REFERRER domain, `domain_name` is the source
 //   - These are domain-level and typically don't include keyword-specific filtering
+//
+// IMPORTANT: This function now strictly filters links per keyword.
+// If no matching links are found for a keyword, it returns empty arrays
+// rather than falling back to all domain links.
 export function filterLinksForKeyword(
   keyword: BronKeyword,
   linksIn: BronLink[],
@@ -584,7 +588,7 @@ export function filterLinksForKeyword(
   
   // Links Out: Links FROM our domain TO other domains
   // BRON returns these with `link` pointing to OUR page (contains topic/keyword slug)
-  let keywordLinksOut = linksOut.filter((link) => {
+  const keywordLinksOut = linksOut.filter((link) => {
     return (
       matchesKeywordToken(link.link) ||
       matchesKeywordToken(link.source_url) ||
@@ -598,7 +602,7 @@ export function filterLinksForKeyword(
   // Links In: Links TO our domain FROM other domains
   // BRON returns these with `link` pointing to the REFERRER's page
   // Try to match if there's a target_url that contains our keyword
-  let keywordLinksIn = linksIn.filter((link) => {
+  const keywordLinksIn = linksIn.filter((link) => {
     return (
       matchesKeywordToken(link.link) ||
       matchesKeywordToken(link.source_url) ||
@@ -608,73 +612,8 @@ export function filterLinksForKeyword(
     );
   });
 
-  // IMPORTANT: BRON's link responses are often domain-level (referrer pages) and
-  // may not include a target_url back to the specific keyword page.
-  // If strict matching yields zero, fall back to category-based matching using
-  // categories present in this keyword's data. If we still can't
-  // determine relevance, show all links so the UI isn't empty.
-  const normalizeCategory = (value?: string) =>
-    (value || "")
-      .replace(/&amp;/g, "&")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
-
-  // Build a category set from the keyword itself if available
-  const keywordCategorySet = new Set<string>();
-  const kwAny = keyword as unknown as Record<string, unknown>;
-  if (typeof kwAny.category === 'string' && kwAny.category) {
-    keywordCategorySet.add(normalizeCategory(kwAny.category));
-  }
-  if (typeof kwAny.parent_category === 'string' && kwAny.parent_category) {
-    keywordCategorySet.add(normalizeCategory(kwAny.parent_category));
-  }
-
-  // Fallback for outbound links: if strict matching yields zero, try category-based or show all
-  if (keywordLinksOut.length === 0 && linksOut.length > 0) {
-    if (keywordCategorySet.size > 0) {
-      const byCategory = linksOut.filter((l) => {
-        const cat = normalizeCategory(l.category);
-        const parent = normalizeCategory(l.parent_category);
-        return (
-          (cat && keywordCategorySet.has(cat)) ||
-          (parent && keywordCategorySet.has(parent))
-        );
-      });
-      keywordLinksOut = byCategory.length > 0 ? byCategory : linksOut;
-    } else {
-      // No category info available - show all outbound links
-      keywordLinksOut = linksOut;
-    }
-  }
-
-  // Fallback for inbound links
-  if (keywordLinksIn.length === 0 && linksIn.length > 0) {
-    // First try using categories from outbound links
-    const outboundCategorySet = new Set<string>();
-    for (const l of keywordLinksOut) {
-      const cat = normalizeCategory(l.category);
-      const parent = normalizeCategory(l.parent_category);
-      if (cat) outboundCategorySet.add(cat);
-      if (parent) outboundCategorySet.add(parent);
-      if (parent && cat) outboundCategorySet.add(`${parent}/${cat}`);
-    }
-
-    if (outboundCategorySet.size > 0) {
-      const byCategory = linksIn.filter((l) => {
-        const cat = normalizeCategory(l.category);
-        const parent = normalizeCategory(l.parent_category);
-        return (
-          (cat && outboundCategorySet.has(cat)) ||
-          (parent && outboundCategorySet.has(parent)) ||
-          (parent && cat && outboundCategorySet.has(`${parent}/${cat}`))
-        );
-      });
-      keywordLinksIn = byCategory.length > 0 ? byCategory : linksIn;
-    } else {
-      keywordLinksIn = linksIn;
-    }
-  }
-  
+  // STRICT FILTERING: Return only the matched links for this keyword.
+  // Do NOT fall back to showing all domain links when no matches are found.
+  // This ensures each keyword shows only its own citation links.
   return { keywordLinksIn, keywordLinksOut };
 }
