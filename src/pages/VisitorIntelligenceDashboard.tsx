@@ -73,11 +73,13 @@ import { QuickStatsExpandableRow } from '@/components/marketing/QuickStatsExpand
 
 import { GMBPanel } from '@/components/marketing/GMBPanel';
 import { LandingPagesPanel } from '@/components/marketing/LandingPagesPanel';
+import { WebBuilderPanel } from '@/components/marketing/web-builder';
 
 // Import modular dashboard components
 import { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
 import { VIDashboardHeader } from '@/components/dashboard/VIDashboardHeader';
-import { VIDashboardTabs, type DashboardTab } from '@/components/dashboard/VIDashboardTabs';
+import { VIDashboardTabs } from '@/components/dashboard/VIDashboardTabs';
+import type { DashboardTab } from '@/components/dashboard/VIDashboardTabs';
 import { VIChatSidebar } from '@/components/dashboard/VIChatSidebar';
 import { FeatureGate } from '@/components/dashboard/FeatureGate';
 import { DomainSelectionDialog } from '@/components/dashboard/DomainSelectionDialog';
@@ -3675,6 +3677,15 @@ f.parentNode.insertBefore(j,f);
           <div className="mt-2">
             <PPCLandingPagesExtendedSection domain={selectedTrackedDomain || selectedDomainKey} />
           </div>
+        </div>
+        </FeatureGate>
+      )}
+
+      {/* WEB Builder Tab Content */}
+      {activeTab === 'web-builder' && (
+        <FeatureGate feature="web-builder" isAdmin={isSuperAdmin}>
+        <div className="max-w-[1480px] mx-auto bg-card rounded-b-xl border-x border-b border-border p-8 glow-primary">
+          <WebBuilderPanel selectedDomain={selectedTrackedDomain || selectedDomainKey || null} />
         </div>
         </FeatureGate>
       )}

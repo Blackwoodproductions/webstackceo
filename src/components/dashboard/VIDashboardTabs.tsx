@@ -1,5 +1,6 @@
+// Dashboard navigation tabs with color-coded service categories
 import { memo } from 'react';
-import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target, BrainCircuit } from 'lucide-react';
+import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target, BrainCircuit, Globe } from 'lucide-react';
 
 export type DashboardTab = 
   | 'visitor-intelligence' 
@@ -9,7 +10,8 @@ export type DashboardTab =
   | 'gmb' 
   | 'social-signals' 
   | 'on-page-seo' 
-  | 'landing-pages';
+  | 'landing-pages'
+  | 'web-builder';
 
 interface VIDashboardTabsProps {
   activeTab: DashboardTab;
@@ -83,6 +85,15 @@ const tabs = [
     icon: FileSearch, 
     isPaid: true,
     colorClass: 'emerald' as const
+  },
+  { 
+    id: 'web-builder' as DashboardTab, 
+    label: 'WEB', 
+    description: 'AI Builder',
+    icon: Globe, 
+    isPaid: true,
+    isHighlighted: true,
+    colorClass: 'fuchsia' as const
   },
 ];
 
@@ -158,6 +169,12 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
             inactive: 'bg-gradient-to-b from-sky-400/5 to-muted/20 text-muted-foreground hover:text-sky-400 hover:bg-sky-400/10 border-transparent',
             iconActive: 'bg-sky-400/20 text-sky-400',
             iconInactive: 'bg-secondary/50',
+          },
+          fuchsia: {
+            active: 'bg-gradient-to-b from-fuchsia-500/20 to-background text-fuchsia-400 border-fuchsia-500/50',
+            inactive: 'bg-gradient-to-b from-fuchsia-500/10 to-muted/30 text-fuchsia-400 hover:text-fuchsia-300 hover:bg-fuchsia-500/15 border-fuchsia-500/30',
+            iconActive: 'bg-fuchsia-500/30 text-fuchsia-300',
+            iconInactive: 'bg-fuchsia-500/20 text-fuchsia-400',
           },
         };
         

@@ -1,8 +1,7 @@
 // Dashboard components - modular, memoized, reusable
 export { VIDashboardHeader } from './VIDashboardHeader';
-export type { DashboardTab } from './VIDashboardHeader';
 export { VIChatSidebar } from './VIChatSidebar';
-export { VIDashboardTabs } from './VIDashboardTabs';
+export { VIDashboardTabs, type DashboardTab } from './VIDashboardTabs';
 export { VIDashboardEffects } from '@/components/ui/vi-dashboard-effects';
 export { FeatureUpgradePrompt, type FeatureType } from './FeatureUpgradePrompt';
 export { FeatureGate } from './FeatureGate';
