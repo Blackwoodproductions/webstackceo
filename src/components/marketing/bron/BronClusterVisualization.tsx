@@ -561,6 +561,18 @@ export const BronClusterVisualization = memo(({
     // Exit early if no clusters
     if (!clusters || clusters.length === 0) return result;
     
+    // Helper: Calculate movement using position 1000 as baseline for unranked keywords
+    const UNRANKED_POSITION = 1000;
+    const calculateMovement = (baseline: number | null, current: number | null): number => {
+      // Both unranked = no movement
+      if (baseline === null && current === null) return 0;
+      
+      const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
+      const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
+      
+      return effectiveBaseline - effectiveCurrent;
+    };
+    
     const centerX = containerSize.width / 2;
     const centerY = containerSize.height / 2;
     // Scale radius based on cluster count - more clusters = larger spread
@@ -615,9 +627,9 @@ export const BronClusterVisualization = memo(({
         movement: isBaselineReport
           ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
           : {
-              google: parentInitial.google && parentGooglePos ? parentInitial.google - parentGooglePos : 0,
-              bing: parentInitial.bing && getPosition(parentSerpData?.bing) ? parentInitial.bing - getPosition(parentSerpData?.bing)! : 0,
-              yahoo: parentInitial.yahoo && getPosition(parentSerpData?.yahoo) ? parentInitial.yahoo - getPosition(parentSerpData?.yahoo)! : 0,
+              google: calculateMovement(parentInitial.google, parentGooglePos),
+              bing: calculateMovement(parentInitial.bing, getPosition(parentSerpData?.bing)),
+              yahoo: calculateMovement(parentInitial.yahoo, getPosition(parentSerpData?.yahoo)),
             },
         linksInCount: parentLinkCounts?.in ?? 0,
         linksOutCount: parentLinkCounts?.out ?? 0,
@@ -660,9 +672,9 @@ export const BronClusterVisualization = memo(({
           movement: isBaselineReport
             ? { google: 0, bing: 0, yahoo: 0 } // Suppress movement on baseline report
             : {
-                google: childInitial.google && childGooglePos ? childInitial.google - childGooglePos : 0,
-                bing: childInitial.bing && getPosition(childSerpData?.bing) ? childInitial.bing - getPosition(childSerpData?.bing)! : 0,
-                yahoo: childInitial.yahoo && getPosition(childSerpData?.yahoo) ? childInitial.yahoo - getPosition(childSerpData?.yahoo)! : 0,
+                google: calculateMovement(childInitial.google, childGooglePos),
+                bing: calculateMovement(childInitial.bing, getPosition(childSerpData?.bing)),
+                yahoo: calculateMovement(childInitial.yahoo, getPosition(childSerpData?.yahoo)),
               },
           linksInCount: childLinkCounts?.in ?? 0,
           linksOutCount: childLinkCounts?.out ?? 0,

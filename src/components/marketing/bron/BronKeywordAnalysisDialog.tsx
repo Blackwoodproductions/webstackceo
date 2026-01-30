@@ -241,20 +241,22 @@ export const BronKeywordAnalysisDialog = memo(({
         stats.baseline = stats.all[0]; // First recorded position is the baseline
       }
       
-      // Change is calculated as: baseline - current
+      // Change is calculated using position 1000 as baseline for unranked keywords
       // Positive = improved (e.g., baseline #10 to current #5 = +5)
       // Negative = dropped (e.g., baseline #5 to current #10 = -5)
+      // New keyword at #1 = 1000 - 1 = +999 improvement
+      const UNRANKED_POSITION = 1000;
       const baseline = stats.baseline;
       const current = stats.current;
       let change = 0;
-      if (baseline !== null && current !== null) {
-        change = baseline - current;
-      } else if (baseline === null && current !== null) {
-        // Newly ranked (wasn't in baseline)
-        change = 999;
-      } else if (baseline !== null && current === null) {
-        // Dropped off entirely
-        change = -999;
+      
+      // Both null = no data, no change
+      if (baseline === null && current === null) {
+        change = 0;
+      } else {
+        const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
+        const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
+        change = effectiveBaseline - effectiveCurrent;
       }
       
       const colorObj = KEYWORD_COLORS[idx % KEYWORD_COLORS.length];
@@ -466,13 +468,11 @@ export const BronKeywordAnalysisDialog = memo(({
                       }`}>
                         {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
                         {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
-                        {summary.change === 0 && <Minus className="w-3 h-3" />}
                         <span className="text-lg font-bold">
                           {summary.change >= 999 ? '+NEW' : 
                            summary.change <= -999 ? 'LOST' :
-                           summary.change !== 0 ? (
-                            summary.change > 0 ? `+${summary.change}` : summary.change
-                          ) : '—'}
+                           summary.change > 0 ? `+${summary.change}` : 
+                           summary.change < 0 ? summary.change : '0'}
                         </span>
                       </div>
                     </div>

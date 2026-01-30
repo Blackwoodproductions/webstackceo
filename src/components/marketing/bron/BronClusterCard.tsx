@@ -207,24 +207,21 @@ function ClusterKeywordRowImpl({
     const currentBing = getPosition(serpData?.bing);
     const currentYahoo = getPosition(serpData?.yahoo);
     
-    // Movement = initial position - current position
+    // Movement = baseline position - current position
     // Positive = improved (was #10, now #5 = 10 - 5 = +5)
     // Negative = dropped (was #5, now #10 = 5 - 10 = -5)
-    // Special case: If baseline was null (unranked) but now ranked, show huge improvement (+999)
-    // If current is null but baseline existed, show huge drop (-999)
+    // Special case: If baseline was null (unranked), treat baseline as position 1000
+    // So #1 position = 1000 - 1 = +999, #10 position = 1000 - 10 = +990
+    // If current is null but baseline existed, treat current as position 1000
+    const UNRANKED_POSITION = 1000;
     const calculateMovement = (baseline: number | null, current: number | null): number => {
-      if (baseline === null && current !== null) {
-        // Newly ranked - huge improvement (was unranked, now ranked)
-        return 999;
-      }
-      if (baseline !== null && current === null) {
-        // Dropped off entirely - huge drop
-        return -999;
-      }
-      if (baseline !== null && current !== null) {
-        return baseline - current;
-      }
-      return 0;
+      const effectiveBaseline = baseline === null ? UNRANKED_POSITION : baseline;
+      const effectiveCurrent = current === null ? UNRANKED_POSITION : current;
+      
+      // Both unranked = no movement
+      if (baseline === null && current === null) return 0;
+      
+      return effectiveBaseline - effectiveCurrent;
     };
     
     const gMove = calculateMovement(initial.google, currentGoogle);
