@@ -74,7 +74,7 @@ interface AIMetricsAnimationProps {
 
 export const AIMetricsAnimation = memo(({ title = "Analyzing Keywords", variant = 'default' }: AIMetricsAnimationProps) => (
   <div 
-    className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 mt-2"
+    className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8"
     style={{ contain: 'layout style paint' }}
     data-no-theme-transition
   >
