@@ -107,20 +107,20 @@ const featureConfig: Record<FeatureType, {
     tier: 'Business CEO'
   },
   'on-page-seo': {
-    name: 'On-Page SEO',
-    description: 'Advanced on-page optimization tools and recommendations',
+    name: 'On-Page SEO Automation',
+    description: 'AI-powered optimization that makes real changes to your website—not pixel injections',
     icon: FileSearch,
-    price: 'Contact',
-    priceSubtext: 'for pricing',
-    color: 'emerald',
+    price: '$99',
+    priceSubtext: '/month',
+    color: 'amber',
     benefits: [
-      'Technical SEO audits',
-      'Content optimization',
-      'Schema markup',
-      'Page speed insights'
+      'Direct platform editing (WordPress, Shopify, Wix)',
+      'Auto meta tag & schema optimization',
+      'Image alt text generation',
+      'Real-time monitoring & auto-fix'
     ],
-    cta: 'Add On-Page SEO',
-    tier: 'Add-on'
+    cta: 'Activate On-Page SEO',
+    tier: 'Premium Add-on'
   },
   'landing-pages': {
     name: 'PPC Landing Pages',
