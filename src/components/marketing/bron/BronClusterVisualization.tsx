@@ -815,18 +815,22 @@ export const BronClusterVisualization = memo(({
                 className="relative w-40 h-40 rounded-full bg-gradient-to-br from-violet-600/30 via-purple-600/25 to-indigo-600/30 border-2 border-violet-400/60 flex flex-col items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.35)] cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => selectedDomain && window.open(`https://${selectedDomain}`, '_blank')}
               >
-                {selectedDomain ? (
-                  <img 
-                    src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`}
-                    alt={`${selectedDomain} favicon`}
-                    className="w-14 h-14 mb-1.5 rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <Globe className={`w-12 h-12 text-violet-400 mb-1.5 ${selectedDomain ? 'hidden' : ''}`} />
+                {/* White circle background for favicon */}
+                <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center mb-1.5">
+                  {selectedDomain ? (
+                    <img 
+                      src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=128`}
+                      alt={`${selectedDomain} favicon`}
+                      className="w-10 h-10 rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback) fallback.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <Globe className={`w-8 h-8 text-violet-500 ${selectedDomain ? 'hidden' : ''}`} />
+                </div>
                 <span className="text-sm font-bold text-violet-300 text-center px-4 leading-tight">
                   {selectedDomain || 'Main Site'}
                 </span>
