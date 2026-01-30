@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  LayoutDashboard, Users, FileText, LogOut, 
-  CheckCircle, XCircle, Clock, Star, Award, TrendingUp,
-  Plus, Edit, Trash2, Eye, Search, Building2, Shield, Crown,
-  BarChart3, Activity, Zap, Globe, ArrowLeft, MousePointer,
+  Users, FileText, LogOut, CheckCircle,
+  XCircle, Clock, Award, TrendingUp,
+  Plus, Eye, Search, Building2, Shield, Crown,
+  Activity, Globe, ArrowLeft, MousePointer,
   Mail, UserCheck, DollarSign, Target, RefreshCw, X, Check,
-  Cpu, Radio, Gauge, Server, Settings, CreditCard, Calendar
+  Cpu, Gauge, BarChart2, PieChart, Layers, Sparkles, Signal,
+  ArrowUpRight, ArrowDownRight, Percent, Timer, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
 interface UserWithRoles {
   id: string;
@@ -222,6 +223,13 @@ const Admin = () => {
     leadsThisMonth: 0,
     conversionRate: 0,
     totalRevenue: 0,
+    // Enhanced metrics
+    avgSessionDuration: 0,
+    bounceRate: 0,
+    topPages: [] as { path: string; views: number }[],
+    leadsByStage: { new: 0, qualified: 0, engaged: 0, closed: 0 },
+    dailyVisitors: [] as { date: string; count: number }[],
+    recentLeads: [] as { email: string; source: string; created_at: string }[],
   });
 
   // Super admin specific state
@@ -322,6 +330,7 @@ const Admin = () => {
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const weekAgo = subDays(now, 7).toISOString();
       
       const [
         visitorsRes,
@@ -331,6 +340,10 @@ const Admin = () => {
         activeTodayRes,
         leadsMonthRes,
         closedLeadsRes,
+        topPagesRes,
+        leadsByStatusRes,
+        dailyVisitorsRes,
+        recentLeadsRes,
       ] = await Promise.all([
         supabase.from("visitor_sessions").select("id", { count: "exact", head: true }),
         supabase.from("page_views").select("id", { count: "exact", head: true }),
@@ -339,12 +352,58 @@ const Admin = () => {
         supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("last_activity_at", todayStart),
         supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
         supabase.from("leads").select("closed_amount").eq("status", "closed").not("closed_amount", "is", null),
+        supabase.from("page_views").select("page_path").limit(500),
+        supabase.from("leads").select("funnel_stage, status"),
+        supabase.from("visitor_sessions").select("started_at").gte("started_at", weekAgo),
+        supabase.from("leads").select("email, source_page, created_at").order("created_at", { ascending: false }).limit(5),
       ]);
       
       const totalRevenue = closedLeadsRes.data?.reduce((sum, l) => sum + (l.closed_amount || 0), 0) || 0;
       const totalVisitors = visitorsRes.count || 0;
       const totalLeads = leadsRes.count || 0;
       const conversionRate = totalVisitors > 0 ? ((totalLeads / totalVisitors) * 100) : 0;
+      
+      // Calculate top pages
+      const pageCounts: Record<string, number> = {};
+      (topPagesRes.data || []).forEach(pv => {
+        const path = pv.page_path || '/';
+        pageCounts[path] = (pageCounts[path] || 0) + 1;
+      });
+      const topPages = Object.entries(pageCounts)
+        .map(([path, views]) => ({ path, views }))
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 5);
+      
+      // Calculate leads by stage
+      const leadsByStage = { new: 0, qualified: 0, engaged: 0, closed: 0 };
+      (leadsByStatusRes.data || []).forEach(lead => {
+        const stage = lead.funnel_stage || 'new';
+        if (stage === 'qualified') leadsByStage.qualified++;
+        else if (stage === 'engaged') leadsByStage.engaged++;
+        else if (lead.status === 'closed') leadsByStage.closed++;
+        else leadsByStage.new++;
+      });
+      
+      // Calculate daily visitors for last 7 days
+      const dailyMap: Record<string, number> = {};
+      for (let i = 6; i >= 0; i--) {
+        const date = format(subDays(now, i), 'MMM d');
+        dailyMap[date] = 0;
+      }
+      (dailyVisitorsRes.data || []).forEach(v => {
+        const date = format(new Date(v.started_at), 'MMM d');
+        if (dailyMap[date] !== undefined) {
+          dailyMap[date]++;
+        }
+      });
+      const dailyVisitors = Object.entries(dailyMap).map(([date, count]) => ({ date, count }));
+      
+      // Format recent leads
+      const recentLeads = (recentLeadsRes.data || []).map(l => ({
+        email: l.email || 'Unknown',
+        source: l.source_page || 'Direct',
+        created_at: l.created_at,
+      }));
       
       setSiteStats({
         totalVisitors,
@@ -355,6 +414,12 @@ const Admin = () => {
         leadsThisMonth: leadsMonthRes.count || 0,
         conversionRate: Math.round(conversionRate * 100) / 100,
         totalRevenue,
+        avgSessionDuration: 0, // Would need time_on_page aggregation
+        bounceRate: 0, // Would need single-page session calculation
+        topPages,
+        leadsByStage,
+        dailyVisitors,
+        recentLeads,
       });
     } catch (error) {
       console.error("Error fetching site stats:", error);
@@ -796,6 +861,205 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               ))}
+            </motion.div>
+
+            {/* Advanced Analytics Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            >
+              {/* 7-Day Traffic Trend Chart */}
+              <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-cyan-500/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/5" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                        <BarChart2 className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Traffic Trend</h3>
+                        <p className="text-xs text-muted-foreground">Last 7 days</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="border-cyan-500/30 text-cyan-400">
+                      <Signal className="w-3 h-3 mr-1" />
+                      Live
+                    </Badge>
+                  </div>
+                  
+                  {/* Bar Chart */}
+                  <div className="flex items-end gap-2 h-32">
+                    {siteStats.dailyVisitors.map((day, i) => {
+                      const maxCount = Math.max(...siteStats.dailyVisitors.map(d => d.count), 1);
+                      const height = (day.count / maxCount) * 100;
+                      
+                      return (
+                        <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
+                          <motion.div
+                            className="w-full rounded-t-lg bg-gradient-to-t from-cyan-500 to-cyan-400 relative group"
+                            initial={{ height: 0 }}
+                            animate={{ height: `${Math.max(height, 5)}%` }}
+                            transition={{ delay: i * 0.1, duration: 0.5 }}
+                          >
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-background/90 border border-border px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              {day.count} visitors
+                            </div>
+                          </motion.div>
+                          <span className="text-[10px] text-muted-foreground">{day.date.split(' ')[1]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Lead Funnel */}
+              <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-violet-500/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-purple-500/5" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                        <Layers className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Lead Funnel</h3>
+                        <p className="text-xs text-muted-foreground">Conversion stages</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Funnel Visualization */}
+                  <div className="space-y-2">
+                    {[
+                      { label: "New Leads", value: siteStats.leadsByStage.new, color: "from-violet-500 to-violet-400", width: "100%" },
+                      { label: "Qualified", value: siteStats.leadsByStage.qualified, color: "from-purple-500 to-purple-400", width: "75%" },
+                      { label: "Engaged", value: siteStats.leadsByStage.engaged, color: "from-fuchsia-500 to-fuchsia-400", width: "50%" },
+                      { label: "Closed", value: siteStats.leadsByStage.closed, color: "from-pink-500 to-pink-400", width: "25%" },
+                    ].map((stage, i) => (
+                      <motion.div
+                        key={stage.label}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + i * 0.1 }}
+                        className="flex items-center gap-3"
+                      >
+                        <span className="text-xs text-muted-foreground w-16">{stage.label}</span>
+                        <div className="flex-1 relative h-8">
+                          <motion.div
+                            className={`h-full rounded-r-lg bg-gradient-to-r ${stage.color} flex items-center justify-end pr-3`}
+                            initial={{ width: 0 }}
+                            animate={{ width: stage.width }}
+                            transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
+                          >
+                            <span className="text-sm font-bold text-white">{stage.value}</span>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Bottom Row: Top Pages & Recent Leads */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            >
+              {/* Top Pages */}
+              <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-emerald-500/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-green-500/5" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                      <PieChart className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Top Pages</h3>
+                      <p className="text-xs text-muted-foreground">Most viewed</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {siteStats.topPages.length > 0 ? siteStats.topPages.map((page, i) => {
+                      const maxViews = Math.max(...siteStats.topPages.map(p => p.views), 1);
+                      const percent = (page.views / maxViews) * 100;
+                      
+                      return (
+                        <motion.div 
+                          key={page.path}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.8 + i * 0.05 }}
+                          className="flex items-center gap-3"
+                        >
+                          <span className="text-xs font-mono text-muted-foreground truncate w-32">{page.path}</span>
+                          <div className="flex-1 h-2 bg-muted/20 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percent}%` }}
+                              transition={{ delay: 0.9 + i * 0.05, duration: 0.4 }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium w-12 text-right">{page.views}</span>
+                        </motion.div>
+                      );
+                    }) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">No page view data yet</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Leads */}
+              <Card className="relative overflow-hidden bg-background/60 backdrop-blur-xl border-amber-500/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5" />
+                <CardContent className="pt-6 relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Recent Leads</h3>
+                      <p className="text-xs text-muted-foreground">Latest captures</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {siteStats.recentLeads.length > 0 ? siteStats.recentLeads.map((lead, i) => (
+                      <motion.div 
+                        key={`${lead.email}-${i}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.8 + i * 0.05 }}
+                        className="flex items-center justify-between p-2 rounded-lg bg-muted/10 border border-border/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <Mail className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium truncate max-w-[140px]">{lead.email}</p>
+                            <p className="text-[10px] text-muted-foreground">{lead.source}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(lead.created_at), 'MMM d')}
+                        </span>
+                      </motion.div>
+                    )) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">No leads captured yet</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           </TabsContent>
 
