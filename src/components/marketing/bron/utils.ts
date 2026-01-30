@@ -512,15 +512,29 @@ export function decodeHtmlContent(html: string): string {
 }
 
 // Filter links for a specific keyword based on URL matching
-// BRON API Link Structure:
-// - Links Out (from our domain): `link` contains URL on OUR domain (e.g., "https://seolocal.it.com/topic-568071bc/")
-//   - The URL contains a slug derived from the keyword/topic
-// - Links In (to our domain): `link` contains URL on the REFERRER domain, `domain_name` is the source
-//   - These are domain-level and typically don't include keyword-specific filtering
+// BRON API Link Structure (Diamond Silo Model):
+// 
+// Links come from the Business Collective - a network of partner domains linking to each other.
+// 
+// LINKS IN (Inbound):
+// - These come from GMB partners to our domain's pages
+// - The 4 pages of the diamond silo that receive links:
+//   1. Main keyword page (money page)
+//   2. Supporting page 1
+//   3. Supporting page 2  
+//   4. Home page / Links & Resources page
+// - BRON API: `link` = URL on referrer's domain, `domain_name` = the source partner domain
+// - Most inbound links are domain-wide (all partners link to all 4 silo pages)
 //
-// IMPORTANT: This function now strictly filters links per keyword.
-// If no matching links are found for a keyword, it returns empty arrays
-// rather than falling back to all domain links.
+// LINKS OUT (Outbound):
+// - These are from each keyword page going UP the silo to other cluster pages
+// - The bottom of the silo (keyword page) links UP to other silo pages
+// - BRON API: `link` = URL on OUR domain (contains the topic/keyword slug with ID like "-582231bc")
+//
+// The link count shown per keyword card represents:
+// - Links In: All domain inbound links (these target the cluster of pages)
+// - Links Out: Links specifically from this keyword's page (filtered by URL token)
+//
 export function filterLinksForKeyword(
   keyword: BronKeyword,
   linksIn: BronLink[],
@@ -530,11 +544,8 @@ export function filterLinksForKeyword(
   const keywordText = getKeywordDisplayText(keyword);
   const keywordUrl = keyword.linkouturl;
 
-  // BRON URLs commonly include a stable token like "-582231bc".
-  // For links-out, BRON returns our page URL (contains this token).
-  // For links-in, BRON returns the referrer's page URL (also contains this token),
-  // but does NOT include a target_url to our page. So token matching is required
-  // to associate inbound links to a specific keyword.
+  // Extract BRON token (e.g., "582231bc" or "568071bc") from URLs
+  // This token uniquely identifies a keyword's page in the BRON system
   const extractBronToken = (value?: string | null): string | null => {
     if (!value) return null;
     const match = String(value).match(/-(\d+bc)(?:\/?$)/i) || String(value).match(/(\d+bc)/i);
@@ -550,41 +561,31 @@ export function filterLinksForKeyword(
       .replace(/\/+$/, "");
   
   // Create slugs from keyword text for matching
-  // Main slug: "local seo services" -> "local-seo-services"
   const mainSlug = keywordText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  
-  // Also create partial slugs for fuzzy matching (first 3-4 words)
   const words = keywordText.toLowerCase().split(/\s+/).filter(w => w.length > 2);
   const shortSlug = words.slice(0, 4).join('-');
   const tinySlug = words.slice(0, 3).join('-');
   
-  // Generate possible URL patterns for this keyword (normalized, protocol-less)
-  const urlPatterns: string[] = [];
-
-  // Build token candidates for matching inbound/outbound links.
+  // Build token candidates for matching
   const tokenCandidates = new Set<string>();
   const tokenFromUrl = extractBronToken(keywordUrl);
   if (tokenFromUrl) tokenCandidates.add(tokenFromUrl);
   const idStr = String(keyword.id);
   if (/^\d+$/.test(idStr)) tokenCandidates.add(`${idStr}bc`);
-  // Some domains include the token with a leading hyphen.
   for (const t of Array.from(tokenCandidates)) tokenCandidates.add(`-${t}`);
   
+  // URL patterns for this keyword
+  const urlPatterns: string[] = [];
   if (keywordUrl) {
-    // Extract slug from the actual keyword URL
     const urlPath = keywordUrl.replace(/^https?:\/\/[^/]+/, '').replace(/\/$/, '');
     const pathSlug = urlPath.split('/').pop() || '';
-    // Remove trailing ID pattern like "-568071bc"
     const cleanSlug = pathSlug.replace(/-\d+bc$/, '');
     if (cleanSlug.length > 3) urlPatterns.push(cleanSlug);
     urlPatterns.push(normalize(keywordUrl));
   }
-  
   if (selectedDomain) {
     urlPatterns.push(normalize(`${selectedDomain}/${mainSlug}`));
   }
-  
-  // Add slug patterns for partial matching
   if (mainSlug.length > 5) urlPatterns.push(mainSlug);
   if (shortSlug.length > 5 && shortSlug !== mainSlug) urlPatterns.push(shortSlug);
   if (tinySlug.length > 5 && tinySlug !== shortSlug) urlPatterns.push(tinySlug);
@@ -593,17 +594,11 @@ export function filterLinksForKeyword(
     if (!value) return false;
     const normalizedValue = normalize(value);
     if (!normalizedValue) return false;
-    
-    // Extract slug portion from URL for comparison
     const urlPath = normalizedValue.split('/').pop() || normalizedValue;
-    // Remove trailing ID pattern like "-568071bc"
     const urlSlug = urlPath.replace(/-\d+bc$/, '');
-    
     return urlPatterns.some((pattern) => {
       if (!pattern) return false;
-      // Check for direct inclusion
       if (normalizedValue.includes(pattern)) return true;
-      // Check for slug match
       if (urlSlug && urlSlug.length > 5) {
         if (pattern.includes(urlSlug) || urlSlug.includes(pattern)) return true;
       }
@@ -622,8 +617,8 @@ export function filterLinksForKeyword(
     return false;
   };
   
-  // Links Out: Links FROM our domain TO other domains
-  // BRON returns these with `link` pointing to OUR page (contains topic/keyword slug)
+  // LINKS OUT: Filter for links specifically from this keyword's page
+  // These are outbound links FROM our page TO other sites
   const keywordLinksOut = linksOut.filter((link) => {
     return (
       matchesKeywordToken(link.link) ||
@@ -635,21 +630,14 @@ export function filterLinksForKeyword(
     );
   });
 
-  // Links In: Links TO our domain FROM other domains
-  // BRON returns these with `link` pointing to the REFERRER's page
-  // Try to match if there's a target_url that contains our keyword
-  const keywordLinksIn = linksIn.filter((link) => {
-    return (
-      matchesKeywordToken(link.link) ||
-      matchesKeywordToken(link.source_url) ||
-      matchesKeywordToken(link.target_url) ||
-      matchesKeywordUrl(link.target_url) ||
-      matchesKeywordUrl(link.link)
-    );
-  });
+  // LINKS IN: For the Business Collective model, ALL inbound links go to the domain's pages
+  // The GMB partners link to all 4 pages in the diamond silo
+  // So we return ALL inbound links for the domain (not filtered per keyword)
+  // This represents the network of partners linking TO this domain
+  // 
+  // The user sees: "100 link partners" sending links to their domain
+  // Each partner links to the main keyword page and supporting pages
+  const keywordLinksIn = linksIn;
 
-  // STRICT FILTERING: Return only the matched links for this keyword.
-  // Do NOT fall back to showing all domain links when no matches are found.
-  // This ensures each keyword shows only its own citation links.
   return { keywordLinksIn, keywordLinksOut };
 }

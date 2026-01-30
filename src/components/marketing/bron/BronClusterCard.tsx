@@ -148,10 +148,14 @@ function ClusterKeywordRowImpl({
   const serpData = useMemo(() => findSerpForKeyword(keywordText, serpReports), [keywordText, serpReports]);
   
   // Filter links for this specific keyword - memoized
-  const { keywordLinksIn, keywordLinksOut } = useMemo(
-    () => filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain),
-    [kw, linksIn, linksOut, selectedDomain]
-  );
+  const { keywordLinksIn, keywordLinksOut } = useMemo(() => {
+    const result = filterLinksForKeyword(kw, linksIn, linksOut, selectedDomain);
+    // Debug logging for link counts
+    if (linksIn.length > 0 || linksOut.length > 0) {
+      console.log(`[BRON Links] Keyword: "${keywordText.slice(0, 40)}..." | Domain Links In: ${linksIn.length} | Domain Links Out: ${linksOut.length} | Filtered In: ${result.keywordLinksIn.length} | Filtered Out: ${result.keywordLinksOut.length}`);
+    }
+    return result;
+  }, [kw, linksIn, linksOut, selectedDomain, keywordText]);
   
   // Calculate movements - memoized
   // Compare current position with baseline (oldest report)
