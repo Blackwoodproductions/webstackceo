@@ -35,6 +35,7 @@ interface PageError {
 
 const BetaNoticeBanner = memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<string>("feedback");
   const [title, setTitle] = useState("");
@@ -200,73 +201,114 @@ const BetaNoticeBanner = memo(() => {
 
   return (
     <>
-      {/* Right side vertical tab */}
+      {/* Right side vertical tab - Futuristic Design */}
       <div 
-        className="fixed right-0 z-[100] flex items-center transition-opacity duration-300"
+        className="fixed right-0 z-[100] flex items-center transition-all duration-500"
         style={{ top: topPosition, opacity: tabOpacity }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <AnimatePresence>
           {isExpanded && (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="mr-1 bg-gradient-to-b from-violet-600/95 via-purple-600/95 to-cyan-600/95 backdrop-blur-sm border border-white/10 rounded-l-xl shadow-lg p-3"
+              initial={{ opacity: 0, x: 20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="mr-2 relative overflow-hidden"
             >
-              <div className="flex flex-col gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openFeedbackDialog("feedback")}
-                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
-                >
-                  <MessageSquarePlus className="w-4 h-4 mr-2" />
-                  Feedback
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openFeedbackDialog("feature_request")}
-                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
-                >
-                  <Lightbulb className="w-4 h-4 mr-2" />
-                  Ideas
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => openFeedbackDialog("bug_report")}
-                  className="text-white hover:bg-white/20 hover:text-white text-xs h-8 px-2 justify-start"
-                >
-                  <Bug className="w-4 h-4 mr-2" />
-                  Bug
-                </Button>
-                {pageErrors.length > 0 && (
+              {/* Glassmorphism panel */}
+              <div className="relative backdrop-blur-xl bg-gradient-to-b from-violet-950/80 via-purple-900/70 to-cyan-950/80 border border-violet-400/30 rounded-2xl shadow-[0_0_40px_rgba(139,92,246,0.3)] p-4">
+                {/* Animated border glow */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/20 via-cyan-400/20 to-violet-500/20 animate-pulse" />
+                
+                {/* Inner content */}
+                <div className="relative flex flex-col gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => openFeedbackDialog("error_report")}
-                    className="text-orange-200 hover:bg-orange-500/20 hover:text-orange-100 text-xs h-8 px-2 justify-start animate-pulse"
+                    onClick={() => openFeedbackDialog("feedback")}
+                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
                   >
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    {pageErrors.length} Error{pageErrors.length > 1 ? 's' : ''}
+                    <MessageSquarePlus className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+                    <span className="bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent font-medium">Feedback</span>
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openFeedbackDialog("feature_request")}
+                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
+                  >
+                    <Lightbulb className="w-4 h-4 text-amber-400 group-hover:text-amber-300 transition-colors" />
+                    <span className="bg-gradient-to-r from-white to-amber-200 bg-clip-text text-transparent font-medium">Ideas</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => openFeedbackDialog("bug_report")}
+                    className="text-white/90 hover:bg-white/10 hover:text-white text-xs h-9 px-3 justify-start gap-2 transition-all duration-300 hover:translate-x-1 group"
+                  >
+                    <Bug className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
+                    <span className="bg-gradient-to-r from-white to-rose-200 bg-clip-text text-transparent font-medium">Bug</span>
+                  </Button>
+                  {pageErrors.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => openFeedbackDialog("error_report")}
+                      className="text-orange-300 hover:bg-orange-500/20 hover:text-orange-100 text-xs h-9 px-3 justify-start gap-2 animate-pulse"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="font-medium">{pageErrors.length} Error{pageErrors.length > 1 ? 's' : ''}</span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Tab handle */}
-        <button
+        {/* Futuristic Tab Handle */}
+        <motion.button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex flex-col items-center gap-1 py-3 px-1.5 bg-gradient-to-b from-violet-500/90 to-cyan-500/90 text-white text-xs font-medium shadow-lg hover:shadow-xl transition-shadow backdrop-blur-sm rounded-l-lg border border-white/20 border-r-0"
+          whileHover={{ scale: 1.02, x: -2 }}
+          whileTap={{ scale: 0.98 }}
+          className={`relative flex flex-col items-center gap-1.5 py-4 px-2 overflow-hidden rounded-l-2xl border border-r-0 transition-all duration-500 ${
+            isHovered || isExpanded
+              ? 'bg-gradient-to-b from-violet-600/95 via-purple-600/90 to-cyan-600/95 border-violet-400/50 shadow-[0_0_30px_rgba(139,92,246,0.5)]'
+              : 'bg-gradient-to-b from-violet-700/80 via-purple-700/70 to-cyan-700/80 border-violet-500/30 shadow-lg'
+          }`}
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
-          <FlaskConical className="w-4 h-4 mb-1 rotate-90" />
-          <span className="tracking-wider">BETA</span>
-          <ChevronLeft className={`w-3 h-3 mt-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-        </button>
+          {/* Scanning line effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/30 to-transparent"
+            animate={{ y: ['-100%', '100%'] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            style={{ height: '50%' }}
+          />
+          
+          {/* Glow pulse */}
+          <div className={`absolute inset-0 bg-gradient-to-b from-violet-400/20 via-transparent to-cyan-400/20 transition-opacity duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+          
+          {/* Icon with glow */}
+          <div className="relative">
+            <FlaskConical className="w-5 h-5 text-white rotate-90 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+          </div>
+          
+          {/* Text with gradient */}
+          <span className="relative tracking-[0.2em] text-[11px] font-bold bg-gradient-to-b from-white via-violet-100 to-cyan-200 bg-clip-text text-transparent drop-shadow-lg">
+            BETA
+          </span>
+          
+          {/* Chevron with animation */}
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronLeft className="w-3.5 h-3.5 text-cyan-300" />
+          </motion.div>
+        </motion.button>
       </div>
 
       {/* Feedback Dialog */}
