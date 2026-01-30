@@ -222,6 +222,7 @@ export const BronKeywordAnalysisDialog = memo(({
   const [selectedEngine, setSelectedEngine] = useState<SearchEngine>("google");
   const [isLoading, setIsLoading] = useState(false);
   const [historicalData, setHistoricalData] = useState<Map<string, BronSerpReport[]>>(new Map());
+  const [fetchProgress, setFetchProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
   
   const mainKeywordText = useMemo(() => getTargetKeyword(keyword), [keyword]);
   
@@ -308,6 +309,9 @@ export const BronKeywordAnalysisDialog = memo(({
       }
       
       setIsLoading(true);
+      setFetchProgress({ done: 0, total: 0 });
+      // Reset per-open so we don't show stale previous domain data.
+      setHistoricalData(new Map());
       const dataMap = new Map<string, BronSerpReport[]>();
       
       try {
@@ -338,10 +342,16 @@ export const BronKeywordAnalysisDialog = memo(({
         // IMPORTANT: The BRON SERP detail endpoint rate-limits aggressively.
         // Fetching in parallel often returns empty responses; throttle + retry.
         const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        const withTimeout = async <T,>(p: Promise<T>, ms: number): Promise<T> => {
+          return await Promise.race([
+            p,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+          ]);
+        };
 
         const fetchOne = async (reportId: string, attempt = 0): Promise<BronSerpReport[]> => {
           try {
-            const data = await onFetchSerpDetail(selectedDomain, reportId);
+            const data = await withTimeout(onFetchSerpDetail(selectedDomain, reportId), 12000);
             const arr = Array.isArray(data) ? data : [];
             // If we got an empty array, it can be a soft rate-limit response.
             if (arr.length === 0 && attempt < 2) {
@@ -360,6 +370,7 @@ export const BronKeywordAnalysisDialog = memo(({
         };
 
         // Throttled sequential fetch to avoid rate limit
+        setFetchProgress({ done: 0, total: reportsToFetch.length });
         for (let i = 0; i < reportsToFetch.length; i++) {
           const reportId = getReportId(reportsToFetch[i]);
           if (!reportId) continue;
@@ -374,6 +385,8 @@ export const BronKeywordAnalysisDialog = memo(({
             // Stream partial results so the chart can render ASAP.
             setHistoricalData(new Map(dataMap));
           }
+
+          setFetchProgress({ done: i + 1, total: reportsToFetch.length });
         }
 
         if (cancelled) return;
@@ -618,21 +631,37 @@ export const BronKeywordAnalysisDialog = memo(({
 
           {/* Chart Section - Uses working BronMultiKeywordTrendChart */}
           <div className="flex-1 min-h-0 overflow-auto">
-            {isLoading ? (
+            {historicalData.size > 0 ? (
+              <div className="relative">
+                {isLoading && (
+                  <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/70 backdrop-blur px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-muted-foreground">Loading historical data…</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {fetchProgress.total > 0 ? `${fetchProgress.done}/${fetchProgress.total}` : ''}
+                    </span>
+                  </div>
+                )}
+                <BronMultiKeywordTrendChart
+                  keywords={chartKeywords}
+                  serpReportsMap={historicalData}
+                  reportDates={reportDates}
+                  title="CLUSTER RANKING TREND"
+                  maxKeywords={3}
+                />
+              </div>
+            ) : isLoading ? (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 border border-primary/30 flex items-center justify-center animate-pulse">
                   <BarChart3 className="w-6 h-6 text-primary" />
                 </div>
                 <div className="text-muted-foreground">Loading historical data...</div>
+                {fetchProgress.total > 0 && (
+                  <div className="text-xs text-muted-foreground tabular-nums">{fetchProgress.done}/{fetchProgress.total}</div>
+                )}
               </div>
-            ) : historicalData.size > 0 ? (
-              <BronMultiKeywordTrendChart
-                keywords={chartKeywords}
-                serpReportsMap={historicalData}
-                reportDates={reportDates}
-                title="CLUSTER RANKING TREND"
-                maxKeywords={3}
-              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-muted/20 border border-border/30 flex items-center justify-center">

@@ -101,6 +101,7 @@ export const BronMultiKeywordTrendChart = memo(({
   const { chartData, summaries } = useMemo(() => {
     const data: ChartDataPoint[] = [];
     const positionsPerKeyword: Record<string, number[]> = {};
+    let anyRealPositions = false;
     
     // Initialize positions tracker for each keyword
     keywordsWithColors.forEach(kw => {
@@ -115,7 +116,6 @@ export const BronMultiKeywordTrendChart = memo(({
       if (!reportData || reportData.length === 0) return;
       
       const point: ChartDataPoint = { date, timestamp };
-      let hasAnyPosition = false;
       
       keywordsWithColors.forEach(kw => {
         const serpItem = findSerpForKeyword(kw.text, reportData);
@@ -124,16 +124,15 @@ export const BronMultiKeywordTrendChart = memo(({
         // Track actual positions for stats
         if (googlePos !== null) {
           positionsPerKeyword[kw.id].push(googlePos);
-          hasAnyPosition = true;
+          anyRealPositions = true;
         }
         
         // Use UNRANKED_POSITION for nulls so they appear at bottom
         point[kw.id] = googlePos ?? UNRANKED_POSITION;
       });
       
-      if (hasAnyPosition) {
-        data.push(point);
-      }
+      // Always include the point if we have report data; UNRANKED values show gaps.
+      data.push(point);
     });
     
     // Calculate summaries for each keyword
@@ -162,11 +161,19 @@ export const BronMultiKeywordTrendChart = memo(({
       };
     });
     
-    return { chartData: data, summaries: keywordSummaries };
+    // If nothing ever ranked, keep a sane default domain later.
+    return { chartData: data, summaries: keywordSummaries, anyRealPositions } as any;
   }, [keywordsWithColors, serpReportsMap, reportDates]);
   
   // Calculate Y-axis domain based on actual data
   const yAxisDomain = useMemo(() => {
+    // If we don't have any real positions, default to full 1..UNRANKED range.
+    // (Otherwise min/max math becomes inverted.)
+    const anyReal = (chartData as any).some?.((p: any) =>
+      keywordsWithColors.some((kw) => typeof p?.[kw.id] === 'number' && p[kw.id] !== UNRANKED_POSITION)
+    );
+    if (!anyReal) return [1, UNRANKED_POSITION];
+
     let minPos = 100;
     let maxPos = 1;
     
