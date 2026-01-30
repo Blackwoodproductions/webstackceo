@@ -57,6 +57,7 @@ interface NodeData {
   x: number;
   y: number;
   isMainNode: boolean;
+  isResourceNode?: boolean; // 4th tier - bottom of silo resource pages
   keywordText: string;
   serpData: BronSerpReport | null;
   metrics: KeywordMetrics | undefined;
@@ -65,6 +66,7 @@ interface NodeData {
   linksInCount: number;
   linksOutCount: number;
   linkoutUrl: string | null;
+  resourceUrl?: string | null; // The "bc" resource page URL
   angle?: number;
   parentNodeId?: string | number;
 }
@@ -517,8 +519,8 @@ export const BronClusterVisualization = memo(({
     });
   }, [clusters, serpReports, sortOrder]);
 
-  // Build three-tier node layout: Center → Money Pages → Supporting Pages
-  const { centerX, centerY, moneyNodes, supportingNodes, connections } = useMemo(() => {
+  // Build four-tier node layout: Center → Money Pages → Supporting Pages → Resource Pages
+  const { centerX, centerY, moneyNodes, supportingNodes, resourceNodes, connections } = useMemo(() => {
     const cx = dimensions.width / 2;
     const cy = dimensions.height / 2;
     
@@ -545,11 +547,28 @@ export const BronClusterVisualization = memo(({
       return null;
     };
 
+    // Helper to generate resource page URL (adds 'bc' before the trailing slash)
+    const getResourceUrl = (pageUrl: string | null): string | null => {
+      if (!pageUrl) return null;
+      // Pattern: /keyword-slug-123456/ -> /keyword-slug-123456bc/
+      const match = pageUrl.match(/^(.*\/)([^/]+)(\/)$/);
+      if (match) {
+        return `${match[1]}${match[2]}bc${match[3]}`;
+      }
+      // Fallback: append 'bc' before trailing slash or at end
+      if (pageUrl.endsWith('/')) {
+        return pageUrl.slice(0, -1) + 'bc/';
+      }
+      return pageUrl + 'bc';
+    };
+
     const money: NodeData[] = [];
     const supporting: NodeData[] = [];
-    const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' }> = [];
+    const resources: NodeData[] = [];
+    const conns: Array<{ from: NodeData; to: NodeData; type: 'money-to-center' | 'supporting-to-money' | 'resource-to-parent' }> = [];
     
     const moneyCount = sortedClusters.length;
+    const resourceRadius = 60; // Distance from parent node for resource nodes
     
     // Position money pages in a circle around the center
     sortedClusters.forEach((cluster, clusterIndex) => {
@@ -566,6 +585,8 @@ export const BronClusterVisualization = memo(({
       const moneyAngle = (clusterIndex / moneyCount) * Math.PI * 2 - Math.PI / 2;
       const moneyX = cx + Math.cos(moneyAngle) * moneyPageRadius;
       const moneyY = cy + Math.sin(moneyAngle) * moneyPageRadius;
+      
+      const moneyResourceUrl = getResourceUrl(parentUrl);
       
       const moneyNode: NodeData = {
         id: cluster.parent.id,
@@ -587,10 +608,39 @@ export const BronClusterVisualization = memo(({
         linksInCount: parentLinkCounts?.in ?? 0,
         linksOutCount: parentLinkCounts?.out ?? 0,
         linkoutUrl: parentUrl,
+        resourceUrl: moneyResourceUrl,
         angle: moneyAngle,
       };
       
       money.push(moneyNode);
+      
+      // Add resource node for money page (positioned outward from center)
+      if (moneyResourceUrl) {
+        const resourceAngle = moneyAngle;
+        const resourceX = moneyX + Math.cos(resourceAngle) * resourceRadius;
+        const resourceY = moneyY + Math.sin(resourceAngle) * resourceRadius;
+        
+        const resourceNode: NodeData = {
+          id: `resource-${cluster.parent.id}`,
+          keyword: cluster.parent,
+          x: resourceX,
+          y: resourceY,
+          isMainNode: false,
+          isResourceNode: true,
+          keywordText: `${parentKeywordText} Resources`,
+          serpData: null,
+          metrics: undefined,
+          pageSpeed: undefined,
+          movement: { google: 0, bing: 0, yahoo: 0 },
+          linksInCount: 0,
+          linksOutCount: parentLinkCounts?.out ?? 0,
+          linkoutUrl: moneyResourceUrl,
+          parentNodeId: moneyNode.id,
+        };
+        
+        resources.push(resourceNode);
+        conns.push({ from: resourceNode, to: moneyNode, type: 'resource-to-parent' });
+      }
       
       // Position supporting pages in an arc around this money page
       const supportingCount = cluster.children.length;
@@ -618,6 +668,8 @@ export const BronClusterVisualization = memo(({
           const supportingX = moneyX + Math.cos(childAngle) * supportingRadius;
           const supportingY = moneyY + Math.sin(childAngle) * supportingRadius;
           
+          const childResourceUrl = getResourceUrl(childUrl);
+          
           const supportingNode: NodeData = {
             id: child.id,
             keyword: child,
@@ -638,6 +690,7 @@ export const BronClusterVisualization = memo(({
             linksInCount: childLinkCounts?.in ?? 0,
             linksOutCount: childLinkCounts?.out ?? 0,
             linkoutUrl: childUrl,
+            resourceUrl: childResourceUrl,
             parentNodeId: moneyNode.id,
           };
           
@@ -645,11 +698,39 @@ export const BronClusterVisualization = memo(({
           
           // Connection from supporting to money page
           conns.push({ from: supportingNode, to: moneyNode, type: 'supporting-to-money' });
+          
+          // Add resource node for supporting page (positioned outward)
+          if (childResourceUrl) {
+            const resAngle = childAngle;
+            const resX = supportingX + Math.cos(resAngle) * (resourceRadius * 0.8);
+            const resY = supportingY + Math.sin(resAngle) * (resourceRadius * 0.8);
+            
+            const resourceNode: NodeData = {
+              id: `resource-${child.id}`,
+              keyword: child,
+              x: resX,
+              y: resY,
+              isMainNode: false,
+              isResourceNode: true,
+              keywordText: `${childKeywordText} Resources`,
+              serpData: null,
+              metrics: undefined,
+              pageSpeed: undefined,
+              movement: { google: 0, bing: 0, yahoo: 0 },
+              linksInCount: 0,
+              linksOutCount: childLinkCounts?.out ?? 0,
+              linkoutUrl: childResourceUrl,
+              parentNodeId: supportingNode.id,
+            };
+            
+            resources.push(resourceNode);
+            conns.push({ from: resourceNode, to: supportingNode, type: 'resource-to-parent' });
+          }
         });
       }
     });
     
-    return { centerX: cx, centerY: cy, moneyNodes: money, supportingNodes: supporting, connections: conns };
+    return { centerX: cx, centerY: cy, moneyNodes: money, supportingNodes: supporting, resourceNodes: resources, connections: conns };
   }, [sortedClusters, dimensions, serpReports, keywordMetrics, pageSpeedScores, selectedDomain, initialPositions, isBaselineReport, linkCountsByUrl]);
 
   // Reset on open
@@ -747,6 +828,9 @@ export const BronClusterVisualization = memo(({
         </Badge>
         <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-violet-400 border-violet-500/30 text-xs px-2 py-1">
           {totalSupportingKeywords} Supporting
+        </Badge>
+        <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-cyan-400 border-cyan-500/30 text-xs px-2 py-1">
+          {resourceNodes.length} Resources
         </Badge>
       </div>
       
@@ -999,6 +1083,48 @@ export const BronClusterVisualization = memo(({
                         {node.keywordText.length > 20 ? node.keywordText.substring(0, 17) + '…' : node.keywordText}
                       </span>
                     </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Resource Page Nodes (4th tier - bottom of silo) */}
+            {resourceNodes.map((node) => {
+              const isHovered = hoveredNode?.id === node.id;
+              
+              return (
+                <div
+                  key={node.id}
+                  className="absolute z-2"
+                  style={{ 
+                    left: node.x, 
+                    top: node.y,
+                    transform: `translate(-50%, -50%) ${isHovered ? 'scale(1.2)' : 'scale(1)'}`,
+                    transition: 'transform 0.15s ease-out',
+                    zIndex: isHovered ? 20 : 2,
+                    contain: 'layout style',
+                  }}
+                  onMouseEnter={(e) => handleNodeHover(node, e)}
+                  onMouseLeave={(e) => handleNodeHover(null, e)}
+                  onClick={() => node.linkoutUrl && window.open(node.linkoutUrl, '_blank')}
+                >
+                  <div className="relative cursor-pointer group">
+                    {/* Resource page node - small with link icon */}
+                    <div 
+                      className="w-6 h-6 rounded-full bg-cyan-500/30 border border-cyan-400/60 flex items-center justify-center"
+                      style={{ boxShadow: isHovered ? '0 0 15px rgba(34,211,238,0.5)' : undefined }}
+                    >
+                      <ExternalLink className="w-3 h-3 text-cyan-400" />
+                    </div>
+                    
+                    {/* Label - only show on hover */}
+                    {isHovered && (
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 whitespace-nowrap">
+                        <span className="text-[8px] text-cyan-300 font-medium bg-background/90 px-1.5 py-0.5 rounded shadow-sm">
+                          Resources
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
