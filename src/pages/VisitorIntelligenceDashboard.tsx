@@ -1943,7 +1943,6 @@ const MarketingDashboard = () => {
         {/* Row 2: Domain Selector - Integrated into header */}
         <div
           className="relative z-[120] px-8 py-2 flex items-center justify-between border-t border-border/30 bg-background/30"
-          style={{ isolation: 'isolate' }}
         >
           {/* Left: Domain Selector & Time Range */}
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -1965,7 +1964,11 @@ const MarketingDashboard = () => {
                 <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative z-[130]">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-2xl z-[500] max-w-[400px] pointer-events-auto">
+                <SelectContent
+                  className="bg-popover border border-border shadow-2xl max-w-[400px] pointer-events-auto"
+                  style={{ zIndex: 9999 }}
+                  sideOffset={4}
+                >
                   {(() => {
                     const trackedSet = new Set(trackedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
                     const userAddedSet = new Set(userAddedDomains.map(d => d.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0]));
