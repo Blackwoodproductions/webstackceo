@@ -58,6 +58,8 @@ const LLM_ICONS: Record<string, string> = {
   'Google Gemini': '🔷',
   'ChatGPT': '🟢',
   'GPT-5 Mini': '🟡',
+  'Perplexity': '🔵',
+  'Claude': '🟣',
 };
 
 const PositionBadge = memo(({ position, confidence }: { position: string; confidence: number }) => {
