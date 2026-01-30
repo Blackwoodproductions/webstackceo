@@ -291,25 +291,31 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
     <div 
       className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30 w-full"
       style={{ 
-        gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 32px 36px',
+        gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
     >
+      {/* Chart button placeholder */}
+      <div className="flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-muted/30" />
+      </div>
+      
       {/* Speed gauge placeholder - centered for alignment */}
       <div className="flex items-center justify-center">
         <div className="w-10 h-10 rounded-full bg-muted/40" />
+      </div>
+      
+      {/* Intent vertical placeholder */}
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="w-7 h-7 rounded-lg bg-muted/40" />
+        <div className="w-5 h-2 rounded bg-muted/30" />
       </div>
       
       {/* Keyword text placeholder */}
       <div className="pr-2 space-y-1.5">
         <div className="h-4 bg-muted/50 rounded" style={{ width: `${60 + (index % 3) * 10}%` }} />
         <div className="h-3 bg-muted/30 rounded" style={{ width: `${40 + (index % 4) * 5}%` }} />
-      </div>
-      
-      {/* Intent badge placeholder */}
-      <div className="flex justify-center">
-        <div className="h-7 w-20 rounded-md bg-muted/40" />
       </div>
       
       {/* Google ranking placeholder */}
@@ -339,11 +345,6 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
         <div className="w-16 h-7 rounded-lg bg-muted/40" />
       </div>
       
-      {/* Chart button placeholder */}
-      <div className="flex justify-center">
-        <div className="w-7 h-7 rounded-lg bg-muted/30" />
-      </div>
-      
       {/* Expand button placeholder */}
       <div />
     </div>
@@ -359,18 +360,21 @@ export const BronKeywordTableHeader = memo(() => (
   <div 
     className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50 w-full" 
     style={{ 
-      gridTemplateColumns: '48px 1fr 120px 80px 80px 80px 150px 100px 32px 36px',
+      gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
       contain: 'layout style' 
     }}
   >
     <div className="flex items-center justify-center">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Trend</span>
+    </div>
+    <div className="flex items-center justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Speed</span>
+    </div>
+    <div className="flex justify-center">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Type</span>
     </div>
     <div className="pr-2">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Keyword</span>
-    </div>
-    <div className="flex justify-center">
-      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Intent</span>
     </div>
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Google</span>
@@ -386,9 +390,6 @@ export const BronKeywordTableHeader = memo(() => (
     </div>
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Links</span>
-    </div>
-    <div className="flex justify-center">
-      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Trend</span>
     </div>
     <div />
   </div>
