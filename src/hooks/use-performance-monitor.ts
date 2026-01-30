@@ -31,7 +31,7 @@ interface PerformanceMetrics {
   dataFetchTime?: number;
 }
 
-interface PerformanceEntry {
+interface StoredPerformanceEntry {
   timestamp: number;
   route: string;
   metrics: PerformanceMetrics;
@@ -57,10 +57,10 @@ function getPerformanceRating(metric: keyof typeof REPORT_THRESHOLD, value: numb
   return 'poor';
 }
 
-function saveMetrics(entry: PerformanceEntry): void {
+function saveMetrics(entry: StoredPerformanceEntry): void {
   try {
     const raw = localStorage.getItem(METRICS_STORAGE_KEY);
-    const entries: PerformanceEntry[] = raw ? JSON.parse(raw) : [];
+    const entries: StoredPerformanceEntry[] = raw ? JSON.parse(raw) : [];
     entries.push(entry);
     
     // Keep only recent entries
@@ -74,7 +74,7 @@ function saveMetrics(entry: PerformanceEntry): void {
   }
 }
 
-function loadMetrics(): PerformanceEntry[] {
+function loadMetrics(): StoredPerformanceEntry[] {
   try {
     const raw = localStorage.getItem(METRICS_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -331,7 +331,7 @@ export function useRenderCount(componentName: string) {
 }
 
 // ─── Export Performance Report Function ───
-export function getPerformanceReport(): { metrics: PerformanceEntry[]; summary: Record<string, number> } {
+export function getPerformanceReport(): { metrics: StoredPerformanceEntry[]; summary: Record<string, number> } {
   const entries = loadMetrics();
   
   // Calculate averages
