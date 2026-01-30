@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback, memo, startTransition, lazy, Suspense } from "react";
-import { Key, RefreshCw, Plus, Search, Save, X, ChevronUp, Loader2, Link2 } from "lucide-react";
+import { Key, Plus, Save, X, ChevronUp, Loader2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -988,24 +988,6 @@ export const BRONKeywordsTab = memo(({
                 />
               )}
               
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search keywords..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-48 h-9 bg-secondary/50"
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onRefresh}
-                disabled={isLoading || !selectedDomain}
-                className="border-primary/30 hover:bg-primary/10"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
             </div>
           </CardHeader>
         )}
