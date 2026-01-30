@@ -362,6 +362,22 @@ serve(async (req) => {
         }
         response = await bronApiRequest("/serp-detail", "POST", { domain, serpid: data.report_id });
         result = await readResponseBody(response);
+        
+        // Log SERP detail structure to understand API response format
+        if (result && typeof result === 'object') {
+          const resAny = result as any;
+          if (Array.isArray(result) && result.length > 0) {
+            console.log("BRON API - getSerpDetail: Direct array with", result.length, "items. First item keys:", Object.keys(result[0]));
+          } else if (resAny.data && Array.isArray(resAny.data) && resAny.data.length > 0) {
+            console.log("BRON API - getSerpDetail: data array with", resAny.data.length, "items. First item keys:", Object.keys(resAny.data[0]));
+          } else if (resAny.rankings && Array.isArray(resAny.rankings)) {
+            console.log("BRON API - getSerpDetail: rankings array with", resAny.rankings.length, "items");
+          } else if (resAny.keywords && Array.isArray(resAny.keywords)) {
+            console.log("BRON API - getSerpDetail: keywords array with", resAny.keywords.length, "items");
+          } else {
+            console.log("BRON API - getSerpDetail: Unknown structure, keys:", Object.keys(result));
+          }
+        }
         break;
       }
 
