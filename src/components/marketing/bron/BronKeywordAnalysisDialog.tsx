@@ -633,8 +633,8 @@ export const BronKeywordAnalysisDialog = memo(({
                 </div>
               </div>
               
-              {/* Right: Date Range Buttons */}
-              <div className="flex gap-1">
+              {/* Right: Date Range Buttons - with right margin to avoid X close button overlap */}
+              <div className="flex gap-1 mr-8">
                 {dateRangeButtons.map(btn => (
                   <Button
                     key={btn.value}
