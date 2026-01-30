@@ -577,11 +577,11 @@ export const BronKeywordCard = memo(({
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
-          {/* Grid-based layout - reordered: Chart first, then PageSpeed, Intent vertical, Keyword, Rankings, Metrics, Links */}
+          {/* Grid-based layout - reordered: Chart first, then PageSpeed, Intent vertical, Keyword, Rankings (tighter), Metrics (more space), Links */}
           <div 
-            className="grid items-center gap-3 w-full" 
+            className="grid items-center gap-2 w-full" 
             style={{ 
-              gridTemplateColumns: '52px 48px 44px 1fr 80px 80px 80px 150px 140px',
+              gridTemplateColumns: '52px 48px 44px 1fr 68px 68px 68px 170px 140px',
             }}
           >
             {/* Column 1: Chart/Analysis Button - NOW FIRST - wider column to push PageSpeed/Intent right */}

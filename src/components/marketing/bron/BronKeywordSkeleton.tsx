@@ -289,9 +289,9 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
   
   return (
     <div 
-      className="grid items-center gap-3 px-4 py-2 rounded-lg bg-card/50 border border-border/30 w-full"
+      className="grid items-center gap-2 px-4 py-2 rounded-lg bg-card/50 border border-border/30 w-full"
       style={{ 
-        gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
+        gridTemplateColumns: '52px 48px 44px 1fr 68px 68px 68px 170px 140px',
         opacity: Math.max(0.3, opacity),
         contain: 'layout style paint',
       }}
@@ -333,20 +333,17 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
         <div className="h-6 w-14 rounded bg-muted/30" />
       </div>
       
-      {/* Metrics placeholders */}
-      <div className="flex justify-center gap-1">
-        <div className="w-10 h-8 rounded-md bg-muted/40" />
-        <div className="w-10 h-8 rounded-md bg-muted/35" />
-        <div className="w-10 h-8 rounded-md bg-muted/30" />
+      {/* Metrics placeholders - wider for better spacing */}
+      <div className="flex justify-center gap-2">
+        <div className="w-12 h-9 rounded-md bg-muted/40" />
+        <div className="w-12 h-9 rounded-md bg-muted/35" />
+        <div className="w-12 h-9 rounded-md bg-muted/30" />
       </div>
       
       {/* Links placeholders */}
-      <div className="flex justify-center">
-        <div className="w-16 h-7 rounded-lg bg-muted/40" />
+      <div className="flex justify-end">
+        <div className="w-24 h-8 rounded-lg bg-muted/40" />
       </div>
-      
-      {/* Expand button placeholder */}
-      <div />
     </div>
   );
 });
@@ -358,9 +355,9 @@ BronKeywordSkeleton.displayName = 'BronKeywordSkeleton';
  */
 export const BronKeywordTableHeader = memo(() => (
   <div 
-    className="grid items-center gap-3 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50 w-full" 
+    className="grid items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-card/80 border border-border/50 w-full" 
     style={{ 
-      gridTemplateColumns: '36px 48px 32px 1fr 80px 80px 80px 150px 100px 36px',
+      gridTemplateColumns: '52px 48px 44px 1fr 68px 68px 68px 170px 140px',
       contain: 'layout style' 
     }}
   >
@@ -388,10 +385,9 @@ export const BronKeywordTableHeader = memo(() => (
     <div className="flex justify-center">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Metrics</span>
     </div>
-    <div className="flex justify-center">
+    <div className="flex justify-end pr-2">
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Links</span>
     </div>
-    <div />
   </div>
 ));
 

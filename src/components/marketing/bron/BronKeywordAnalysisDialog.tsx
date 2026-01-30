@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { BronKeyword, BronSerpReport, BronSerpListItem } from "@/hooks/use-bron-api";
 import { getKeywordDisplayText, getPosition } from "./BronKeywordCard";
+import { findSerpForKeyword } from "./utils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { format } from "date-fns";
 
@@ -214,9 +215,8 @@ export const BronKeywordAnalysisDialog = memo(({
       };
       
       trackedKeywords.forEach(tk => {
-        const serpItem = reportData.find(r => 
-          r.keyword?.toLowerCase() === tk.text.toLowerCase()
-        );
+        // Use fuzzy matching like the main dashboard does
+        const serpItem = findSerpForKeyword(tk.text, reportData);
         const pos = getPosition(serpItem?.google);
         if (pos !== null) {
           point[tk.text] = pos;
