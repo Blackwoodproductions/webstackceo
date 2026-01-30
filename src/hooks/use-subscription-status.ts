@@ -1,11 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type SubscriptionTier = 'free' | 'business_ceo' | 'white_label' | 'super_reseller';
+/**
+ * Subscription Tier Structure:
+ * 
+ * - vi_basic ($15/mo per domain): ONLY Visitor Intelligence dashboard access
+ * - business_ceo ($75/mo): VI + BRON + CADE (2 articles) + GMB + Social
+ * - white_label ($499/mo): Everything + white-label branding + 40% off
+ * - super_reseller ($1499/mo): Everything + API access + 60% off
+ * 
+ * Add-ons:
+ * - Additional VI domains: $15/mo each
+ * - AEO/GEO keywords: $2/keyword/mo (tied to BRON keyword count)
+ * - On-Page SEO: Contact pricing
+ * - PPC Landing Pages: Contact pricing
+ */
+export type SubscriptionTier = 'free' | 'vi_basic' | 'business_ceo' | 'white_label' | 'super_reseller';
 
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
   isActive: boolean;
+  hasViAccess: boolean;
   hasBron: boolean;
   hasCade: boolean;
   hasAeoGeo: boolean;
@@ -25,6 +40,7 @@ export interface SubscriptionStatus {
 const DEFAULT_STATUS: SubscriptionStatus = {
   tier: 'free',
   isActive: false,
+  hasViAccess: true,
   hasBron: false,
   hasCade: false,
   hasAeoGeo: false,
@@ -43,18 +59,6 @@ const DEFAULT_STATUS: SubscriptionStatus = {
 
 /**
  * Hook to check user's subscription status and feature access
- * 
- * Subscription tiers:
- * - free: VI dashboard only (1 domain)
- * - business_ceo ($75/mo): BRON + CADE (2 articles) + GMB + Social
- * - white_label ($499/mo): Everything + white-label branding + 40% off
- * - super_reseller ($1499/mo): Everything + API access + 60% off
- * 
- * Add-ons:
- * - Additional VI domains: $15/mo each
- * - AEO/GEO keywords: $2/keyword/mo (tied to BRON keyword count)
- * - On-Page SEO: Contact pricing
- * - PPC Landing Pages: Contact pricing
  */
 export function useSubscriptionStatus() {
   const [status, setStatus] = useState<SubscriptionStatus>(DEFAULT_STATUS);
@@ -82,7 +86,7 @@ export function useSubscriptionStatus() {
         .eq('user_id', user.id);
 
       const userRoles = roles?.map(r => r.role) || [];
-      const isWhiteLabel = userRoles.includes('white_label_admin');
+      const isWhiteLabelRole = userRoles.includes('white_label_admin');
       const isSuperAdmin = userRoles.includes('super_admin');
 
       // Determine subscription tier based on white_label_settings and roles
@@ -96,7 +100,7 @@ export function useSubscriptionStatus() {
         // Determine tier from subscription or role
         if (isSuperAdmin || subStatus === 'enterprise') {
           tier = 'super_reseller';
-        } else if (isWhiteLabel || subStatus === 'white_label') {
+        } else if (isWhiteLabelRole || subStatus === 'white_label') {
           tier = 'white_label';
         } else if (isActive) {
           tier = 'business_ceo';
@@ -104,7 +108,6 @@ export function useSubscriptionStatus() {
       }
 
       // For demo/development purposes, grant access based on roles
-      // In production, this would check actual Stripe subscription
       if (isSuperAdmin) {
         tier = 'super_reseller';
         isActive = true;
@@ -114,15 +117,22 @@ export function useSubscriptionStatus() {
       }
 
       // Determine feature access based on tier
-      const hasBron = tier !== 'free';
-      const hasCade = tier !== 'free';
-      const hasGmb = tier !== 'free';
-      const hasSocial = tier !== 'free';
+      // vi_basic ($15/domain) = ONLY Visitor Intelligence access
+      // business_ceo ($75/mo) = VI + BRON + CADE + GMB + Social
+      // white_label/super_reseller = Everything
+      
+      const hasViAccess = true;
+      
+      // BRON, CADE, GMB, Social require business_ceo or higher
+      const hasBron = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
+      const hasCade = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
+      const hasGmb = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
+      const hasSocial = tier === 'business_ceo' || tier === 'white_label' || tier === 'super_reseller';
       
       // AEO/GEO requires BRON (tied to keyword count)
       const hasAeoGeo = hasBron;
       
-      // On-page SEO and PPC are add-ons (would check separate subscription)
+      // On-page SEO and PPC are add-ons
       const hasOnPageSeo = tier === 'white_label' || tier === 'super_reseller';
       const hasPpcPages = tier === 'white_label' || tier === 'super_reseller';
 
@@ -131,26 +141,24 @@ export function useSubscriptionStatus() {
       let keywordCount = 0;
       let articlesPerMonth = 0;
 
-      switch (tier) {
-        case 'business_ceo':
-          keywordCount = 15;
-          articlesPerMonth = 2;
-          break;
-        case 'white_label':
-          domainCount = 10;
-          keywordCount = 50;
-          articlesPerMonth = 10;
-          break;
-        case 'super_reseller':
-          domainCount = -1; // Unlimited
-          keywordCount = -1; // Unlimited
-          articlesPerMonth = -1; // Unlimited
-          break;
+      // Note: vi_basic tier would be set via Stripe webhook - currently only grants VI access
+      if (tier === 'business_ceo') {
+        keywordCount = 15;
+        articlesPerMonth = 2;
+      } else if (tier === 'white_label') {
+        domainCount = 10;
+        keywordCount = 50;
+        articlesPerMonth = 10;
+      } else if (tier === 'super_reseller') {
+        domainCount = -1;
+        keywordCount = -1;
+        articlesPerMonth = -1;
       }
 
       setStatus({
         tier,
         isActive,
+        hasViAccess,
         hasBron,
         hasCade,
         hasAeoGeo,
@@ -179,7 +187,6 @@ export function useSubscriptionStatus() {
   useEffect(() => {
     checkSubscription();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
       checkSubscription();
     });
