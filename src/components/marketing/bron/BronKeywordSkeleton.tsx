@@ -314,17 +314,17 @@ export const BronKeywordSkeleton = memo(({ index }: { index: number }) => {
       
       {/* Google ranking placeholder */}
       <div className="flex justify-center">
-        <div className="h-8 w-full rounded-md bg-muted/40" />
+        <div className="h-6 w-14 rounded bg-muted/40" />
       </div>
       
       {/* Bing ranking placeholder */}
       <div className="flex justify-center">
-        <div className="h-8 w-full rounded-md bg-muted/35" />
+        <div className="h-6 w-14 rounded bg-muted/35" />
       </div>
       
       {/* Yahoo ranking placeholder */}
       <div className="flex justify-center">
-        <div className="h-8 w-full rounded-md bg-muted/30" />
+        <div className="h-6 w-14 rounded bg-muted/30" />
       </div>
       
       {/* Metrics placeholders */}
