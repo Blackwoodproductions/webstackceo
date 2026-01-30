@@ -58,8 +58,9 @@ interface CADEDashboardNewProps {
 }
 
 // ─── Cache Helpers ───────────────────────────────────────────────────────────
-const CACHE_KEY = "cade_subscription_cache";
-const CACHE_MAX_AGE = 5 * 60 * 1000; // 5 minutes - shorter to ensure fresh subscription checks
+// V2: Invalidates old cache after fixing CADE subscription detection
+const CACHE_KEY = "cade_subscription_cache_v2";
+const CACHE_MAX_AGE = 2 * 60 * 1000; // 2 minutes - short to ensure fresh subscription checks
 
 interface CacheEntry {
   subscription: BronSubscription;
@@ -546,8 +547,9 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange }: CADEDashboard
     prevDomainRef.current = domain;
     
     const init = async () => {
-      // Force fresh subscription check when domain changes
-      const hasSub = await checkSubscription(domainChanged);
+      // Always force fresh subscription check to prevent stale cache issues
+      // This ensures the sales page shows correctly for non-subscribers
+      const hasSub = await checkSubscription(true); // Force refresh
       if (cancelled) return;
       if (hasSub) {
         fetchData();

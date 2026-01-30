@@ -522,17 +522,25 @@ serve(async (req) => {
         const domainData = result as Record<string, unknown>;
         const serviceType = String(domainData?.servicetype || domainData?.service_type || "");
         const numericServiceType = parseInt(serviceType, 10);
-        const hasCade = !isNaN(numericServiceType) && numericServiceType > 0;
+        
+        // CADE-enabled service types - must be in the CADE tier range (380-389)
+        // Other service types (like BRON-only plans) should NOT grant CADE access
+        const CADE_SERVICE_TYPES = [380, 381, 382, 383, 384, 385, 386, 387, 388, 389];
+        const hasCade = !isNaN(numericServiceType) && CADE_SERVICE_TYPES.includes(numericServiceType);
         
         const planNames: Record<string, string> = {
-          "383": "CADE Pro",
-          "385": "CADE Enterprise", 
           "380": "CADE Starter",
           "381": "CADE Basic",
           "382": "CADE Standard",
+          "383": "CADE Pro",
           "384": "CADE Premium",
+          "385": "CADE Enterprise",
+          "386": "CADE Agency",
+          "387": "CADE White Label",
+          "388": "CADE Reseller",
+          "389": "CADE Ultimate",
         };
-        const planName = planNames[serviceType] || (hasCade ? `Plan ${serviceType}` : "Free");
+        const planName = planNames[serviceType] || (hasCade ? `CADE Plan ${serviceType}` : "Free");
         
         return new Response(
           JSON.stringify({ 
