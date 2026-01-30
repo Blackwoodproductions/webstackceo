@@ -681,16 +681,16 @@ export const BronClusterVisualization = memo(({
         });
       }
       
-      // Add ONE resource node per cluster - positioned at the outer edge of the cluster
+      // Add ONE resource node per cluster - positioned at a CONSISTENT outer radius
       // This single resource page links to the money page AND all supporting pages
       if (moneyResourceUrl) {
-        // Position resource page beyond the furthest supporting nodes
-        const supportingRadius = 105 + Math.min(supportingCount * 10, 70);
-        const totalDistance = moneyPageRadius + supportingRadius + resourceRadius;
+        // Use a FIXED outer radius for ALL resource nodes so they align on the same circle
+        // regardless of how many supporting pages each cluster has
+        const fixedResourceRadius = moneyPageRadius + 180 + resourceRadius; // Consistent outer circle
         
         // Place resource node in the same direction as the cluster
-        const resourceX = cx + Math.cos(moneyAngle) * totalDistance;
-        const resourceY = cy + Math.sin(moneyAngle) * totalDistance;
+        const resourceX = cx + Math.cos(moneyAngle) * fixedResourceRadius;
+        const resourceY = cy + Math.sin(moneyAngle) * fixedResourceRadius;
         
         const resourceNode: NodeData = {
           id: `resource-${cluster.parent.id}`,

@@ -457,7 +457,8 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
   
   return (
     <div className="flex items-center gap-1.5 flex-nowrap" style={{ contain: 'layout style' }}>
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
+      {/* CPC Badge */}
+      <div className="flex flex-col items-center px-1.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30">
         <div className="flex items-center gap-0.5">
           <DollarSign className="w-2.5 h-2.5 text-amber-400" />
           <span className="text-[10px] font-bold text-amber-400">
@@ -473,23 +474,8 @@ const MetricsDisplay = memo(({ metrics, googlePos, loading }: {
         <span className="text-[7px] text-amber-400/70">CPC</span>
       </div>
       
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-        <div className="flex items-center gap-0.5">
-          <Search className="w-2.5 h-2.5 text-cyan-400" />
-          <span className="text-[10px] font-bold text-cyan-400">
-            {showVolLoading ? (
-              <span className="opacity-50">...</span>
-            ) : hasCachedVolume ? (
-              formatVolume(metrics!.search_volume)
-            ) : (
-              '—'
-            )}
-          </span>
-        </div>
-        <span className="text-[7px] text-cyan-400/70">Vol</span>
-      </div>
-      
-      <div className="flex flex-col items-center px-1 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
+      {/* CTR Badge - Volume badge removed */}
+      <div className="flex flex-col items-center px-1.5 py-1 rounded-lg bg-violet-500/10 border border-violet-500/30">
         <div className="flex items-center gap-0.5">
           <MousePointerClick className="w-2.5 h-2.5 text-violet-400" />
           <span className="text-[10px] font-bold text-violet-400">{ctrValue || '—'}</span>
@@ -640,10 +626,10 @@ export const BronKeywordCard = memo(({
           <div 
             className="grid items-center gap-2 w-full" 
             style={{ 
-              // Narrower ranking columns (80px), proper metrics width, compact links column
+              // Metrics column narrowed to 120px (only CPC + CTR now, no Vol)
               gridTemplateColumns: isNested 
-                ? '52px 44px 1fr 80px 80px 80px 160px 100px'  // 8 columns
-                : '44px 52px 44px 1fr 80px 80px 80px 160px 100px',  // 9 columns with chart
+                ? '52px 44px 1fr 80px 80px 80px 120px 100px'  // 8 columns
+                : '44px 52px 44px 1fr 80px 80px 80px 120px 100px',  // 9 columns with chart
             }}
           >
             {/* Column 1: Chart/Analysis Button - only for non-nested cards */}
