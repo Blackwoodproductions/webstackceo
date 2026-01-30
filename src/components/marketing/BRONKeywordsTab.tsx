@@ -454,6 +454,40 @@ export const BRONKeywordsTab = memo(({
     return String(anyReport.serpid || anyReport.report_id || anyReport.id || '');
   }, []);
 
+  // Helper to get report timestamp in the same way as the date selector
+  // (BRON history items have inconsistent date field names across endpoints)
+  const getReportTimestampFromHistoryItem = useCallback((report: BronSerpListItem): number => {
+    const anyReport = report as any;
+    const dateStr =
+      anyReport.started ||
+      anyReport.start_date ||
+      anyReport.startdate ||
+      anyReport.date ||
+      anyReport.created ||
+      anyReport.created_at ||
+      anyReport.timestamp ||
+      anyReport.complete ||
+      anyReport.completed ||
+      anyReport.completed_at;
+
+    if (!dateStr) return 0;
+
+    // Handle Unix timestamps (if it's a number or numeric string)
+    if (typeof dateStr === 'number') {
+      return dateStr > 9999999999 ? dateStr : dateStr * 1000;
+    }
+    if (/^\d+$/.test(String(dateStr))) {
+      const num = parseInt(String(dateStr), 10);
+      return num > 9999999999 ? num : num * 1000;
+    }
+
+    try {
+      return new Date(dateStr).getTime();
+    } catch {
+      return 0;
+    }
+  }, []);
+
   // Fetch initial positions from SERP history (baseline = oldest report)
   useEffect(() => {
     const fetchInitialPositions = async () => {
@@ -461,8 +495,8 @@ export const BRONKeywordsTab = memo(({
       
       try {
         const sortedHistory = [...serpHistory].sort((a, b) => {
-          const dateA = new Date(a.started || a.created_at || 0).getTime();
-          const dateB = new Date(b.started || b.created_at || 0).getTime();
+          const dateA = getReportTimestampFromHistoryItem(a);
+          const dateB = getReportTimestampFromHistoryItem(b);
           return dateA - dateB;
         });
         
@@ -507,7 +541,13 @@ export const BRONKeywordsTab = memo(({
     };
     
     fetchInitialPositions();
-  }, [selectedDomain, serpHistory, onFetchSerpDetail, getReportIdFromHistoryItem]);
+  }, [
+    selectedDomain,
+    serpHistory,
+    onFetchSerpDetail,
+    getReportIdFromHistoryItem,
+    getReportTimestampFromHistoryItem,
+  ]);
 
   // Fetch keyword metrics
   // Extract core keyword without location suffixes for national volume lookup
