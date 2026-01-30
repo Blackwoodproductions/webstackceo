@@ -380,7 +380,9 @@ export const BronKeywordAnalysisDialog = memo(({
           // Empirically it tends to work with `report_id` or `id` (like our baseline fetch),
           // while the UI/report list often prefers `serpid`.
           // Fetch with a tolerant ID, but store under the UI key so the chart can map it.
-          const apiReportId = String((item as any).report_id || (item as any).id || (item as any).serpid || displayReportId);
+          // IMPORTANT: The BRON /serp-detail endpoint expects `serpid`.
+          // Our backend wrapper maps `data.report_id` -> `serpid`, so we must pass the SERP id here.
+          const apiReportId = String((item as any).serpid || (item as any).report_id || (item as any).id || displayReportId);
 
           // Small delay between calls keeps the endpoint happy.
           if (i > 0) await sleep(220);
