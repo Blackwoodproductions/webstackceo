@@ -163,6 +163,26 @@ const ModelCard = memo(({ name, status }: { name: string; status: 'waiting' | 'a
 ));
 ModelCard.displayName = 'ModelCard';
 
+// ─── Get next training day ────────────────────────────────────────────────
+const getNextTrainingDays = (): string => {
+  const dayOfWeek = new Date().getDay();
+  const miniDays = [1, 3, 5]; // Mon, Wed, Fri
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  // Find next mini training day
+  for (let i = 1; i <= 7; i++) {
+    const nextDay = (dayOfWeek + i) % 7;
+    if (miniDays.includes(nextDay)) {
+      return dayNames[nextDay];
+    }
+  }
+  return 'Mon';
+};
+
+const isMiniTrainingDay = (): boolean => {
+  return [1, 3, 5].includes(new Date().getDay());
+};
+
 // ─── Compact Training Info for Cards ────────────────────────────────────────
 export const KeywordTrainingInfo = memo(({ 
   hasResults,
@@ -242,6 +262,24 @@ export const KeywordTrainingInfo = memo(({
             <span>{roundCount}r</span>
           </div>
         )}
+      </div>
+      
+      {/* Mini training schedule row */}
+      <div className="flex items-center gap-1.5">
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] ${
+          isMiniTrainingDay() 
+            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
+            : 'bg-muted/20 text-muted-foreground'
+        }`}>
+          <Zap className="w-2 h-2" />
+          <span>
+            {isMiniTrainingDay() 
+              ? '5min boost today' 
+              : `Next: ${getNextTrainingDays()}`
+            }
+          </span>
+        </div>
+        <span className="text-[8px] text-muted-foreground/60">Mon/Wed/Fri</span>
       </div>
     </div>
   );

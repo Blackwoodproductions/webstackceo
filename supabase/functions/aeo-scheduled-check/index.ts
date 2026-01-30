@@ -76,6 +76,24 @@ const ROUNDS_PER_SESSION = 12;
 const DELAY_BETWEEN_ROUNDS_MS = 90000; // 90 seconds between rounds to spread over 20 mins
 const DELAY_BETWEEN_MODELS_MS = 2000; // 2 seconds between model calls
 
+// Mini training session settings (5 min quick booster)
+const MINI_TRAINING_ROUNDS = 5;
+const MINI_TRAINING_DELAY_MS = 45000; // 45 seconds between rounds for ~5 min total
+
+// Quick training prompts for mini sessions - faster, more direct
+const MINI_TRAINING_PROMPTS = [
+  (keyword: string, domain: string, location?: string) => 
+    `Who is the #1 ${keyword}${location ? ` in ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Best ${keyword} recommendation${location ? ` near ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Top-rated ${keyword} provider${location ? ` in ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Who leads in ${keyword} services${location ? ` in ${location}` : ''}?`,
+  (keyword: string, domain: string, location?: string) => 
+    `Most trusted ${keyword} expert${location ? ` near ${location}` : ''}?`,
+];
+
 async function queryLLM(
   model: string,
   displayName: string,
@@ -229,6 +247,41 @@ async function runTrainingRound(
   return results;
 }
 
+// Mini training round (5 rounds, ~5 minutes total)
+async function runMiniTrainingRound(
+  roundNumber: number,
+  domain: string,
+  keyword: string,
+  location: string | undefined,
+  apiKey: string
+): Promise<LLMResult[]> {
+  const promptIndex = roundNumber % MINI_TRAINING_PROMPTS.length;
+  const promptFn = MINI_TRAINING_PROMPTS[promptIndex];
+  const prompt = promptFn(keyword, domain, location);
+  
+  console.log(`[AEO Mini] Round ${roundNumber + 1}: "${prompt.substring(0, 50)}..."`);
+  
+  const results: LLMResult[] = [];
+  
+  // Query models sequentially with delays
+  for (const model of MODELS_TO_CHECK) {
+    const result = await queryLLM(model.id, model.displayName, prompt, keyword, domain, apiKey, roundNumber + 1);
+    results.push(result);
+    
+    if (MODELS_TO_CHECK.indexOf(model) < MODELS_TO_CHECK.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_MODELS_MS));
+    }
+  }
+  
+  return results;
+}
+
+// Check if today is a mini training day (Mon, Wed, Fri = days 1, 3, 5)
+function isMiniTrainingDay(): boolean {
+  const dayOfWeek = new Date().getDay();
+  return [1, 3, 5].includes(dayOfWeek); // Monday, Wednesday, Friday
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -329,6 +382,102 @@ serve(async (req) => {
         domain: targetDomain,
         results: allResults,
         suggestions,
+        timestamp: new Date().toISOString(),
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Mini training action (5-minute quick booster - runs on Mon/Wed/Fri)
+    if (action === 'mini_train' || action === 'mini_training') {
+      console.log(`[AEO Mini Training] Starting 5-minute booster sessions`);
+      
+      // Get all domains with recent activity
+      const { data: recentKeywords } = await supabase
+        .from('aeo_check_results')
+        .select('domain, keyword')
+        .gte('checked_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order('checked_at', { ascending: false });
+      
+      if (!recentKeywords || recentKeywords.length === 0) {
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'No keywords found for mini training',
+          timestamp: new Date().toISOString(),
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Group by domain and get unique keywords
+      const domainKeywords: Record<string, string[]> = {};
+      recentKeywords.forEach(r => {
+        if (!domainKeywords[r.domain]) domainKeywords[r.domain] = [];
+        if (!domainKeywords[r.domain].includes(r.keyword)) {
+          domainKeywords[r.domain].push(r.keyword);
+        }
+      });
+      
+      const miniResults: Array<{ domain: string; keyword: string; prominent: number; mentioned: number }> = [];
+      
+      for (const [dmn, keywords] of Object.entries(domainKeywords)) {
+        for (const kw of keywords.slice(0, 5)) { // Max 5 keywords per domain
+          console.log(`[AEO Mini] 5-min booster for "${kw}" on ${dmn}`);
+          
+          const allResults: LLMResult[] = [];
+          
+          for (let round = 0; round < MINI_TRAINING_ROUNDS; round++) {
+            const roundResults = await runMiniTrainingRound(round, dmn, kw, undefined, LOVABLE_API_KEY);
+            allResults.push(...roundResults);
+            
+            // Mini delay between rounds (~45 seconds for 5 min total)
+            if (round < MINI_TRAINING_ROUNDS - 1) {
+              await new Promise(resolve => setTimeout(resolve, MINI_TRAINING_DELAY_MS));
+            }
+          }
+          
+          const prominentCt = allResults.filter(r => r.position === 'prominent').length;
+          const mentionedCt = allResults.filter(r => r.position === 'mentioned').length;
+          
+          // Generate mini training suggestions
+          const miniSuggestions: string[] = [];
+          miniSuggestions.push(`⚡ Mini training session (5 rounds) completed`);
+          if (prominentCt > 0) {
+            miniSuggestions.push(`✓ ${prominentCt} prominent placements achieved`);
+          }
+          if (mentionedCt > 0) {
+            miniSuggestions.push(`📌 ${mentionedCt} mentions recorded`);
+          }
+          miniSuggestions.push(`📅 Next mini session: ${['Mon','Wed','Fri'].join('/')}`);
+          
+          // Upsert results
+          await supabase
+            .from('aeo_check_results')
+            .upsert({
+              domain: dmn,
+              keyword: kw,
+              check_date: new Date().toISOString().split('T')[0],
+              checked_at: new Date().toISOString(),
+              results: allResults,
+              suggestions: miniSuggestions,
+              prominent_count: prominentCt,
+              mentioned_count: mentionedCt,
+            }, {
+              onConflict: 'domain,keyword,check_date',
+            });
+          
+          miniResults.push({ domain: dmn, keyword: kw, prominent: prominentCt, mentioned: mentionedCt });
+        }
+      }
+      
+      console.log(`[AEO Mini] Completed ${miniResults.length} mini training sessions`);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        action: 'mini_training',
+        sessionsCompleted: miniResults.length,
+        results: miniResults,
+        isMiniTrainingDay: isMiniTrainingDay(),
         timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
