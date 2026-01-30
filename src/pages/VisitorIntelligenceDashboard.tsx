@@ -591,7 +591,7 @@ const MarketingDashboard = () => {
     isCacheFresh,
   } = useDomainCache();
   
-  // Multi-tenant user domains system
+  // Multi-tenant user domains system - pass isSuperAdmin to include demo domains
   const {
     domains: userOwnedDomains,
     primaryDomain: userPrimaryDomain,
@@ -603,7 +603,7 @@ const MarketingDashboard = () => {
     importFromGsc,
     refreshDomains: refreshUserDomains,
     canAccessDomain,
-  } = useUserDomains();
+  } = useUserDomains(isSuperAdmin);
   
   const [addDomainDialogOpen, setAddDomainDialogOpen] = useState(false);
   const [domainSelectionDialogOpen, setDomainSelectionDialogOpen] = useState(false);

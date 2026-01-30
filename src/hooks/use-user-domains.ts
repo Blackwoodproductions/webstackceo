@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -37,14 +37,30 @@ function normalizeDomain(domain: string): string {
   return domain
     .toLowerCase()
     .trim()
+    .replace('sc-domain:', '') // Remove GSC domain prefix
     .replace(/^(https?:\/\/)?(www\.)?/, '')
     .replace(/\/$/, '')
     .split('/')[0];
 }
 
-export function useUserDomains(): UseUserDomainsReturn {
+// Demo domains that super admins can access
+const DEMO_DOMAINS: Omit<UserDomain, 'user_id'>[] = [
+  {
+    id: 'demo-webstack-ceo',
+    domain: 'webstack.ceo',
+    source: 'demo',
+    is_primary: false,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    isDemo: true,
+  },
+];
+
+export function useUserDomains(isSuperAdmin: boolean = false): UseUserDomainsReturn {
   const [domains, setDomains] = useState<UserDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch user's domains
   const fetchDomains = useCallback(async () => {
@@ -52,9 +68,12 @@ export function useUserDomains(): UseUserDomainsReturn {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setDomains([]);
+        setUserId(null);
         setIsLoading(false);
         return;
       }
+      
+      setUserId(user.id);
 
       const { data, error } = await supabase
         .from('user_domains')
@@ -66,7 +85,22 @@ export function useUserDomains(): UseUserDomainsReturn {
 
       if (error) throw error;
       
-      setDomains((data as UserDomain[]) || []);
+      // Normalize domains to remove sc-domain: prefix
+      const normalizedDomains = ((data as UserDomain[]) || []).map(d => ({
+        ...d,
+        domain: normalizeDomain(d.domain),
+      }));
+      
+      // Deduplicate domains by normalized domain name
+      const seen = new Set<string>();
+      const dedupedDomains = normalizedDomains.filter(d => {
+        const normalized = normalizeDomain(d.domain);
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+      });
+      
+      setDomains(dedupedDomains);
     } catch (error) {
       console.error('[useUserDomains] Error fetching domains:', error);
       setDomains([]);
@@ -242,12 +276,30 @@ export function useUserDomains(): UseUserDomainsReturn {
     return !!userDomain;
   }, [domains]);
 
-  // Derived state
-  const primaryDomain = domains.find(d => d.is_primary) || null;
+  // Derived state - include demo domains for super admins
+  const allDomains = useMemo(() => {
+    if (isSuperAdmin && userId) {
+      // Add demo domains for super admins, marking them clearly
+      const demoDomains = DEMO_DOMAINS.map(d => ({
+        ...d,
+        user_id: userId,
+        isDemo: true,
+      }));
+      
+      // Only add demo domains that aren't already in user's list
+      const existingNormalized = new Set(domains.map(d => normalizeDomain(d.domain)));
+      const newDemos = demoDomains.filter(d => !existingNormalized.has(normalizeDomain(d.domain)));
+      
+      return [...domains, ...newDemos];
+    }
+    return domains;
+  }, [domains, isSuperAdmin, userId]);
+  
+  const primaryDomain = allDomains.find(d => d.is_primary) || null;
   const hasPrimaryDomain = !!primaryDomain;
 
   return {
-    domains,
+    domains: allDomains,
     primaryDomain,
     isLoading,
     hasPrimaryDomain,
