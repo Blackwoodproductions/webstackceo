@@ -36,9 +36,10 @@ const premiumFeatures: Record<string, { icon: typeof Sparkles; label: string; co
 
 // Add-ons available for all plans
 const addOns = [
-  { name: "On-Page SEO", icon: Sparkles },
-  { name: "PPC Landing Pages", icon: Zap },
-  { name: "Lovable Premium Hosting", icon: Shield },
+  { name: "On-Page SEO", icon: Sparkles, price: "Contact" },
+  { name: "PPC Landing Pages", icon: Zap, price: "Contact" },
+  { name: "AEO/GEO Keywords", icon: Star, price: "$2/kw/mo" },
+  { name: "Additional VI Domain", icon: Shield, price: "$15/mo" },
 ];
 
 const plans = [
@@ -58,6 +59,12 @@ const plans = [
       "Up to 125 targeted Deep Links",
       "DA - DR BOOSTER",
       "In-depth analytics",
+    ],
+    includedServices: [
+      { name: "BRON Rankings", included: true },
+      { name: "CADE (2 articles/mo)", included: true },
+      { name: "VI Dashboard (1 domain)", included: true },
+      { name: "GMB Integration", included: true },
     ],
     highlighted: false,
     hasToggle: true,
@@ -83,6 +90,12 @@ const plans = [
       "Reseller training & resources",
       "White-label everything",
     ],
+    includedServices: [
+      { name: "Custom logo branding", included: true },
+      { name: "White-label reports", included: true },
+      { name: "Client management", included: true },
+      { name: "40% off add-ons", included: true },
+    ],
     highlighted: true,
     hasToggle: true,
   },
@@ -103,6 +116,12 @@ const plans = [
       "Custom SLA agreements",
       "Dedicated security protocols",
       "Early access to new features",
+    ],
+    includedServices: [
+      { name: "Full API access", included: true },
+      { name: "Custom integrations", included: true },
+      { name: "60% off all add-ons", included: true },
+      { name: "Enterprise SLA", included: true },
     ],
     highlighted: false,
     hasToggle: true,
@@ -289,7 +308,13 @@ const PricingSection = () => {
                           <AddonIcon className="w-4 h-4 text-primary/60" />
                           {addon.name}
                         </span>
-                        <span className="text-xs text-primary font-medium">Contact</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          addon.price.includes('$') 
+                            ? 'bg-gradient-to-r from-cyan-500/20 to-violet-500/20 text-cyan-400' 
+                            : 'text-primary'
+                        }`}>
+                          {addon.price}
+                        </span>
                       </li>
                     );
                   })}
