@@ -252,6 +252,18 @@ export const BronKeywordAnalysisDialog = memo(({
   const getReportId = (item: BronSerpListItem): string => {
     return String(item.serpid || item.report_id || item.id || '');
   };
+  
+  // All keywords to analyze (main + related) - limit to 3 for cluster view
+  // NOTE: Moved before useEffect since it's referenced in logging
+  const allKeywords = useMemo(() => {
+    const kws = [keyword, ...relatedKeywords].slice(0, 3); // Max 3 keywords for cluster
+    return kws.map((kw, idx) => ({
+      keyword: kw,
+      id: String(kw.id),
+      text: getTargetKeyword(kw),
+      color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length],
+    }));
+  }, [keyword, relatedKeywords]);
 
   // Fetch historical data for all reports
   useEffect(() => {
@@ -284,7 +296,7 @@ export const BronKeywordAnalysisDialog = memo(({
           return tsA - tsB;
         });
         
-        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'historical reports for keyword:', mainKeywordText);
+        console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'reports for cluster:', allKeywords.map(k => k.text));
         
         for (const item of reportsToFetch) {
           const reportId = getReportId(item);
@@ -301,7 +313,17 @@ export const BronKeywordAnalysisDialog = memo(({
         }
         
         setHistoricalData(dataMap);
-        console.log('[BronKeywordAnalysisDialog] Fetched data for', dataMap.size, 'reports');
+        console.log('[BronKeywordAnalysisDialog] Loaded', dataMap.size, 'historical reports');
+        if (dataMap.size > 0) {
+          const firstReportId = [...dataMap.keys()][0];
+          const firstReportData = dataMap.get(firstReportId);
+          console.log('[BronKeywordAnalysisDialog] Sample SERP data (first 3):', firstReportData?.slice(0, 3).map(r => ({
+            keyword: r.keyword,
+            google: r.google,
+            bing: r.bing,
+            yahoo: r.yahoo
+          })));
+        }
       } catch (err) {
         console.error('Failed to fetch historical data:', err);
       } finally {
@@ -310,18 +332,7 @@ export const BronKeywordAnalysisDialog = memo(({
     };
     
     fetchData();
-  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, mainKeywordText]);
-  
-  // All keywords to analyze (main + related) - limit to 3 for cluster view
-  const allKeywords = useMemo(() => {
-    const kws = [keyword, ...relatedKeywords].slice(0, 3); // Max 3 keywords for cluster
-    return kws.map((kw, idx) => ({
-      keyword: kw,
-      id: String(kw.id),
-      text: getTargetKeyword(kw),
-      color: KEYWORD_COLORS[idx % KEYWORD_COLORS.length],
-    }));
-  }, [keyword, relatedKeywords]);
+  }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, allKeywords]);
 
   // Build chart data for a specific engine
   const buildChartDataForEngine = (engine: SearchEngine): { data: ChartDataPoint[], summaries: KeywordSummary[] } => {
@@ -398,6 +409,13 @@ export const BronKeywordAnalysisDialog = memo(({
       // Always include the data point when we have report data so the timeline
       // can show "unranked" periods leading up to first rankings.
       data.push(point);
+    });
+    
+    // Log chart data summary
+    console.log(`[BronKeywordAnalysisDialog] ${engine} chart built:`, {
+      totalDataPoints: data.length,
+      historicalDataSize: historicalData.size,
+      filteredHistoryLength: filteredHistory.length
     });
     
     // Log summary
@@ -519,16 +537,16 @@ export const BronKeywordAnalysisDialog = memo(({
                 ))}
               </TabsList>
               
-              {/* Inline Legend */}
-              <div className="flex flex-wrap gap-2">
+              {/* Inline Legend - Full keyword text */}
+              <div className="flex flex-wrap gap-2 flex-1 justify-end">
                 {allKeywords.map((kw) => (
-                  <div key={kw.id} className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/50 border border-border/30">
+                  <div key={kw.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/60 border border-border/40">
                     <div 
-                      className="w-2.5 h-2.5 rounded-full" 
+                      className="w-3 h-3 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: kw.color }}
                     />
-                    <span className="text-xs text-foreground truncate max-w-[140px]" title={kw.text}>
-                      {kw.text.length > 20 ? kw.text.slice(0, 20) + '...' : kw.text}
+                    <span className="text-sm text-foreground font-medium">
+                      {kw.text}
                     </span>
                   </div>
                 ))}
@@ -550,42 +568,50 @@ export const BronKeywordAnalysisDialog = memo(({
             ))}
           </Tabs>
 
-          {/* Compact Summary Row */}
-          <div className="mt-3 flex gap-2 shrink-0">
+          {/* Summary Cards - Larger with vertical layout */}
+          <div className="mt-4 grid grid-cols-3 gap-3 shrink-0">
             {currentData.summaries.map((summary) => (
               <div 
                 key={summary.id}
-                className="flex-1 flex items-center gap-3 rounded-lg border border-border/40 bg-card/50 px-3 py-2"
+                className="rounded-xl border border-border/50 bg-gradient-to-br from-card/80 to-card/60 p-4"
               >
-                <div 
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
-                  style={{ backgroundColor: summary.color }}
-                />
-                <span className="text-xs text-foreground truncate flex-1" title={summary.keyword}>
-                  {summary.keyword.length > 18 ? summary.keyword.slice(0, 18) + '...' : summary.keyword}
-                </span>
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="text-center">
-                    <span className="text-muted-foreground">Best:</span>
-                    <span className="font-bold ml-1" style={{ color: summary.color }}>
+                {/* Keyword name with color indicator */}
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/30">
+                  <div 
+                    className="w-3.5 h-3.5 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: summary.color }}
+                  />
+                  <span className="text-sm font-semibold text-foreground" title={summary.keyword}>
+                    {summary.keyword}
+                  </span>
+                </div>
+                
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Best</p>
+                    <p className="text-xl font-bold" style={{ color: summary.color }}>
                       {summary.best !== null ? `#${summary.best}` : '—'}
-                    </span>
+                    </p>
                   </div>
-                  <div className="text-center">
-                    <span className="text-muted-foreground">Now:</span>
-                    <span className="font-bold ml-1" style={{ color: summary.color }}>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Current</p>
+                    <p className="text-xl font-bold" style={{ color: summary.color }}>
                       {summary.current !== null ? `#${summary.current}` : '—'}
-                    </span>
+                    </p>
                   </div>
-                  <div className={`flex items-center gap-0.5 ${
-                    summary.change > 0 ? 'text-emerald-400' : summary.change < 0 ? 'text-red-400' : 'text-muted-foreground'
-                  }`}>
-                    {summary.change > 0 && <TrendingUp className="w-3 h-3" />}
-                    {summary.change < 0 && <TrendingDown className="w-3 h-3" />}
-                    {summary.change === 0 && <Minus className="w-3 h-3" />}
-                    <span className="font-bold">
-                      {summary.change > 0 ? `+${summary.change}` : summary.change < 0 ? `${summary.change}` : '0'}
-                    </span>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Change</p>
+                    <div className={`flex items-center justify-center gap-1 ${
+                      summary.change > 0 ? 'text-emerald-400' : summary.change < 0 ? 'text-red-400' : 'text-muted-foreground'
+                    }`}>
+                      {summary.change > 0 && <TrendingUp className="w-4 h-4" />}
+                      {summary.change < 0 && <TrendingDown className="w-4 h-4" />}
+                      {summary.change === 0 && <Minus className="w-4 h-4" />}
+                      <span className="text-xl font-bold">
+                        {summary.change > 0 ? `+${summary.change}` : summary.change < 0 ? `${summary.change}` : '0'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
