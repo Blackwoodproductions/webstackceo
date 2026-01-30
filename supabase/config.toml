@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.aeo-llm-check]
 verify_jwt = false
+
+[functions.aeo-scheduled-check]
+verify_jwt = false
