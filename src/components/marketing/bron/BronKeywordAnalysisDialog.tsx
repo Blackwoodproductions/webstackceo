@@ -286,6 +286,7 @@ export const BronKeywordAnalysisDialog = memo(({
 
   // Fetch historical data for all reports
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       console.log('[BronKeywordAnalysisDialog] Effect triggered:', {
         isOpen,
@@ -333,29 +334,50 @@ export const BronKeywordAnalysisDialog = memo(({
         });
         
         console.log('[BronKeywordAnalysisDialog] Fetching', reportsToFetch.length, 'reports for cluster:', allKeywords.map(k => k.text));
-        
-        // Fetch all reports in parallel for speed
-        const fetchPromises = reportsToFetch.map(async (item) => {
-          const reportId = getReportId(item);
-          if (!reportId) return { reportId: '', data: [] as BronSerpReport[] };
-          
+
+        // IMPORTANT: The BRON SERP detail endpoint rate-limits aggressively.
+        // Fetching in parallel often returns empty responses; throttle + retry.
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+        const fetchOne = async (reportId: string, attempt = 0): Promise<BronSerpReport[]> => {
           try {
             const data = await onFetchSerpDetail(selectedDomain, reportId);
-            return { reportId, data: data || [] };
+            const arr = Array.isArray(data) ? data : [];
+            // If we got an empty array, it can be a soft rate-limit response.
+            if (arr.length === 0 && attempt < 2) {
+              await sleep(500 * (attempt + 1));
+              return fetchOne(reportId, attempt + 1);
+            }
+            return arr;
           } catch (e) {
-            console.warn(`Failed to fetch report ${reportId}:`, e);
-            return { reportId, data: [] as BronSerpReport[] };
+            if (attempt < 2) {
+              await sleep(500 * (attempt + 1));
+              return fetchOne(reportId, attempt + 1);
+            }
+            console.warn(`[BronKeywordAnalysisDialog] Failed to fetch report ${reportId}:`, e);
+            return [];
           }
-        });
-        
-        const results = await Promise.all(fetchPromises);
-        results.forEach(({ reportId, data }) => {
-          if (reportId && data.length > 0) {
+        };
+
+        // Throttled sequential fetch to avoid rate limit
+        for (let i = 0; i < reportsToFetch.length; i++) {
+          const reportId = getReportId(reportsToFetch[i]);
+          if (!reportId) continue;
+
+          // Small delay between calls keeps the endpoint happy.
+          if (i > 0) await sleep(220);
+          const data = await fetchOne(reportId);
+
+          if (cancelled) return;
+          if (data.length > 0) {
             dataMap.set(reportId, data);
+            // Stream partial results so the chart can render ASAP.
+            setHistoricalData(new Map(dataMap));
           }
-        });
-        
-        setHistoricalData(dataMap);
+        }
+
+        if (cancelled) return;
+        setHistoricalData(new Map(dataMap));
         console.log('[BronKeywordAnalysisDialog] Loaded', dataMap.size, 'historical reports');
         
         // Log detailed matching info for debugging
@@ -377,11 +399,15 @@ export const BronKeywordAnalysisDialog = memo(({
       } catch (err) {
         console.error('Failed to fetch historical data:', err);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
-    
+
     fetchData();
+    return () => {
+      // Prevent state updates after close/reopen, especially during long fetch sequences.
+      cancelled = true;
+    };
   }, [isOpen, selectedDomain, filteredHistory, onFetchSerpDetail, allKeywords]);
 
   // Build chart data for a specific engine
