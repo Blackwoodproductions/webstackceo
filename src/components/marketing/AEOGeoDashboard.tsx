@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { useBronApi, BronKeyword } from '@/hooks/use-bron-api';
 import { getTargetKeyword } from './bron/BronKeywordCard';
 import { groupKeywords, KeywordCluster } from './bron/utils';
-import { LLMTrainingAnimation, KeywordTrainingInfo } from '@/components/ui/llm-training-animation';
+import { KeywordTrainingInfo } from '@/components/ui/llm-training-animation';
 import { format, subDays, startOfDay, isToday, differenceInDays } from 'date-fns';
 
 interface LLMResult {
@@ -823,6 +823,17 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     return diffDays >= CACHE_TTL_DAYS;
   }, []);
 
+  // Reset state when domain changes
+  useEffect(() => {
+    if (domain && hasFetchedRef.current !== domain) {
+      // Clear stale data from previous domain immediately
+      setBronKeywords([]);
+      setKeywordResults({});
+      setAvailableDates([]);
+      hasAutoStartedRef.current = null;
+    }
+  }, [domain]);
+  
   // Fetch BRON keywords for this domain
   useEffect(() => {
     if (!domain || hasFetchedRef.current === domain) return;
@@ -831,14 +842,15 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     const fetchKeywords = async () => {
       setIsLoadingKeywords(true);
       try {
-        // Load cached results first
-        const cached = await loadCachedResults();
+        // Load cached results and dates in parallel
+        const [cached] = await Promise.all([
+          loadCachedResults(),
+          loadAvailableDates(),
+        ]);
+        
         if (Object.keys(cached).length > 0) {
           setKeywordResults(cached);
         }
-        
-        // Load available dates
-        await loadAvailableDates();
         
         // Fetch BRON keywords
         await bronApi.fetchKeywords(domain);
@@ -1140,13 +1152,21 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     toast.info('Auto-check paused');
   }, []);
   
-  // Stats (memoized)
+  // Stats (memoized) - Only count results for keywords that exist in bronKeywords
   const stats = useMemo(() => {
-    const checked = Object.values(keywordResults).filter(r => r.results.length > 0).length;
-    const prominent = Object.values(keywordResults)
+    // Create a set of valid keyword names for fast lookup
+    const validKeywords = new Set(bronKeywords.map(k => k.keyword));
+    
+    // Only count checked results for keywords that exist in the current bronKeywords list
+    const relevantResults = Object.entries(keywordResults)
+      .filter(([keyword]) => validKeywords.has(keyword))
+      .map(([, result]) => result);
+    
+    const checked = relevantResults.filter(r => r.results.length > 0).length;
+    const prominent = relevantResults
       .flatMap(r => r.results)
       .filter(r => r.position === 'prominent').length;
-    const mentioned = Object.values(keywordResults)
+    const mentioned = relevantResults
       .flatMap(r => r.results)
       .filter(r => r.position === 'mentioned').length;
     
@@ -1154,30 +1174,33 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
     const mainCount = bronKeywords.filter(k => !k.isNested).length;
     const supportingCount = bronKeywords.filter(k => k.isNested).length;
     
+    // Total keywords = main + supporting
+    const totalKeywords = bronKeywords.length;
+    
     // Count training sessions and last trained date
-    const allResults = Object.values(keywordResults);
-    const trainedKeywords = allResults.filter(r => 
+    const trainedKeywords = relevantResults.filter(r => 
       r.suggestions?.some(s => s.includes('Training session completed') || s.includes('rounds trained'))
     );
-    const trainingInProgress = allResults.some(r => 
+    const trainingInProgress = relevantResults.some(r => 
       r.suggestions?.some(s => s.includes('Training in progress'))
     );
     
     // Get most recent training timestamp
-    const timestamps = allResults
+    const timestamps = relevantResults
       .filter(r => r.timestamp)
       .map(r => new Date(r.timestamp!).getTime())
       .filter(t => !isNaN(t));
     const lastTrainedAt = timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null;
     
     // Count total rounds trained across all keywords
-    const totalRoundsTrained = allResults.reduce((acc, r) => {
+    const totalRoundsTrained = relevantResults.reduce((acc, r) => {
       const rounds = [...new Set(r.results.filter(res => res.roundNumber).map(res => res.roundNumber))];
       return acc + rounds.length;
     }, 0);
     
     return { 
       checked, 
+      totalKeywords,
       prominent, 
       mentioned, 
       mainCount, 
@@ -1266,7 +1289,7 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               <div className="flex items-center gap-3">
                 {/* Checked Count */}
                 <div className="text-center px-5 py-3 bg-background/60 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg min-w-[90px]">
-                  <p className="text-2xl font-bold text-foreground">{stats.checked}/{bronKeywords.length}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.checked}/{stats.totalKeywords}</p>
                   <p className="text-xs text-muted-foreground font-medium">Checked</p>
                 </div>
                 
@@ -1364,24 +1387,9 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
         availableDates={availableDates} 
       />
       
-      {/* Keywords List - With proper loading animation */}
-      <div className="space-y-2">
-        {isLoadingKeywords ? (
-          <LLMTrainingAnimation 
-            title="Loading Keywords for LLM Training"
-            subtitle={`Analyzing ${domain} keywords from BRON tracker`}
-          />
-        ) : bronKeywords.length === 0 ? (
-          <Card className="bg-muted/20 border-dashed">
-            <CardContent className="py-12 text-center">
-              <BrainCircuit className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Keywords Found</h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Connect your domain in the BRON tab first to track keywords, then return here to check AI engine presence.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
+      {/* Keywords List - No loading screen, render immediately */}
+      <div className="space-y-2" style={{ contain: 'layout style' }}>
+        {bronKeywords.length > 0 ? (
           bronKeywords.map((kw, idx) => (
             <KeywordAEOCard
               key={`${kw.keyword}-${idx}`}
@@ -1395,7 +1403,13 @@ export const AEOGeoDashboard = memo(({ domain }: AEOGeoDashboardProps) => {
               childCount={kw.childCount}
             />
           ))
-        )}
+        ) : isLoadingKeywords || bronApi.isLoading ? (
+          // Only show minimal placeholder during initial load - no heavy animations
+          <div className="text-center py-8 text-muted-foreground">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+            <p className="text-sm">Loading keywords...</p>
+          </div>
+        ) : null}
       </div>
       
       {/* Info Card */}
