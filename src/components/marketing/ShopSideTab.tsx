@@ -86,94 +86,97 @@ const ShopSideTabInner = memo(function ShopSideTabInner() {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Holographic Glass Tab - Distinct from right-side tabs */}
+        {/* Holographic Glass Tab - Horizontal pink design */}
         <motion.button
           onClick={handleClick}
-          whileHover={{ scale: 1.05, x: 3 }}
+          whileHover={{ scale: 1.08, x: 6 }}
           whileTap={{ scale: 0.95 }}
           className="relative group"
         >
-          {/* Outer glow ring */}
+          {/* Outer glow ring - Pink themed */}
           <motion.div
-            className={`absolute -inset-1 rounded-r-3xl bg-gradient-to-br from-pink-500 via-purple-500 to-cyan-500 blur-md transition-opacity duration-500 ${
-              isHovered ? 'opacity-80' : 'opacity-40'
+            className={`absolute -inset-1.5 rounded-r-2xl blur-lg transition-all duration-500 ${
+              isHovered 
+                ? 'opacity-100 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600' 
+                : 'opacity-50 bg-pink-500/60'
             }`}
             animate={isHovered ? { 
-              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 1],
             } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
+            transition={{ duration: 1.5, repeat: Infinity }}
           />
           
-          {/* Main button container */}
+          {/* Main button container - Horizontal layout */}
           <div
-            className={`relative flex flex-col items-center gap-2 py-5 px-3 rounded-r-3xl border border-l-0 backdrop-blur-xl transition-all duration-500 ${
+            className={`relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-r-2xl border border-l-0 backdrop-blur-xl transition-all duration-500 overflow-hidden ${
               isHovered
-                ? 'bg-gradient-to-b from-slate-900/95 via-slate-800/90 to-slate-900/95 border-white/30 shadow-[0_0_40px_rgba(168,85,247,0.4)]'
-                : 'bg-gradient-to-b from-slate-900/80 via-slate-800/70 to-slate-900/80 border-white/10 shadow-xl'
+                ? 'bg-gradient-to-br from-pink-950/95 via-rose-900/90 to-pink-950/95 border-pink-400/50 shadow-[0_0_50px_rgba(236,72,153,0.5)]'
+                : 'bg-gradient-to-br from-pink-950/80 via-rose-950/70 to-pink-950/80 border-pink-500/30 shadow-[0_0_25px_rgba(236,72,153,0.25)]'
             }`}
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
           >
-            {/* Holographic shimmer effect */}
+            {/* Scanning line animation */}
             <motion.div
-              className="absolute inset-0 rounded-r-3xl overflow-hidden"
-              style={{ mixBlendMode: 'overlay' }}
+              className="absolute inset-0 pointer-events-none"
+              style={{ opacity: isHovered ? 1 : 0.5 }}
             >
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-transparent to-cyan-500/20"
-                animate={{ 
-                  backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-400 to-transparent"
+                animate={{ top: ['0%', '100%', '0%'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
               />
             </motion.div>
             
-            {/* Rainbow border animation on hover */}
-            <motion.div
-              className={`absolute inset-0 rounded-r-3xl transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
-              style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(236,72,153,0.3) 25%, rgba(168,85,247,0.3) 50%, rgba(34,211,238,0.3) 75%, transparent 100%)',
-                backgroundSize: '200% 100%',
-              }}
-              animate={isHovered ? { backgroundPosition: ['200% 0%', '-200% 0%'] } : {}}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-            />
-            
-            {/* Sparkle icon */}
-            <motion.div
-              className="relative"
-              animate={isHovered ? { 
-                rotate: [0, 15, -15, 0],
-                scale: [1, 1.2, 1],
-              } : {}}
-              transition={{ duration: 0.6 }}
-            >
-              <Sparkles className={`w-4 h-4 transition-colors duration-300 ${isHovered ? 'text-pink-400' : 'text-purple-400'}`} />
-            </motion.div>
-            
-            {/* Store icon */}
-            <div className="relative">
-              <Store className={`w-5 h-5 transition-all duration-300 drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] ${
-                isHovered ? 'text-white' : 'text-purple-200'
-              }`} />
-            </div>
-            
-            {/* Text with rainbow gradient on hover */}
-            <span className={`relative tracking-[0.25em] text-[10px] font-black uppercase transition-all duration-300 ${
+            {/* SHOP text - Horizontal on top, bigger */}
+            <span className={`relative text-sm font-black uppercase tracking-widest transition-all duration-300 ${
               isHovered 
-                ? 'bg-gradient-to-b from-pink-300 via-purple-200 to-cyan-300 bg-clip-text text-transparent'
-                : 'bg-gradient-to-b from-purple-200 via-white to-purple-200 bg-clip-text text-transparent'
+                ? 'text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]'
+                : 'bg-gradient-to-r from-pink-200 via-rose-200 to-pink-200 bg-clip-text text-transparent'
             }`}>
               SHOP
             </span>
             
-            {/* Pulsing dot indicator */}
+            {/* Icons row below text */}
+            <div className="flex items-center gap-1.5">
+              {/* Pulsing dot */}
+              <motion.div
+                className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-rose-400"
+                animate={{ 
+                  scale: [1, 1.4, 1],
+                  opacity: [0.6, 1, 0.6],
+                }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              />
+              
+              {/* Store icon */}
+              <motion.div
+                animate={isHovered ? { y: [-1, 1, -1] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                <Store className={`w-5 h-5 transition-all duration-300 ${
+                  isHovered ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-pink-300'
+                }`} />
+              </motion.div>
+              
+              {/* Sparkle icon */}
+              <motion.div
+                animate={isHovered ? { 
+                  rotate: [0, 20, -20, 0],
+                  scale: [1, 1.2, 1],
+                } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                <Sparkles className={`w-4 h-4 transition-all duration-300 ${
+                  isHovered ? 'text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-pink-400'
+                }`} />
+              </motion.div>
+            </div>
+            
+            {/* Shimmer overlay on hover */}
             <motion.div
-              className="relative w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-purple-400"
-              animate={{ 
-                scale: [1, 1.3, 1],
-                opacity: [0.7, 1, 0.7],
-              }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              initial={{ x: '-100%' }}
+              animate={isHovered ? { x: '100%' } : { x: '-100%' }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
             />
           </div>
         </motion.button>
