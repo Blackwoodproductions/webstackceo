@@ -323,21 +323,52 @@ serve(async (req) => {
       // No body - scheduled run
     }
     
-    // Quick training action for single keyword (3 rounds, ~30 seconds)
+    // Training session - duration depends on day of week
+    // Mon/Wed/Fri (days 1,3,5) = 5-minute booster (5 rounds, ~45s delays)
+    // Tue/Thu/Sat (days 2,4,6) = 20-minute full session (12 rounds, ~90s delays)
+    // Sunday (day 0) = rest day, run mini session
     if (action === 'train_keyword' && targetDomain && targetKeywords.length === 1) {
       const keyword = targetKeywords[0];
-      console.log(`[AEO Quick Training] Starting 3-round session for "${keyword}" on ${targetDomain}`);
+      const dayOfWeek = new Date().getDay();
+      const isBoosterDay = [1, 3, 5].includes(dayOfWeek); // Mon, Wed, Fri
+      const isFullSessionDay = [2, 4, 6].includes(dayOfWeek); // Tue, Thu, Sat
       
-      const quickRounds = 3;
+      // Determine session parameters based on day
+      let sessionRounds: number;
+      let delayBetweenRounds: number;
+      let sessionType: string;
+      
+      if (isFullSessionDay) {
+        // Full 20-minute session: 12 rounds with ~90s delays = ~18 mins + processing
+        sessionRounds = ROUNDS_PER_SESSION; // 12
+        delayBetweenRounds = DELAY_BETWEEN_ROUNDS_MS; // 90000ms = 90s
+        sessionType = '20-minute full';
+      } else if (isBoosterDay) {
+        // 5-minute booster: 5 rounds with ~45s delays = ~4 mins + processing  
+        sessionRounds = MINI_TRAINING_ROUNDS; // 5
+        delayBetweenRounds = MINI_TRAINING_DELAY_MS; // 45000ms = 45s
+        sessionType = '5-minute booster';
+      } else {
+        // Sunday rest day - still run mini session
+        sessionRounds = MINI_TRAINING_ROUNDS; // 5
+        delayBetweenRounds = MINI_TRAINING_DELAY_MS; // 45000ms
+        sessionType = '5-minute (rest day)';
+      }
+      
+      console.log(`[AEO Training] Starting ${sessionType} session for "${keyword}" on ${targetDomain} (${sessionRounds} rounds)`);
+      
       const allResults: LLMResult[] = [];
       
-      for (let round = 0; round < quickRounds; round++) {
-        const roundResults = await runTrainingRound(round, targetDomain, keyword, location, LOVABLE_API_KEY);
+      for (let round = 0; round < sessionRounds; round++) {
+        // Use appropriate prompts based on session type
+        const roundResults = isFullSessionDay 
+          ? await runTrainingRound(round, targetDomain, keyword, location, LOVABLE_API_KEY)
+          : await runMiniTrainingRound(round, targetDomain, keyword, location, LOVABLE_API_KEY);
         allResults.push(...roundResults);
         
-        // Brief delay between rounds
-        if (round < quickRounds - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+        // Delay between rounds (45s for booster, 90s for full session)
+        if (round < sessionRounds - 1) {
+          await new Promise(resolve => setTimeout(resolve, delayBetweenRounds));
         }
       }
       
@@ -346,18 +377,23 @@ serve(async (req) => {
       const mentionedCount = allResults.filter(r => r.position === 'mentioned').length;
       const totalChecks = allResults.filter(r => !r.error).length;
       
-      // Generate training suggestions
+      // Generate training suggestions with session info
       const suggestions: string[] = [];
+      suggestions.push(`✓ ${sessionType} session completed (${sessionRounds} rounds)`);
       if (prominentCount > 0) {
-        suggestions.push(`Training session completed with ${prominentCount}/${totalChecks} prominent placements`);
+        suggestions.push(`🏆 ${prominentCount}/${totalChecks} prominent placements achieved`);
         if (prominentCount === totalChecks) {
-          suggestions.push('Achieved #1 prominence across all models!');
+          suggestions.push('🎯 Achieved #1 prominence across all models!');
         }
       } else if (mentionedCount > 0) {
-        suggestions.push(`Improved visibility with ${mentionedCount}/${totalChecks} mentions`);
+        suggestions.push(`📌 Improved visibility with ${mentionedCount}/${totalChecks} mentions`);
       } else {
-        suggestions.push('Initial training complete - more sessions recommended for visibility');
+        suggestions.push('Initial training complete - more sessions recommended');
       }
+      // Add next session info
+      const nextFullDay = isFullSessionDay ? 'tomorrow' : ['Tue', 'Thu', 'Sat'][Math.floor(Math.random() * 3)];
+      const nextBoosterDay = isBoosterDay ? 'tomorrow' : ['Mon', 'Wed', 'Fri'][Math.floor(Math.random() * 3)];
+      suggestions.push(`📅 Next: ${isFullSessionDay ? '5-min booster on ' + nextBoosterDay : '20-min session on ' + nextFullDay}`);
       
       // Save to database
       const today = new Date().toISOString().split('T')[0];
@@ -382,6 +418,8 @@ serve(async (req) => {
         domain: targetDomain,
         results: allResults,
         suggestions,
+        sessionType,
+        sessionRounds,
         timestamp: new Date().toISOString(),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -1237,114 +1237,173 @@ export function GMBPanel({ selectedDomain }: GMBPanelProps) {
           onCancel={() => setShowCreateFlow(false)}
         />
       ) : (
-        /* No Listing Found - Inline Onboarding Wizard Style */
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          {/* Inline Wizard Card - Matches GSC/GA onboarding style */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-amber-500/30">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-amber-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-foreground mb-0.5">
-                  Add Your Business to Google Maps
-                </h4>
-                <p className="text-[10px] text-muted-foreground">
-                  <span className="text-amber-400 font-medium">{selectedDomain}</span> isn't listed on Google Maps yet
-                </p>
-              </div>
+        /* No Listing Found - Enhanced Futuristic Onboarding Panel */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          {/* Main Onboarding Card - Larger, More Modern */}
+          <Card className="relative overflow-hidden border-2 border-blue-500/30 bg-gradient-to-br from-card via-blue-500/5 to-green-500/5">
+            {/* Background Effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-blue-500/20 via-green-500/10 to-transparent rounded-bl-[150px]" />
+              <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-gradient-to-tr from-green-500/15 to-transparent rounded-tr-[100px]" />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              />
             </div>
-
-            {/* Step 1: Main Setup Options */}
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                Get your business visible in local search results:
-              </p>
-
-              {/* Option 1: Create New Listing - Now uses inline flow */}
-              <button
-                onClick={() => setShowCreateFlow(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all text-left group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Plus className="w-4 h-4 text-blue-400" />
-                </div>
+            
+            <CardHeader className="relative z-10 pb-2">
+              <div className="flex items-start gap-4">
+                <motion.div 
+                  className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center shadow-lg shadow-blue-500/30"
+                  whileHover={{ scale: 1.05, rotate: 3 }}
+                >
+                  <MapPin className="w-8 h-8 text-white" />
+                </motion.div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-foreground">Create New Listing</span>
-                    <Badge className="text-[8px] py-0 h-3.5 bg-blue-500/20 text-blue-400 border-blue-500/30">Recommended</Badge>
+                  <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400">
+                    Add Your Business to Google Maps
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    <span className="text-blue-400 font-semibold">{selectedDomain}</span> isn't listed on Google Maps yet
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Get your business visible in local search results and start attracting more customers.
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="relative z-10 space-y-4 pt-2">
+              {/* Main Action Buttons - Larger, More Interactive */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Create New Listing */}
+                <motion.button
+                  onClick={() => setShowCreateFlow(true)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative p-5 rounded-xl border-2 border-blue-500/40 bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:from-blue-500/20 hover:to-blue-500/10 hover:border-blue-500/60 transition-all text-left group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                      <Plus className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-foreground">Create New Listing</span>
+                        <Badge className="text-[9px] py-0.5 px-2 bg-blue-500/30 text-blue-300 border-blue-500/50">
+                          Recommended
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Add {selectedDomain} to Google Business Profile</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Add {selectedDomain} to Google Business Profile</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 transition-colors" />
-              </button>
+                </motion.button>
 
-              {/* Option 2: Claim Existing Listing - Now uses inline flow */}
-              <button
-                onClick={() => setShowClaimFlow(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-all text-left group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-                  <Search className="w-4 h-4 text-green-400" />
-                </div>
-                <div className="flex-1">
-                  <span className="text-xs font-medium text-foreground block">Claim Existing Listing</span>
-                  <p className="text-[10px] text-muted-foreground">Search for and claim an unclaimed listing</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-green-400 transition-colors" />
-              </button>
+                {/* Claim Existing Listing */}
+                <motion.button
+                  onClick={() => setShowClaimFlow(true)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="relative p-5 rounded-xl border-2 border-green-500/40 bg-gradient-to-br from-green-500/10 to-green-500/5 hover:from-green-500/20 hover:to-green-500/10 hover:border-green-500/60 transition-all text-left group overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative z-10 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                      <Search className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-bold text-foreground block mb-1">Claim Existing Listing</span>
+                      <p className="text-xs text-muted-foreground">Search for and claim an unclaimed listing</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-green-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </motion.button>
+              </div>
 
-              {/* Option 3: Re-check Connection */}
-              <button
+              {/* Re-check Connection - Secondary Action */}
+              <motion.button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 transition-all text-left group disabled:opacity-50"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="w-full p-4 rounded-xl border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/50 transition-all text-left group disabled:opacity-50"
               >
-                <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                  <RefreshCw className={`w-4 h-4 text-violet-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </div>
-                <div className="flex-1">
-                  <span className="text-xs font-medium text-foreground block">Re-check Connection</span>
-                  <p className="text-[10px] text-muted-foreground">Sync your Google account for new listings</p>
-                </div>
-                {isRefreshing ? (
-                  <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-violet-400 transition-colors" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Compact Benefits Summary - Single Row */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { icon: MapPin, label: 'Local Search', value: 'Top 3 get 70% clicks', color: 'blue' },
-              { icon: Star, label: 'Reviews', value: '4.5+ stars = 25% more', color: 'amber' },
-              { icon: TrendingUp, label: 'Insights', value: 'Track all actions', color: 'green' },
-            ].map((benefit, i) => {
-              const colorMap: Record<string, string> = {
-                blue: 'border-blue-500/20 bg-blue-500/5 text-blue-400',
-                amber: 'border-amber-500/20 bg-amber-500/5 text-amber-400',
-                green: 'border-green-500/20 bg-green-500/5 text-green-400',
-              };
-              
-              return (
-                <motion.div
-                  key={benefit.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`p-3 rounded-lg border ${colorMap[benefit.color]}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <benefit.icon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-medium">{benefit.label}</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                    <RefreshCw className={`w-5 h-5 text-violet-400 ${isRefreshing ? 'animate-spin' : ''}`} />
                   </div>
-                  <p className="text-[9px] text-muted-foreground">{benefit.value}</p>
-                </motion.div>
-              );
-            })}
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-foreground block">Re-check Connection</span>
+                    <p className="text-xs text-muted-foreground">Sync your Google account for new listings</p>
+                  </div>
+                  {isRefreshing ? (
+                    <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-violet-400 group-hover:translate-x-1 transition-transform" />
+                  )}
+                </div>
+              </motion.button>
+            </CardContent>
+          </Card>
+
+          {/* Benefits Grid - Enhanced Glassmorphism Cards */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { 
+                icon: MapPin, 
+                label: 'Local Search', 
+                value: 'Top 3 get 70% of clicks', 
+                description: 'Appear in Map Pack results',
+                gradient: 'from-blue-500 to-cyan-500',
+                borderColor: 'border-blue-500/30',
+                bgColor: 'from-blue-500/10 to-cyan-500/5'
+              },
+              { 
+                icon: Star, 
+                label: 'Reviews', 
+                value: '4.5+ stars = 25% more traffic', 
+                description: 'Build trust with customers',
+                gradient: 'from-amber-500 to-orange-500',
+                borderColor: 'border-amber-500/30',
+                bgColor: 'from-amber-500/10 to-orange-500/5'
+              },
+              { 
+                icon: TrendingUp, 
+                label: 'Insights', 
+                value: 'Track all actions', 
+                description: 'Measure performance',
+                gradient: 'from-green-500 to-emerald-500',
+                borderColor: 'border-green-500/30',
+                bgColor: 'from-green-500/10 to-emerald-500/5'
+              },
+            ].map((benefit, i) => (
+              <motion.div
+                key={benefit.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`relative p-5 rounded-xl border ${benefit.borderColor} bg-gradient-to-br ${benefit.bgColor} overflow-hidden group`}
+              >
+                {/* Hover shimmer */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                
+                <div className="relative z-10">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-3 shadow-lg`}>
+                    <benefit.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <h4 className="text-sm font-bold text-foreground mb-1">{benefit.label}</h4>
+                  <p className="text-xs text-foreground/80 font-medium mb-1">{benefit.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{benefit.description}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       )}
