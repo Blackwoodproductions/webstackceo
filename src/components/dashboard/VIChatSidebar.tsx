@@ -1,5 +1,5 @@
-import { memo, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -7,9 +7,11 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import {
   MessageCircle, ChevronLeft, ChevronRight, Eye, Zap, Flame, Star, 
-  Target, Crosshair, Sparkles, Activity, User as UserIcon
+  Target, Crosshair, Sparkles, Activity, User as UserIcon, Users
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
+import { useOnlineOperators, OnlineOperator } from '@/hooks/use-online-operators';
+import OperatorChatPanel from './OperatorChatPanel';
 
 interface ChatConversation {
   id: string;
@@ -207,6 +209,11 @@ export const VIChatSidebar = memo(function VIChatSidebar({
   fetchSidebarChats,
   hasNewMessage,
 }: VIChatSidebarProps) {
+  // Fetch online operators
+  const { operators } = useOnlineOperators(user?.id || null);
+  
+  // State for internal operator chat
+  const [operatorChatTarget, setOperatorChatTarget] = useState<OnlineOperator | null>(null);
   
   const handleStartChat = useCallback(async (visitor: LiveVisitor) => {
     if (visitor.is_current_user) return;
@@ -233,6 +240,11 @@ export const VIChatSidebar = memo(function VIChatSidebar({
       toast.success('Chat started with visitor');
     }
   }, [setChatPanelOpen, setSelectedChatId, fetchSidebarChats]);
+
+  const handleOperatorClick = useCallback((operator: OnlineOperator) => {
+    if (operator.is_current_user) return;
+    setOperatorChatTarget(operator);
+  }, []);
 
   const pendingChatsCount = useMemo(() => 
     sidebarChats.filter(c => c.status === 'pending').length,
@@ -294,83 +306,226 @@ export const VIChatSidebar = memo(function VIChatSidebar({
 
         {/* Content */}
         {chatOnline && chatPanelOpen && (
-          <div className="flex-1 overflow-auto p-3 space-y-2">
-            {/* Active Chats */}
-            {sidebarChats.map((chat) => {
-              const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
-              
-              return (
-                <motion.div
-                  key={chat.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => setSelectedChatId(chat.id)}
-                  className={`group relative p-3 rounded-lg border cursor-pointer transition-all ${
-                    selectedChatId === chat.id
-                      ? 'bg-primary/10 border-primary/30'
-                      : chat.status === 'pending'
-                        ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20'
-                        : 'bg-card/50 border-border/50 hover:bg-card hover:border-primary/30'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-500/50" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {chat.visitor_name || chat.visitor_email || 'Anonymous'}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {chat.current_page || '/'}
-                      </p>
-                    </div>
-                    {chat.status === 'pending' && (
-                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    )}
+          <div className="relative flex-1 overflow-hidden">
+            {/* Internal Operator Chat Panel */}
+            <AnimatePresence>
+              {operatorChatTarget && user && (
+                <OperatorChatPanel
+                  currentUserId={user.id}
+                  recipientId={operatorChatTarget.user_id}
+                  recipientProfile={{
+                    user_id: operatorChatTarget.user_id,
+                    avatar_url: operatorChatTarget.avatar_url,
+                    full_name: operatorChatTarget.full_name,
+                    email: operatorChatTarget.email,
+                  }}
+                  onClose={() => setOperatorChatTarget(null)}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Main content area */}
+            <div className="h-full overflow-auto p-3 space-y-2">
+              {/* Operators Online Section */}
+              {operators.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 py-1">
+                    <Users className="w-3 h-3 text-amber-500" />
+                    <span className="text-[10px] font-semibold text-amber-500">
+                      Operators Online ({operators.length})
+                    </span>
                   </div>
-                </motion.div>
-              );
-            })}
+                  
+                  {operators.map((operator) => (
+                    <motion.div
+                      key={operator.user_id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={() => handleOperatorClick(operator)}
+                      className={`group relative p-2 rounded-lg border transition-all ${
+                        operator.is_current_user
+                          ? 'bg-primary/10 border-primary/30'
+                          : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {operator.avatar_url ? (
+                          <div className="relative">
+                            <img
+                              src={operator.avatar_url}
+                              alt={operator.full_name || 'Operator'}
+                              className={`w-8 h-8 rounded-full object-cover ring-2 ${
+                                operator.is_current_user ? 'ring-primary/50' : 'ring-amber-500/50'
+                              }`}
+                            />
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${
+                              operator.is_current_user ? 'bg-primary' : 'bg-amber-400'
+                            }`} />
+                          </div>
+                        ) : (
+                          <div className={`relative w-8 h-8 rounded-full flex items-center justify-center ${
+                            operator.is_current_user 
+                              ? 'bg-gradient-to-br from-primary to-violet-500' 
+                              : 'bg-gradient-to-br from-amber-500 to-orange-500'
+                          }`}>
+                            <span className="text-xs font-bold text-white">
+                              {(operator.full_name || operator.email || 'O').charAt(0).toUpperCase()}
+                            </span>
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${
+                              operator.is_current_user ? 'bg-primary' : 'bg-amber-400'
+                            }`} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium text-foreground truncate">
+                              {operator.full_name || operator.email?.split('@')[0] || 'Operator'}
+                            </p>
+                            {operator.is_current_user && (
+                              <span className="text-[8px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1 py-0.5 rounded-full">
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-amber-500">Operator</p>
+                        </div>
+                        {!operator.is_current_user && (
+                          <MessageCircle className="w-3 h-3 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
 
-            {/* Separator */}
-            {sidebarChats.length > 0 && liveVisitors.length > 0 && (
-              <div className="flex items-center gap-2 py-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] text-muted-foreground">Live Visitors</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-            )}
+                  {/* Separator between operators and chats/visitors */}
+                  {(sidebarChats.length > 0 || liveVisitors.length > 0) && (
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+                  )}
+                </>
+              )}
 
-            {/* Live Visitors */}
-            {liveVisitors.map((visitor) => (
-              <VisitorCard
-                key={visitor.session_id}
-                visitor={visitor}
-                onStartChat={handleStartChat}
-                isExpanded={true}
-              />
-            ))}
+              {/* Active Chats */}
+              {sidebarChats.map((chat) => {
+                const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
+                
+                return (
+                  <motion.div
+                    key={chat.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    className={`group relative p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedChatId === chat.id
+                        ? 'bg-primary/10 border-primary/30'
+                        : chat.status === 'pending'
+                          ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20'
+                          : 'bg-card/50 border-border/50 hover:bg-card hover:border-primary/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-cyan-500/50" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
+                          <UserIcon className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {chat.visitor_name || chat.visitor_email || 'Anonymous'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {chat.current_page || '/'}
+                        </p>
+                      </div>
+                      {chat.status === 'pending' && (
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
 
-            {/* Empty state */}
-            {sidebarChats.length === 0 && liveVisitors.length === 0 && (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center py-8 animate-fade-in">
-                  <MessageCircle className="w-12 h-12 text-cyan-500/40 mx-auto" />
-                  <p className="text-xs text-muted-foreground mt-3">Waiting for visitors...</p>
+              {/* Separator */}
+              {sidebarChats.length > 0 && liveVisitors.length > 0 && (
+                <div className="flex items-center gap-2 py-2">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] text-muted-foreground">Live Visitors</span>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Live Visitors */}
+              {liveVisitors.map((visitor) => (
+                <VisitorCard
+                  key={visitor.session_id}
+                  visitor={visitor}
+                  onStartChat={handleStartChat}
+                  isExpanded={true}
+                />
+              ))}
+
+              {/* Empty state */}
+              {sidebarChats.length === 0 && liveVisitors.length === 0 && operators.length === 0 && (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center py-8 animate-fade-in">
+                    <MessageCircle className="w-12 h-12 text-cyan-500/40 mx-auto" />
+                    <p className="text-xs text-muted-foreground mt-3">Waiting for visitors...</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Collapsed state */}
         {chatOnline && !chatPanelOpen && (
           <div className="flex-1 flex flex-col items-center gap-2 py-3 overflow-auto">
+            {/* Operators - collapsed */}
+            {operators.slice(0, 3).map((operator) => (
+              <div
+                key={operator.user_id}
+                onClick={() => {
+                  setChatPanelOpen(true);
+                  if (!operator.is_current_user) {
+                    setOperatorChatTarget(operator);
+                  }
+                }}
+                className={`relative w-10 h-10 rounded-full transition-all ${
+                  operator.is_current_user ? '' : 'cursor-pointer hover:scale-110'
+                }`}
+                title={`${operator.full_name || operator.email || 'Operator'}${operator.is_current_user ? ' (You)' : ''}`}
+              >
+                {operator.avatar_url ? (
+                  <img
+                    src={operator.avatar_url}
+                    alt=""
+                    className={`w-full h-full rounded-full object-cover ring-2 ${
+                      operator.is_current_user ? 'ring-primary/50' : 'ring-amber-500/50'
+                    }`}
+                  />
+                ) : (
+                  <div className={`w-full h-full rounded-full flex items-center justify-center ${
+                    operator.is_current_user 
+                      ? 'bg-gradient-to-br from-primary to-violet-500' 
+                      : 'bg-gradient-to-br from-amber-500 to-orange-500'
+                  }`}>
+                    <span className="text-sm font-bold text-white">
+                      {(operator.full_name || operator.email || 'O').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                  operator.is_current_user ? 'bg-primary' : 'bg-amber-400'
+                }`} />
+              </div>
+            ))}
+
+            {operators.length > 0 && (sidebarChats.length > 0 || liveVisitors.length > 0) && (
+              <div className="w-6 h-px bg-border my-1" />
+            )}
+
             {sidebarChats.slice(0, 5).map((chat) => {
               const avatarUrl = chat.visitor_email ? chatProfileAvatars[chat.visitor_email] : null;
               
@@ -413,7 +568,7 @@ export const VIChatSidebar = memo(function VIChatSidebar({
               />
             ))}
 
-            {sidebarChats.length === 0 && liveVisitors.length === 0 && (
+            {sidebarChats.length === 0 && liveVisitors.length === 0 && operators.length === 0 && (
               <div className="flex-1 flex items-center justify-center">
                 <Eye className="w-5 h-5 text-muted-foreground/30" />
               </div>
