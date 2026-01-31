@@ -632,7 +632,17 @@ serve(async (req) => {
         
         // Build messages with tool results (including errors - AI should handle gracefully)
         const messagesWithTools = [
-          { role: "system", content: systemPrompt + `\n\nIMPORTANT: Some tools may have returned errors. When tools fail, acknowledge the issue briefly and still provide helpful advice based on what you know. Never show blank responses - always give the user something actionable.` },
+          { role: "system", content: systemPrompt + `\n\n## ⚠️ TOOL RESULTS STATUS:
+Some tools may have returned errors (check for "error" keys in results).
+
+CRITICAL INSTRUCTIONS FOR THIS RESPONSE:
+1. If any tool succeeded, present that data clearly
+2. If some tools failed, acknowledge briefly and use the fallback_advice if provided
+3. If ALL tools failed, provide expert SEO recommendations based on best practices
+4. NEVER return an empty or blank response - ALWAYS give actionable advice
+5. Save successful data to the SEO Vault (include domain parameter)
+
+Remember: Users expect help even when APIs have issues. Be the expert!` },
           ...messages,
           assistantMessage,
           ...toolResults.map((result: any, index: number) => ({
@@ -1055,7 +1065,12 @@ async function getSerpReport(domain: string): Promise<any> {
   const apiKey = Deno.env.get("BRON_API_KEY");
   
   if (!apiId || !apiKey) {
-    return { error: "BRON API not configured", message: "SERP report requires BRON API credentials." };
+    return { 
+      domain, 
+      error: "BRON API not configured", 
+      message: "SERP report requires BRON API credentials.",
+      fallback_advice: "For SERP analysis, I recommend using Google Search Console data or the keyword metrics tool."
+    };
   }
   
   try {
@@ -1075,27 +1090,54 @@ async function getSerpReport(domain: string): Promise<any> {
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      console.error(`SERP report API returned ${response.status}`);
-      return { error: `SERP API error: ${response.status}`, message: "The SERP report service is temporarily unavailable. Please try again later." };
-    }
-
-    // Check content type to avoid parsing HTML as JSON
+    // Check content type FIRST before anything else
     const contentType = response.headers.get("content-type") || "";
-    if (!contentType.includes("application/json")) {
-      const text = await response.text();
-      console.error("SERP report returned non-JSON:", text.slice(0, 200));
-      return { error: "SERP API returned invalid response", message: "The SERP report service returned an unexpected response. Please try again later." };
+    const responseText = await response.text();
+    
+    if (!response.ok) {
+      console.error(`SERP report API returned ${response.status}:`, responseText.slice(0, 200));
+      return { 
+        domain, 
+        error: `SERP API error: ${response.status}`, 
+        message: "The SERP report service is temporarily unavailable.",
+        fallback_advice: "I can still help with keyword metrics and domain audit data instead."
+      };
     }
 
-    const data = await response.json();
-    return { domain, report: data };
+    // Check if it's actually JSON
+    if (!contentType.includes("application/json") || responseText.trim().startsWith('<')) {
+      console.error("SERP report returned non-JSON:", responseText.slice(0, 200));
+      return { 
+        domain, 
+        error: "SERP API returned invalid response", 
+        message: "The SERP report service returned an unexpected response.",
+        fallback_advice: "Let me try other SEO tools to get you the information you need."
+      };
+    }
+
+    try {
+      const data = JSON.parse(responseText);
+      return { domain, report: data };
+    } catch (parseError) {
+      console.error("SERP JSON parse error:", parseError);
+      return { 
+        domain, 
+        error: "Failed to parse SERP data", 
+        message: "The response format was unexpected.",
+        fallback_advice: "I can use alternative data sources to provide SEO insights."
+      };
+    }
   } catch (error) {
     console.error("SERP report error:", error);
     const message = error instanceof Error && error.name === 'AbortError' 
       ? "SERP report request timed out. Please try again."
       : "Failed to fetch SERP report. The service may be temporarily unavailable.";
-    return { error: "Failed to fetch SERP report", message };
+    return { 
+      domain, 
+      error: "Failed to fetch SERP report", 
+      message,
+      fallback_advice: "I'll provide recommendations based on available data and SEO best practices."
+    };
   }
 }
 
@@ -1310,25 +1352,30 @@ async function saveCompetitors(supabase: any, userId: string, userDomain: string
 // Find backlink partner opportunities using Ahrefs API
 async function findBacklinkPartners(domain: string, competitorDomains?: string[], niche?: string): Promise<any> {
   const ahrefsApiKey = Deno.env.get("AHREFS_API_KEY");
+  const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  
+  // Always provide useful fallback strategies
+  const fallbackStrategies = [
+    "Guest posting on industry blogs",
+    "HARO (Help a Reporter Out) submissions",
+    "Broken link building",
+    "Resource page outreach",
+    "Local business directories",
+    "Industry association websites",
+    "Podcast guest appearances",
+    "Creating linkable assets (infographics, tools, studies)"
+  ];
   
   if (!ahrefsApiKey) {
     return {
-      domain,
+      domain: cleanDomain,
       message: "Backlink partner discovery requires Ahrefs API. Here are general recommendations:",
-      strategies: [
-        "Guest posting on industry blogs",
-        "HARO (Help a Reporter Out) submissions",
-        "Broken link building",
-        "Resource page outreach",
-        "Local business directories",
-        "Industry association websites"
-      ],
+      strategies: fallbackStrategies,
       niche_specific: niche ? `Focus on ${niche}-related publications and forums` : null
     };
   }
 
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
     const today = new Date().toISOString().split('T')[0];
     
     // Get referring domains for the user's domain
@@ -1341,13 +1388,30 @@ async function findBacklinkPartners(domain: string, competitorDomains?: string[]
       order_by: 'domain_rating:desc'
     });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     const response = await fetch(`https://api.ahrefs.com/v3/site-explorer/refdomains?${params.toString()}`, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${ahrefsApiKey}`, 'Accept': 'application/json' }
+      headers: { 'Authorization': `Bearer ${ahrefsApiKey}`, 'Accept': 'application/json' },
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`Ahrefs API error: ${response.status}`);
+      const errorStatus = response.status;
+      console.error(`Ahrefs API error: ${errorStatus}`);
+      
+      // Return helpful fallback instead of throwing
+      return {
+        domain: cleanDomain,
+        error: `Ahrefs API returned ${errorStatus}`,
+        message: "Unable to fetch live backlink data, but here are proven strategies:",
+        strategies: fallbackStrategies,
+        niche_specific: niche ? `Focus on ${niche}-related publications and forums` : null,
+        fallback_advice: "Run a domain audit first to get cached backlink data, then use these strategies for outreach."
+      };
     }
 
     const data = await response.json();
@@ -1366,11 +1430,22 @@ async function findBacklinkPartners(domain: string, competitorDomains?: string[]
         "Find industry directories and resource pages",
         "Reach out to sites linking to competitors but not you"
       ],
+      strategies: fallbackStrategies.slice(0, 4),
       message: `Found ${existingPartners.length} existing link partners. Focus outreach on DR 30+ sites in your niche.`
     };
   } catch (error) {
     console.error("Backlink partners error:", error);
-    return { error: "Failed to fetch backlink data", message: error instanceof Error ? error.message : "Unknown error" };
+    const isTimeout = error instanceof Error && error.name === 'AbortError';
+    
+    // Always return useful data even on error
+    return { 
+      domain: cleanDomain,
+      error: "Failed to fetch backlink data", 
+      message: isTimeout ? "Request timed out." : (error instanceof Error ? error.message : "Unknown error"),
+      strategies: fallbackStrategies,
+      niche_specific: niche ? `Focus on ${niche}-related publications and forums` : null,
+      fallback_advice: "These strategies work for any domain. Start with guest posting and local directories for quick wins."
+    };
   }
 }
 
@@ -1878,6 +1953,22 @@ function buildSystemPrompt(domainContext: any, userEmail?: string, selectedDomai
 - Never ask which domain - use the selected domain shown below
 - Start responses with: "🎯 **[domain]** - " then proceed
 - If no domain is selected, ask them to pick one from the dropdown
+
+## ⚠️ CRITICAL - HANDLING TOOL ERRORS:
+Some SEO tools (Ahrefs, SERP APIs) may occasionally fail or return errors.
+When tools return errors or fail:
+1. **NEVER give a blank response** - ALWAYS provide value
+2. Acknowledge briefly: "Some live data is temporarily unavailable..."
+3. Use the fallback_advice from the tool response if available
+4. Provide actionable recommendations based on SEO best practices
+5. Suggest alternative tools that might have the data
+6. If running multiple reports and some fail, report on what succeeded
+
+Example response when tools fail:
+"Some external data sources are currently unavailable. Here's what I found and actionable next steps:
+- ✅ Keyword metrics: [data that worked]
+- ⚠️ SERP data: Temporarily unavailable. Use Google Search Console for rankings.
+- 💡 Recommendations: [Your expert advice]"
 
 ## QUICK RESPONSES:
 - For simple questions: Answer directly, no preamble
