@@ -78,6 +78,21 @@ export function DomainSelectorBar({
     }));
   }, [selectedDomain]);
   
+  // Handle domain change - also store in localStorage and dispatch global event
+  const handleDomainSelect = useCallback((domain: string) => {
+    // Store in localStorage so AI can pick it up
+    localStorage.setItem('webstack_selected_domain', domain);
+    sessionStorage.setItem('webstack_current_domain', domain);
+    
+    // Dispatch global event for AI assistant sync
+    window.dispatchEvent(new CustomEvent('domain-selected', { 
+      detail: { domain } 
+    }));
+    
+    // Call the parent handler
+    onDomainChange(domain);
+  }, [onDomainChange]);
+  
   const normalizeDomainKey = (input: string) =>
     input
       .toLowerCase()
@@ -124,7 +139,7 @@ export function DomainSelectorBar({
                 <Globe className="w-4 h-4 text-primary" />
               </div>
 
-              <Select value={selectedValue} onValueChange={onDomainChange}>
+              <Select value={selectedValue} onValueChange={handleDomainSelect}>
                 <SelectTrigger className="w-[180px] h-7 text-sm bg-background border-border/50 pointer-events-auto relative">
                   <SelectValue placeholder="Select domain" />
                 </SelectTrigger>

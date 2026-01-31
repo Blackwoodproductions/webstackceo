@@ -55,16 +55,36 @@ export function useAIAssistant() {
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Listen for global domain changes from dashboard/domain selector bar
+  // This syncs the AI domain with the dashboard's selected domain
   useEffect(() => {
     const handleDomainChange = (e: CustomEvent<{ domain: string | null }>) => {
-      if (e.detail.domain && e.detail.domain !== selectedDomain) {
+      if (e.detail.domain) {
         setSelectedDomain(e.detail.domain);
+        console.log('[AI Assistant] Domain synced from selector:', e.detail.domain);
       }
     };
     
     window.addEventListener('domain-selected', handleDomainChange as EventListener);
     return () => {
       window.removeEventListener('domain-selected', handleDomainChange as EventListener);
+    };
+  }, []);
+  
+  // Also listen for when AI opens - fetch the current domain from localStorage or sessionStorage
+  useEffect(() => {
+    const handleAIOpen = () => {
+      // Try to get domain from localStorage (DomainSelectorBar stores it there)
+      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+                          sessionStorage.getItem('webstack_current_domain');
+      if (storedDomain && !selectedDomain) {
+        setSelectedDomain(storedDomain);
+        console.log('[AI Assistant] Restored domain from storage:', storedDomain);
+      }
+    };
+    
+    window.addEventListener('open-ai-assistant', handleAIOpen);
+    return () => {
+      window.removeEventListener('open-ai-assistant', handleAIOpen);
     };
   }, [selectedDomain]);
 
