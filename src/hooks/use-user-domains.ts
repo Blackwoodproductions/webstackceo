@@ -43,21 +43,11 @@ function normalizeDomain(domain: string): string {
     .split('/')[0];
 }
 
-// Demo domains that super admins can access
-const DEMO_DOMAINS: Omit<UserDomain, 'user_id'>[] = [
-  {
-    id: 'demo-webstack-ceo',
-    domain: 'webstack.ceo',
-    source: 'demo',
-    is_primary: false,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    isDemo: true,
-  },
-];
+// REMOVED: Demo domains - each user should only see their own GSC domains
+// Super admins no longer get demo domains automatically
 
-export function useUserDomains(isSuperAdmin: boolean = false): UseUserDomainsReturn {
+// isSuperAdmin param is kept for API compatibility but no longer adds demo domains
+export function useUserDomains(_isSuperAdmin: boolean = false): UseUserDomainsReturn {
   const [domains, setDomains] = useState<UserDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -276,30 +266,12 @@ export function useUserDomains(isSuperAdmin: boolean = false): UseUserDomainsRet
     return !!userDomain;
   }, [domains]);
 
-  // Derived state - include demo domains for super admins
-  const allDomains = useMemo(() => {
-    if (isSuperAdmin && userId) {
-      // Add demo domains for super admins, marking them clearly
-      const demoDomains = DEMO_DOMAINS.map(d => ({
-        ...d,
-        user_id: userId,
-        isDemo: true,
-      }));
-      
-      // Only add demo domains that aren't already in user's list
-      const existingNormalized = new Set(domains.map(d => normalizeDomain(d.domain)));
-      const newDemos = demoDomains.filter(d => !existingNormalized.has(normalizeDomain(d.domain)));
-      
-      return [...domains, ...newDemos];
-    }
-    return domains;
-  }, [domains, isSuperAdmin, userId]);
-  
-  const primaryDomain = allDomains.find(d => d.is_primary) || null;
+  // Each user only sees their own domains - no demo domain injection
+  const primaryDomain = domains.find(d => d.is_primary) || null;
   const hasPrimaryDomain = !!primaryDomain;
 
   return {
-    domains: allDomains,
+    domains,
     primaryDomain,
     isLoading,
     hasPrimaryDomain,
