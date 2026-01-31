@@ -19,7 +19,7 @@ interface BronClusterCardProps {
   linksIn: BronLink[];
   linksOut: BronLink[];
   selectedDomain?: string;
-  expandedIds: Set<number | string>;
+  expandedId: number | string | null;
   initialPositions: Record<string, InitialPositions>;
   metricsLoadingKeys: Set<string>;
   inlineEditForms: Record<string | number, Record<string, string>>;
@@ -325,7 +325,7 @@ export const BronClusterCard = memo(({
   linksIn,
   linksOut,
   selectedDomain,
-  expandedIds,
+  expandedId,
   initialPositions,
   metricsLoadingKeys,
   inlineEditForms,
@@ -356,7 +356,7 @@ export const BronClusterCard = memo(({
           linksIn={linksIn}
           linksOut={linksOut}
           selectedDomain={selectedDomain}
-          isExpanded={expandedIds.has(cluster.parent.id)}
+          isExpanded={String(expandedId) === String(cluster.parent.id)}
           initialPositions={initialPositions}
           metricsLoadingKeys={metricsLoadingKeys}
           inlineEditForms={inlineEditForms}
@@ -389,7 +389,7 @@ export const BronClusterCard = memo(({
         linksIn={linksIn}
         linksOut={linksOut}
         selectedDomain={selectedDomain}
-        isExpanded={expandedIds.has(cluster.parent.id)}
+        isExpanded={String(expandedId) === String(cluster.parent.id)}
         initialPositions={initialPositions}
         metricsLoadingKeys={metricsLoadingKeys}
         inlineEditForms={inlineEditForms}
@@ -426,7 +426,7 @@ export const BronClusterCard = memo(({
               linksIn={linksIn}
               linksOut={linksOut}
               selectedDomain={selectedDomain}
-              isExpanded={expandedIds.has(child.id)}
+              isExpanded={String(expandedId) === String(child.id)}
               initialPositions={initialPositions}
               metricsLoadingKeys={metricsLoadingKeys}
               inlineEditForms={inlineEditForms}
@@ -459,10 +459,15 @@ export const BronClusterCard = memo(({
   if (prev.initialPositions !== next.initialPositions) return false;
   if (prev.compactMode !== next.compactMode) return false;
 
-  // Check expansion/saving/form state for IDs in this cluster
-  const ids = [prev.cluster.parent.id, ...prev.cluster.children.map(c => c.id)];
+  // Expansion: only re-render this cluster when the expanded keyword toggles within it
+  const ids = [prev.cluster.parent.id, ...prev.cluster.children.map((c) => c.id)];
+  const prevExpandedInCluster = prev.expandedId !== null && ids.some((id) => String(id) === String(prev.expandedId));
+  const nextExpandedInCluster = next.expandedId !== null && ids.some((id) => String(id) === String(next.expandedId));
+  if (prevExpandedInCluster !== nextExpandedInCluster) return false;
+  if (prevExpandedInCluster && nextExpandedInCluster && String(prev.expandedId) !== String(next.expandedId)) return false;
+
+  // Check saving/form state for IDs in this cluster
   for (const id of ids) {
-    if (prev.expandedIds.has(id) !== next.expandedIds.has(id)) return false;
     if ((prev.inlineEditForms as any)[id] !== (next.inlineEditForms as any)[id]) return false;
     if (prev.savingIds.has(id) !== next.savingIds.has(id)) return false;
   }
