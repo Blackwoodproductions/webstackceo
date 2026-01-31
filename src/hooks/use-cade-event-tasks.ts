@@ -229,15 +229,27 @@ export function useCadeEventTasks(domain?: string) {
   const hasActiveTasks = useMemo(() => stats.active > 0, [stats.active]);
 
   // Get the most recent active task per type
+  // Only consider tasks from the last 30 minutes that are truly still running
   const activeTasksByType = useMemo(() => {
-    const isActive = (s: string) => 
-      ["running", "processing", "pending", "queued", "in_progress"].includes(s.toLowerCase());
+    const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
+    
+    const isActive = (t: CadeEventTask) => {
+      const statusLower = (t.statusValue || "").toLowerCase();
+      // Explicitly exclude completed/done/failed states
+      if (["completed", "done", "success", "failed", "error"].includes(statusLower)) {
+        return false;
+      }
+      // Only include tasks that are explicitly running/pending and recent
+      const isActiveStatus = ["running", "processing", "pending", "queued", "in_progress"].includes(statusLower);
+      const isRecent = t.created_at ? new Date(t.created_at).getTime() > thirtyMinutesAgo : false;
+      return isActiveStatus && isRecent;
+    };
     
     return {
-      crawl: byType.crawl.find(t => isActive(t.statusValue)),
-      categorization: byType.categorization.find(t => isActive(t.statusValue)),
-      css: byType.css.find(t => isActive(t.statusValue)),
-      content: byType.content.find(t => isActive(t.statusValue)),
+      crawl: byType.crawl.find(t => isActive(t)),
+      categorization: byType.categorization.find(t => isActive(t)),
+      css: byType.css.find(t => isActive(t)),
+      content: byType.content.find(t => isActive(t)),
     };
   }, [byType]);
 

@@ -611,8 +611,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
 
 
 
-      {/* Row 1: Website Crawl + Live Activity Side by Side */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Row 1: Website Crawl + SEO Vault + Live Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         
         {/* Website Crawl Card - 2 columns */}
         <div className="md:col-span-2">
@@ -710,8 +710,21 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
           </SectionCard>
         </div>
 
-        {/* Live Activity Mini Dashboard - 3 columns */}
-        <div className="md:col-span-3">
+        {/* SEO Vault Card - 2 columns */}
+        <div className="md:col-span-2">
+          <SectionCard title="SEO Vault" accentColor="emerald" className="h-full">
+            <CADEVaultIntegration 
+              domain={domain}
+              onGenerateFromPlan={async (item) => {
+                // Refresh content after generation starts
+                setTimeout(() => fetchData(), 2000);
+              }}
+            />
+          </SectionCard>
+        </div>
+
+        {/* Live Activity Mini Dashboard - 2 columns */}
+        <div className="md:col-span-2">
           <SectionCard title="Live Activity" accentColor="violet" className="h-full">
             <div className="space-y-4">
               {/* Dials Row */}
