@@ -314,47 +314,6 @@ export function PPCKeywordLandingSystem({
         </div>
       </motion.div>
 
-      {/* BULK PAGE GENERATION */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="relative z-10"
-      >
-        <div className="glass-card rounded-2xl p-6 border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-cyan-500/5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center">
-              <FileStack className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg flex items-center gap-2">
-                Bulk Page Generation
-                <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px]">AI-Powered</Badge>
-              </h3>
-              <p className="text-sm text-muted-foreground">Create keyword-specific landing pages at scale</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {PAGE_TYPES.map((type) => (
-              <HighTechCardWrapper key={type.id} showGlow={selectedPageType === type.id}>
-                <button
-                  onClick={() => setSelectedPageType(type.id)}
-                  className={`w-full glass-card rounded-xl p-4 text-center transition-all duration-300 h-full ${
-                    selectedPageType === type.id 
-                      ? 'border-primary bg-primary/10 ring-1 ring-primary/30' 
-                      : 'border-border/50 hover:border-primary/30'
-                  }`}
-                >
-                  <span className="text-2xl mb-2 block">{type.emoji}</span>
-                  <p className="text-xs font-medium">{type.name}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{type.description}</p>
-                </button>
-              </HighTechCardWrapper>
-            ))}
-          </div>
-        </div>
-      </motion.div>
 
       {/* A/B TESTING & HEAT TRACKING */}
       <motion.div
