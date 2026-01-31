@@ -997,53 +997,308 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                 ) : (
                   <ScrollArea className="flex-1 relative">
                     {messages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                        <div className="relative mb-6">
-                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 via-cyan-500/20 to-violet-500/20 flex items-center justify-center">
-                            <Brain className="w-10 h-10 text-cyan-400" />
-                          </div>
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-violet-500/20 blur-xl animate-pulse" />
+                      <div className="flex flex-col items-center justify-center h-full p-8 text-center relative overflow-hidden">
+                        {/* Matrix Digital Rain Background */}
+                        <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
+                          {[...Array(20)].map((_, i) => (
+                            <motion.div
+                              key={`rain-${i}`}
+                              className="absolute text-cyan-400/60 font-mono text-xs whitespace-nowrap"
+                              style={{
+                                left: `${(i * 5) + Math.random() * 2}%`,
+                                writingMode: 'vertical-rl',
+                              }}
+                              initial={{ y: '-100%', opacity: 0 }}
+                              animate={{
+                                y: '100vh',
+                                opacity: [0, 1, 1, 0],
+                              }}
+                              transition={{
+                                duration: 4 + Math.random() * 4,
+                                repeat: Infinity,
+                                delay: Math.random() * 3,
+                                ease: 'linear',
+                              }}
+                            >
+                              {[...Array(15)].map((_, j) => (
+                                <span key={j} className={j % 3 === 0 ? 'text-violet-400' : ''}>
+                                  {String.fromCharCode(0x30A0 + Math.random() * 96)}
+                                </span>
+                              ))}
+                            </motion.div>
+                          ))}
                         </div>
-                        <h3 className="font-bold mb-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">What can I help with?</h3>
-                        <p className="text-sm text-muted-foreground mb-6 max-w-[250px]">
+
+                        {/* Neural Grid Lines */}
+                        <div className="absolute inset-0 pointer-events-none">
+                          <svg className="w-full h-full opacity-20">
+                            <defs>
+                              <pattern id="neural-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-cyan-500/50" />
+                              </pattern>
+                              <linearGradient id="grid-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stopColor="white" stopOpacity="0" />
+                                <stop offset="30%" stopColor="white" stopOpacity="1" />
+                                <stop offset="70%" stopColor="white" stopOpacity="1" />
+                                <stop offset="100%" stopColor="white" stopOpacity="0" />
+                              </linearGradient>
+                              <mask id="grid-mask">
+                                <rect width="100%" height="100%" fill="url(#grid-fade)" />
+                              </mask>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#neural-grid)" mask="url(#grid-mask)" />
+                          </svg>
+                        </div>
+
+                        {/* Scanning Beam */}
+                        <motion.div
+                          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent pointer-events-none"
+                          initial={{ top: 0, opacity: 0 }}
+                          animate={{
+                            top: ['0%', '100%'],
+                            opacity: [0, 0.8, 0.8, 0],
+                          }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: 'linear',
+                          }}
+                        />
+
+                        {/* AI Brain Orb with Advanced Effects */}
+                        <div className="relative mb-8 z-10">
+                          {/* Outer neural ring pulses */}
+                          {[0, 1, 2].map((i) => (
+                            <motion.div
+                              key={`pulse-${i}`}
+                              className="absolute inset-0 rounded-full"
+                              style={{
+                                background: `radial-gradient(circle, transparent 50%, ${i === 0 ? 'rgba(6, 182, 212, 0.3)' : i === 1 ? 'rgba(139, 92, 246, 0.2)' : 'rgba(236, 72, 153, 0.15)'} 100%)`,
+                              }}
+                              initial={{ scale: 1, opacity: 0.6 }}
+                              animate={{
+                                scale: [1, 2.5, 3],
+                                opacity: [0.6, 0.2, 0],
+                              }}
+                              transition={{
+                                duration: 2.5,
+                                repeat: Infinity,
+                                delay: i * 0.8,
+                                ease: 'easeOut',
+                              }}
+                            />
+                          ))}
+
+                          {/* Orbiting particles */}
+                          {[...Array(6)].map((_, i) => (
+                            <motion.div
+                              key={`orbit-${i}`}
+                              className="absolute w-2 h-2 rounded-full"
+                              style={{
+                                background: i % 2 === 0 ? 'linear-gradient(to right, #06b6d4, #8b5cf6)' : 'linear-gradient(to right, #8b5cf6, #ec4899)',
+                                boxShadow: i % 2 === 0 ? '0 0 10px #06b6d4' : '0 0 10px #8b5cf6',
+                                top: '50%',
+                                left: '50%',
+                                marginLeft: '-4px',
+                                marginTop: '-4px',
+                              }}
+                              animate={{
+                                x: Math.cos((i * 60) * Math.PI / 180) * 55,
+                                y: Math.sin((i * 60) * Math.PI / 180) * 55,
+                                rotate: [0, 360],
+                                scale: [1, 1.3, 1],
+                              }}
+                              transition={{
+                                rotate: {
+                                  duration: 4 + i * 0.5,
+                                  repeat: Infinity,
+                                  ease: 'linear',
+                                },
+                                scale: {
+                                  duration: 1.5,
+                                  repeat: Infinity,
+                                  delay: i * 0.2,
+                                },
+                              }}
+                            />
+                          ))}
+
+                          {/* Main orb container */}
+                          <motion.div
+                            className="relative w-24 h-24 rounded-full flex items-center justify-center"
+                            animate={{
+                              rotateY: [0, 360],
+                            }}
+                            transition={{
+                              duration: 20,
+                              repeat: Infinity,
+                              ease: 'linear',
+                            }}
+                          >
+                            {/* Gradient background with holographic effect */}
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-600/40 via-cyan-500/40 to-fuchsia-500/40 backdrop-blur-sm" />
+                            <div className="absolute inset-1 rounded-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-cyan-500/30" />
+                            
+                            {/* Inner glow */}
+                            <motion.div
+                              className="absolute inset-2 rounded-full bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-transparent"
+                              animate={{
+                                opacity: [0.5, 1, 0.5],
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                              }}
+                            />
+
+                            {/* Brain icon */}
+                            <motion.div
+                              animate={{
+                                scale: [1, 1.1, 1],
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                              }}
+                            >
+                              <Brain className="w-10 h-10 text-cyan-400 drop-shadow-[0_0_15px_rgba(6,182,212,0.8)] relative z-10" />
+                            </motion.div>
+                          </motion.div>
+
+                          {/* Holographic ring */}
+                          <motion.div
+                            className="absolute inset-0 rounded-full border-2 border-cyan-400/30"
+                            style={{
+                              boxShadow: '0 0 20px rgba(6, 182, 212, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.1)',
+                            }}
+                            animate={{
+                              rotateX: [0, 360],
+                              rotateZ: [0, 180],
+                            }}
+                            transition={{
+                              duration: 10,
+                              repeat: Infinity,
+                              ease: 'linear',
+                            }}
+                          />
+                        </div>
+
+                        {/* Glitch Title Effect */}
+                        <motion.h3 
+                          className="font-bold mb-2 text-lg relative z-10"
+                          animate={{
+                            textShadow: [
+                              '0 0 0 transparent',
+                              '2px 0 0 rgba(6, 182, 212, 0.5), -2px 0 0 rgba(139, 92, 246, 0.5)',
+                              '0 0 0 transparent',
+                            ],
+                          }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            repeatDelay: 2,
+                          }}
+                        >
+                          <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                            What can I help with?
+                          </span>
+                        </motion.h3>
+                        <p className="text-sm text-muted-foreground mb-6 max-w-[250px] relative z-10">
                           Keyword research, competitor analysis, or SEO troubleshooting.
                         </p>
-                        <div className="grid gap-2 w-full max-w-[280px]">
+                        <div className="grid gap-2 w-full max-w-[280px] relative z-10">
                           {[
                             { text: "🔍 Research keywords", full: "Research keywords for my domain" },
                             { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy" },
                             { text: "🚀 Improve rankings", full: "How can I improve my search rankings?" },
                             { text: "🔗 Find backlink opportunities", full: "Find backlink partner opportunities for my site" },
                           ].map((suggestion, i) => (
-                            <Button
+                            <motion.div
                               key={i}
-                              variant="outline"
-                              size="sm"
-                              className="justify-start text-left h-auto py-2.5 px-3 bg-gradient-to-r from-muted/30 to-transparent border-border/50 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all"
-                              onClick={() => {
-                                setInputValue(suggestion.full);
-                                inputRef.current?.focus();
-                              }}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 + i * 0.1 }}
+                              whileHover={{ scale: 1.02, x: 5 }}
+                              whileTap={{ scale: 0.98 }}
                             >
-                              {suggestion.text}
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-start text-left h-auto py-3 px-4 relative overflow-hidden group
+                                  bg-gradient-to-r from-slate-900/80 to-slate-800/50 
+                                  border-cyan-500/20 hover:border-cyan-400/50
+                                  hover:shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all duration-300"
+                                onClick={() => {
+                                  setInputValue(suggestion.full);
+                                  inputRef.current?.focus();
+                                }}
+                              >
+                                {/* Scanning line on hover */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none overflow-hidden">
+                                  <motion.div
+                                    className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                                    animate={{ y: [0, 40, 0] }}
+                                    transition={{ duration: 1, repeat: Infinity }}
+                                  />
+                                </div>
+                                {/* Left accent bar */}
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className="relative z-10">{suggestion.text}</span>
+                              </Button>
+                            </motion.div>
                           ))}
                         </div>
                         
                         {/* Credit/Usage Info */}
                         {usage && (
-                          <div className="mt-6 pt-4 border-t border-border/30 w-full max-w-[280px]">
+                          <motion.div 
+                            className="mt-6 pt-4 border-t border-cyan-500/20 w-full max-w-[280px] relative z-10"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                          >
                             <div className="flex items-center justify-between text-xs mb-2">
                               <span className="text-muted-foreground flex items-center gap-1.5">
-                                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                                Credits This Month
+                                <motion.div
+                                  animate={{ rotate: [0, 360] }}
+                                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                                >
+                                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                                </motion.div>
+                                <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent font-medium">
+                                  Credits This Month
+                                </span>
                               </span>
                             </div>
                             {usage.isUnlimited || usage.isAdmin ? (
-                              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-amber-500/10 via-violet-500/10 to-cyan-500/10 border border-amber-500/20">
-                                <Shield className="w-4 h-4 text-amber-400" />
-                                <span className="text-sm font-semibold text-amber-400">Unlimited Access</span>
-                              </div>
+                              <motion.div 
+                                className="flex items-center justify-center gap-2 p-3 rounded-lg relative overflow-hidden"
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15))',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                }}
+                                animate={{
+                                  boxShadow: [
+                                    '0 0 20px rgba(245, 158, 11, 0.2)',
+                                    '0 0 30px rgba(139, 92, 246, 0.3)',
+                                    '0 0 20px rgba(245, 158, 11, 0.2)',
+                                  ],
+                                }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                              >
+                                {/* Animated background shimmer */}
+                                <motion.div
+                                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                                  animate={{ x: ['-100%', '100%'] }}
+                                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                                />
+                                <Shield className="w-5 h-5 text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                <span className="text-sm font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
+                                  Unlimited Access
+                                </span>
+                              </motion.div>
                             ) : (
                               <>
                                 <div className="flex items-center justify-between mb-1.5">
@@ -1055,23 +1310,32 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                                     {usage.minutesUsed} / {usage.minutesLimit} used
                                   </span>
                                 </div>
-                                <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
-                                  <div 
+                                <div className="h-2 bg-slate-800/80 rounded-full overflow-hidden border border-cyan-500/20">
+                                  <motion.div 
                                     className={cn(
-                                      "h-full transition-all rounded-full",
+                                      "h-full rounded-full relative",
                                       (usage.minutesUsed / usage.minutesLimit) >= 0.8 
                                         ? "bg-gradient-to-r from-destructive to-orange-500" 
-                                        : "bg-gradient-to-r from-cyan-500 to-violet-500"
+                                        : "bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500"
                                     )}
-                                    style={{ width: `${Math.min((usage.minutesUsed / usage.minutesLimit) * 100, 100)}%` }}
-                                  />
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min((usage.minutesUsed / usage.minutesLimit) * 100, 100)}%` }}
+                                    transition={{ duration: 1, ease: 'easeOut' }}
+                                  >
+                                    {/* Shimmer effect */}
+                                    <motion.div
+                                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                                      animate={{ x: ['-100%', '100%'] }}
+                                      transition={{ duration: 1.5, repeat: Infinity }}
+                                    />
+                                  </motion.div>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
                                   ~1 min per query • Resets monthly
                                 </p>
                               </>
                             )}
-                          </div>
+                          </motion.div>
                         )}
                       </div>
                     ) : (
