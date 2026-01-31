@@ -14,6 +14,7 @@ import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import { useCart, CartProvider } from "@/contexts/CartContext";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { useGeoCurrency } from "@/hooks/use-geo-currency";
+import { CalendlyModal, useCalendlyModal } from "@/components/ui/calendly-modal";
 import { 
   BRON_PRODUCTS, 
   CADE_PRODUCTS, 
@@ -209,6 +210,7 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
   const { addItem, totalItems } = useCart();
   const { formatLocalPrice, isUSD, country, loading } = useGeoCurrency();
+  const { isOpen: isCalendlyOpen, setIsOpen: setCalendlyOpen, openCalendly } = useCalendlyModal();
 
   const handleAddToCart = (product: StripeProduct) => {
     addItem({
@@ -433,12 +435,10 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
                           <Button
                             variant="outline"
                             className="w-full"
-                            asChild
+                            onClick={openCalendly}
                           >
-                            <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                              <HeadphonesIcon className="w-4 h-4 mr-2" />
-                              Book a Call
-                            </a>
+                            <HeadphonesIcon className="w-4 h-4 mr-2" />
+                            Book a Call
                           </Button>
                         ) : (
                           <Button
@@ -639,11 +639,12 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
               <Button variant="outline" asChild>
                 <a href="/faq">View FAQ</a>
               </Button>
-              <Button className="bg-gradient-to-r from-primary to-violet-500" asChild>
-                <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                  <HeadphonesIcon className="w-4 h-4 mr-2" />
-                  Book a Demo
-                </a>
+              <Button 
+                className="bg-gradient-to-r from-primary to-violet-500"
+                onClick={openCalendly}
+              >
+                <HeadphonesIcon className="w-4 h-4 mr-2" />
+                Book a Demo
               </Button>
             </div>
           </Card>
@@ -652,6 +653,9 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
 
       {/* Cart Drawer */}
       <CartDrawer />
+      
+      {/* Calendly Modal */}
+      <CalendlyModal open={isCalendlyOpen} onOpenChange={setCalendlyOpen} />
     </section>
   );
 });

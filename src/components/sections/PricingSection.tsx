@@ -5,6 +5,7 @@ import { useState, useMemo } from "react";
 import StripePaymentIcons from "@/components/ui/stripe-payment-icons";
 import { useCart } from "@/contexts/CartContext";
 import { useGeoCurrency } from "@/hooks/use-geo-currency";
+import { CalendlyModal, useCalendlyModal } from "@/components/ui/calendly-modal";
 // Calculate positions left based on current date (decreases throughout month)
 const getPositionsLeft = () => {
   const now = new Date();
@@ -183,6 +184,7 @@ const PricingSection = () => {
   const positionsLeft = useMemo(() => getPositionsLeft(), []);
   const { addItem } = useCart();
   const { formatLocalPrice, isUSD, country, loading, convertPrice } = useGeoCurrency();
+  const { isOpen: isCalendlyOpen, setIsOpen: setCalendlyOpen, openCalendly } = useCalendlyModal();
 
   const handleAddToCart = (plan: typeof plans[0]) => {
     const cartKey = isYearly && plan.cartKeyYearly ? plan.cartKeyYearly : plan.cartKey;
@@ -401,11 +403,9 @@ const PricingSection = () => {
                   variant="heroOutline"
                   className="w-full"
                   size="lg"
-                  asChild
+                  onClick={openCalendly}
                 >
-                  <a href="https://calendly.com/d/csmt-vs9-zq6/seo-local-book-demo" target="_blank" rel="noopener noreferrer">
-                    {plan.buttonText}
-                  </a>
+                  {plan.buttonText}
                 </Button>
               ) : (
                 <Button
@@ -421,6 +421,9 @@ const PricingSection = () => {
             </motion.div>
           ))}
         </div>
+        
+        {/* Calendly Modal */}
+        <CalendlyModal open={isCalendlyOpen} onOpenChange={setCalendlyOpen} />
 
 
         {/* Stripe Payment Icons */}
