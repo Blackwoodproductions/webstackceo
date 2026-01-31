@@ -23,32 +23,32 @@ export const VisitorTrackingProvider = ({ children }: { children: React.ReactNod
   const [sessionReady, setSessionReady] = useState(false);
   const lastPath = useRef<string>('');
 
-  // Initialize session on first load
+  // Initialize session on first load - NON-BLOCKING
   useEffect(() => {
-    const initSession = async () => {
-      try {
-        // Get current user if authenticated
-        const { data: { user } } = await supabase.auth.getUser();
-
-        // Route all writes through backend function to avoid RLS/anon write failures.
-        // This tracks webstack.ceo internal visitors (the marketing site itself)
-        await supabase.functions.invoke('visitor-session-track', {
-          body: {
-            action: 'init',
-            session_id: sessionId.current,
-            first_page: window.location.pathname,
-            referrer: document.referrer || null,
-            user_agent: navigator.userAgent,
-            domain: 'webstack.ceo', // Internal tracking for the marketing site
-            // user_id is derived server-side from the caller JWT (if any)
-          },
-        });
-        setSessionReady(true);
-      } catch (error) {
-        // Still mark as ready to not block the app
-        setSessionReady(true);
-        console.error('Session init error:', error);
-      }
+    // Mark session ready IMMEDIATELY so app is not blocked
+    setSessionReady(true);
+    
+    // Fire-and-forget session initialization
+    const initSession = () => {
+      // Use setTimeout to ensure this runs after the main thread is free
+      setTimeout(async () => {
+        try {
+          // Route all writes through backend function to avoid RLS/anon write failures.
+          // This tracks webstack.ceo internal visitors (the marketing site itself)
+          await supabase.functions.invoke('visitor-session-track', {
+            body: {
+              action: 'init',
+              session_id: sessionId.current,
+              first_page: window.location.pathname,
+              referrer: document.referrer || null,
+              user_agent: navigator.userAgent,
+              domain: 'webstack.ceo', // Internal tracking for the marketing site
+            },
+          });
+        } catch (error) {
+          console.error('Session init error:', error);
+        }
+      }, 0);
     };
 
     initSession();

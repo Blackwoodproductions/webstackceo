@@ -92,30 +92,95 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
   const [newVisitorsToday, setNewVisitorsToday] = useState(0);
 
   const fetchData = useCallback(async () => {
+    // Use AbortController to cancel stale requests
+    const controller = new AbortController();
+    
     try {
-      // Build queries with optional domain filtering
+      // Build lightweight count queries first for instant stats
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString();
+
+      // Phase 1: Quick count queries for instant stats (no data transfer)
+      const countPromises = [
+        supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }),
+        supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).gte('last_activity_at', fiveMinutesAgo),
+        supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).gte('started_at', todayStr),
+        supabase.from('leads').select('id', { count: 'exact', head: true }),
+      ];
+
+      // Apply domain filter to counts
+      if (domain) {
+        countPromises[0] = supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).eq('domain', domain);
+        countPromises[1] = supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).eq('domain', domain).gte('last_activity_at', fiveMinutesAgo);
+        countPromises[2] = supabase.from('visitor_sessions').select('id', { count: 'exact', head: true }).eq('domain', domain).gte('started_at', todayStr);
+        countPromises[3] = supabase.from('leads').select('id', { count: 'exact', head: true }).eq('tracking_domain', domain);
+      }
+
+      // Execute count queries immediately - these are very fast
+      const [totalSessions, activeSessions, todaySessions, totalLeads] = await Promise.all(countPromises);
+      
+      // Update stats immediately so UI shows data
+      setActiveVisitors(activeSessions.count || 0);
+      setNewVisitorsToday(todaySessions.count || 0);
+      setFunnelStats(prev => ({
+        ...prev,
+        visitors: totalSessions.count || 0,
+        leads: totalLeads.count || 0,
+      }));
+      
+      // Mark loading complete after quick stats
+      setIsLoading(false);
+
+      // Phase 2: Background fetch of full data (deferred, lower priority)
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(async () => {
+          await fetchFullData(domain, controller.signal);
+          setIsRefreshing(false);
+        }, { timeout: 3000 });
+      } else {
+        setTimeout(async () => {
+          await fetchFullData(domain, controller.signal);
+          setIsRefreshing(false);
+        }, 100);
+      }
+    } catch (error) {
+      console.error('[useDashboardData] Error fetching data:', error);
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+    
+    return () => controller.abort();
+  }, [domain]);
+
+  // Full data fetch (runs in background)
+  const fetchFullData = async (domain: string | null | undefined, signal?: AbortSignal) => {
+    try {
+      // Build queries with optional domain filtering - reduced limits for performance
       let sessionsQuery = supabase
         .from('visitor_sessions')
         .select('*')
         .order('started_at', { ascending: false })
-        .limit(500);
+        .limit(100); // Reduced from 500
       
       let pageViewsQuery = supabase
         .from('page_views')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .limit(200); // Reduced from 1000
       
       let toolsQuery = supabase
         .from('tool_interactions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(500);
+        .limit(100); // Reduced from 500
       
       let leadsQuery = supabase
         .from('leads')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       // Apply domain filter if specified
       if (domain) {
@@ -133,67 +198,60 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
         toolsQuery,
       ]);
 
+      // Check if aborted
+      if (signal?.aborted) return;
+
       if (leadsRes.data) setLeads(leadsRes.data);
       if (sessionsRes.data) setSessions(sessionsRes.data);
       if (pageViewsRes.data) setPageViews(pageViewsRes.data);
       if (toolsRes.data) setToolInteractions(toolsRes.data);
 
-      // Calculate stats
-      const allSessions = sessionsRes.data || [];
+      // Calculate detailed stats
       const allLeads = leadsRes.data || [];
       const allTools = toolsRes.data || [];
 
-      // Active visitors (last 5 minutes)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      const activeCount = allSessions.filter(s => s.last_activity_at >= fiveMinutesAgo).length;
-      setActiveVisitors(activeCount);
-
-      // New visitors today
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString();
-      const newToday = allSessions.filter(s => s.started_at >= todayStr).length;
-      setNewVisitorsToday(newToday);
-
-      // Calculate funnel stats
-      const uniqueSessionIds = new Set(allSessions.map(s => s.session_id));
       const engagedSessionIds = new Set(allTools.map(t => t.session_id));
       const qualifiedLeads = allLeads.filter(l => l.qualification_step && l.qualification_step >= 2);
       const closedLeads = allLeads.filter(l => l.status === 'closed');
       const withName = allLeads.filter(l => l.full_name);
       const withCompanyInfo = allLeads.filter(l => l.company_employees || l.annual_revenue);
 
-      setFunnelStats({
-        visitors: uniqueSessionIds.size,
+      setFunnelStats(prev => ({
+        ...prev,
         engaged: engagedSessionIds.size,
-        leads: allLeads.length,
         qualified: qualifiedLeads.length,
         closedLeads: closedLeads.length,
         withName: withName.length,
         withCompanyInfo: withCompanyInfo.length,
-      });
+      }));
     } catch (error) {
-      console.error('[useDashboardData] Error fetching data:', error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if ((error as Error).name !== 'AbortError') {
+        console.error('[useDashboardData] Error fetching full data:', error);
+      }
     }
-  }, [domain]);
+  };
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     await fetchData();
   }, [fetchData]);
 
-  // Initial fetch and re-fetch when domain changes
+  // Initial fetch and re-fetch when domain changes - non-blocking
   useEffect(() => {
-    setIsLoading(true);
+    // Don't set loading true - let quick stats populate first
     fetchData();
   }, [fetchData]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 60 seconds (increased from 30 for performance)
   useEffect(() => {
-    const interval = setInterval(fetchData, 30000);
+    const interval = setInterval(() => {
+      // Use requestIdleCallback to avoid blocking UI
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => fetchData(), { timeout: 5000 });
+      } else {
+        fetchData();
+      }
+    }, 60000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
