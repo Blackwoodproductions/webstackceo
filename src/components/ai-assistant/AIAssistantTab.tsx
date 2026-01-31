@@ -391,6 +391,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     stopStreaming,
     deleteConversation,
     clearCurrentConversation,
+    syncDomainNow,
   } = useAIAssistant();
 
   // Voice recognition
@@ -484,7 +485,22 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     }
   }, [isOpen, setSelectedDomain]);
 
-  // Listen for AI bubble prompts from domain selector bar
+  // Listen for domain-selected event from dashboard domain selector
+  // This keeps the AI chatbot in sync when user changes domain while AI panel is open
+  useEffect(() => {
+    const handleDomainChange = (e: CustomEvent<{ domain: string }>) => {
+      if (e.detail?.domain) {
+        setSelectedDomain(e.detail.domain);
+        console.log('[AI Tab] Domain updated from dashboard:', e.detail.domain);
+      }
+    };
+    
+    window.addEventListener('domain-selected', handleDomainChange as EventListener);
+    return () => {
+      window.removeEventListener('domain-selected', handleDomainChange as EventListener);
+    };
+  }, [setSelectedDomain]);
+
   useEffect(() => {
     const handleAIPrompt = (e: CustomEvent<{ prompt: string; domain: string | null }>) => {
       const { prompt, domain } = e.detail;

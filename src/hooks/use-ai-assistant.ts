@@ -107,7 +107,9 @@ export function useAIAssistant() {
   // Also listen for when AI opens - re-sync domain from localStorage
   useEffect(() => {
     const handleAIOpen = () => {
-      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+      // Priority: bron_last_selected_domain (dashboard's source of truth)
+      const storedDomain = localStorage.getItem('bron_last_selected_domain') ||
+                          localStorage.getItem('webstack_selected_domain') || 
                           sessionStorage.getItem('webstack_current_domain');
       if (storedDomain) {
         setSelectedDomain(storedDomain);
@@ -120,6 +122,18 @@ export function useAIAssistant() {
       window.removeEventListener('open-ai-assistant', handleAIOpen);
     };
   }, []);
+  
+  // Force-sync domain when selectedDomain is set - ensure localStorage priority is correct
+  const syncDomainNow = useCallback(() => {
+    const storedDomain = localStorage.getItem('bron_last_selected_domain') ||
+                        localStorage.getItem('webstack_selected_domain') || 
+                        sessionStorage.getItem('webstack_current_domain');
+    if (storedDomain && storedDomain !== selectedDomain) {
+      setSelectedDomain(storedDomain);
+      return storedDomain;
+    }
+    return selectedDomain;
+  }, [selectedDomain]);
 
   // Load conversations
   useEffect(() => {
@@ -457,5 +471,6 @@ export function useAIAssistant() {
     deleteConversation,
     clearCurrentConversation,
     checkUsage,
+    syncDomainNow,
   };
 }
