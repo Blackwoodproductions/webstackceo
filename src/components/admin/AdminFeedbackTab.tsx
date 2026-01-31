@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { 
   MessageSquare, Bug, Lightbulb, AlertTriangle, 
   Eye, Check, Clock, XCircle, RefreshCw, Filter,
-  ChevronDown, ChevronUp, ExternalLink, Mail
+  ChevronDown, ChevronUp, ExternalLink, Mail, Wand2, Sparkles, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,12 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface BetaFeedback {
   id: string;
@@ -155,6 +161,87 @@ const AdminFeedbackTab = memo(() => {
     } finally {
       setUpdating(false);
     }
+  };
+
+  // Generate a Lovable-compatible fix prompt from the feedback
+  const generateFixPrompt = (item: BetaFeedback): string => {
+    const parts: string[] = [];
+    
+    // Add context based on type
+    if (item.feedback_type === 'bug_report' || item.feedback_type === 'error_report') {
+      parts.push(`🐛 **Bug/Error Report**: ${item.title || 'Reported Issue'}`);
+    } else if (item.feedback_type === 'feature_request') {
+      parts.push(`✨ **Feature Request**: ${item.title || 'New Feature'}`);
+    } else {
+      parts.push(`📝 **Feedback**: ${item.title || 'User Feedback'}`);
+    }
+    
+    // Add user message
+    parts.push(`\n**User Report:**\n${item.message}`);
+    
+    // Add page context
+    if (item.page_url) {
+      parts.push(`\n**Page:** ${item.page_url}`);
+    }
+    
+    // Add error context
+    if (item.page_errors && Array.isArray(item.page_errors) && item.page_errors.length > 0) {
+      const errors = item.page_errors.map((err: any) => 
+        typeof err === 'object' ? err.message : String(err)
+      ).join('\n- ');
+      parts.push(`\n**Page Errors:**\n- ${errors}`);
+    }
+    
+    if (item.console_errors && Array.isArray(item.console_errors) && item.console_errors.length > 0) {
+      const consoleErrs = item.console_errors.slice(-5).join('\n- ');
+      parts.push(`\n**Console Errors:**\n- ${consoleErrs}`);
+    }
+    
+    // Add fix instruction
+    parts.push(`\n\n**Please fix this issue automatically.** Analyze the error context and implement the necessary changes.`);
+    
+    return parts.join('\n');
+  };
+
+  // Copy fix prompt to clipboard for Lovable
+  const copyFixPrompt = async (item: BetaFeedback) => {
+    const prompt = generateFixPrompt(item);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success("Fix prompt copied! Paste it in Lovable chat to auto-fix.");
+    } catch (err) {
+      toast.error("Failed to copy prompt");
+    }
+  };
+
+  // Open Lovable editor with the fix prompt
+  const initiateAutoFix = async (item: BetaFeedback) => {
+    const prompt = generateFixPrompt(item);
+    
+    // Copy to clipboard first
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch (err) {
+      // Silent fail - user can still manually paste
+    }
+    
+    // Mark as in progress
+    await updateStatus(item.id, "in_progress");
+    
+    // Open Lovable editor in a new tab
+    // The project ID is in the URL - we construct the Lovable chat URL
+    const lovableProjectUrl = `https://lovable.dev/projects/13c35a32-15ad-4fba-abcf-febaaa2e3347`;
+    
+    toast.success(
+      "Fix prompt copied! Opening Lovable editor...",
+      { 
+        description: "Paste the prompt in the chat to start auto-fix.",
+        duration: 5000 
+      }
+    );
+    
+    // Open Lovable in new tab
+    window.open(lovableProjectUrl, '_blank');
   };
 
   const StatCard = ({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) => (
@@ -424,6 +511,45 @@ const AdminFeedbackTab = memo(() => {
                     className="mt-2"
                   />
                 </div>
+
+                {/* Auto Fix with Lovable - Special Section */}
+                {(selectedFeedback.feedback_type === 'bug_report' || selectedFeedback.feedback_type === 'error_report') && (
+                  <TooltipProvider>
+                    <div className="p-4 rounded-lg bg-gradient-to-r from-violet-500/10 via-cyan-500/10 to-violet-500/10 border border-violet-500/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-5 h-5 text-violet-400" />
+                        <span className="font-semibold text-violet-300">Auto Fix with Lovable AI</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Generate a fix prompt with all error context and open Lovable to automatically resolve this issue.
+                      </p>
+                      <div className="flex gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyFixPrompt(selectedFeedback)}
+                              className="border-violet-500/30 hover:bg-violet-500/10"
+                            >
+                              <Copy className="w-4 h-4 mr-1" />
+                              Copy Prompt
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy fix prompt to clipboard</TooltipContent>
+                        </Tooltip>
+                        <Button
+                          size="sm"
+                          onClick={() => initiateAutoFix(selectedFeedback)}
+                          className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:opacity-90 text-white"
+                        >
+                          <Wand2 className="w-4 h-4 mr-1" />
+                          Auto Fix with Lovable
+                        </Button>
+                      </div>
+                    </div>
+                  </TooltipProvider>
+                )}
 
                 {/* Status Actions */}
                 <div className="flex flex-wrap gap-2 pt-2">
