@@ -1,12 +1,13 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio, Archive, Lock } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio, Archive, Lock, FileText, Star, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAIAssistant, type AIMessage, type AIConversation, AI_MODELS, type AIModelId } from '@/hooks/use-ai-assistant';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserDomains } from '@/hooks/use-user-domains';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -316,18 +317,62 @@ const ConversationItem = memo(function ConversationItem({
   );
 });
 
+// SEO Vault item type
+interface VaultItem {
+  id: string;
+  title: string;
+  report_type: string;
+  summary: string;
+  tags: string[];
+  is_favorite: boolean;
+  created_at: string;
+  domain?: string;
+}
+
 export const AIAssistantTab = memo(function AIAssistantTab() {
   const { user, googleProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [showVault, setShowVault] = useState(false);
+  const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
+  const [vaultLoading, setVaultLoading] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Get user domains
   const { domains } = useUserDomains();
+  
+  // Load vault items
+  const loadVaultItems = useCallback(async () => {
+    if (!user) return;
+    setVaultLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('seo_vault')
+        .select('id, title, report_type, summary, tags, is_favorite, created_at, domain')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (!error && data) {
+        setVaultItems(data);
+      }
+    } catch (err) {
+      console.error('Failed to load vault items:', err);
+    } finally {
+      setVaultLoading(false);
+    }
+  }, [user]);
+  
+  // Load vault when opened
+  useEffect(() => {
+    if (showVault) {
+      loadVaultItems();
+    }
+  }, [showVault, loadVaultItems]);
   
   const {
     conversations,
@@ -623,11 +668,11 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        // TODO: Open SEO Vault panel/modal
-                        console.log('Open SEO Vault');
-                      }}
-                      className="relative hover:bg-amber-500/10 group"
+                      onClick={() => setShowVault(!showVault)}
+                      className={cn(
+                        "relative hover:bg-amber-500/10 group",
+                        showVault && "bg-amber-500/20 text-amber-400"
+                      )}
                     >
                       <div className="relative">
                         <Archive className="w-4 h-4 text-amber-500 group-hover:text-amber-400 transition-colors" />
@@ -635,6 +680,12 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                       </div>
                       {/* Glow effect on hover */}
                       <div className="absolute inset-0 rounded-md bg-amber-500/10 opacity-0 group-hover:opacity-100 blur-sm transition-opacity" />
+                      {/* Item count badge */}
+                      {vaultItems.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold bg-amber-500 text-black rounded-full flex items-center justify-center">
+                          {vaultItems.length > 9 ? '9+' : vaultItems.length}
+                        </span>
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -790,64 +841,159 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                   </Select>
                 </div>
 
-                {/* Messages */}
-                <ScrollArea className="flex-1 relative">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                      <div className="relative mb-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 via-cyan-500/20 to-violet-500/20 flex items-center justify-center">
-                          <Brain className="w-10 h-10 text-cyan-400" />
+                {/* Vault View OR Messages */}
+                {showVault ? (
+                  <ScrollArea className="flex-1 relative">
+                    <div className="p-4">
+                      {/* Vault Header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30">
+                          <Archive className="w-5 h-5 text-amber-400" />
                         </div>
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-violet-500/20 blur-xl animate-pulse" />
+                        <div>
+                          <h3 className="font-bold text-foreground">SEO Vault</h3>
+                          <p className="text-xs text-muted-foreground">{vaultItems.length} saved reports & plans</p>
+                        </div>
                       </div>
-                      <h3 className="font-bold mb-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">What can I help with?</h3>
-                      <p className="text-sm text-muted-foreground mb-6 max-w-[250px]">
-                        Keyword research, competitor analysis, or SEO troubleshooting.
-                      </p>
-                      <div className="grid gap-2 w-full max-w-[280px]">
-                        {[
-                          { text: "🔍 Research keywords", full: "Research keywords for my domain" },
-                          { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy" },
-                          { text: "🚀 Improve rankings", full: "How can I improve my search rankings?" },
-                          { text: "🔗 Find backlink opportunities", full: "Find backlink partner opportunities for my site" },
-                        ].map((suggestion, i) => (
-                          <Button
-                            key={i}
-                            variant="outline"
-                            size="sm"
-                            className="justify-start text-left h-auto py-2.5 px-3 bg-gradient-to-r from-muted/30 to-transparent border-border/50 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all"
-                            onClick={() => {
-                              setInputValue(suggestion.full);
-                              inputRef.current?.focus();
-                            }}
-                          >
-                            {suggestion.text}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      {messages.map((msg, i) => (
-                        <ChatMessage 
-                          key={msg.id} 
-                          message={msg} 
-                          isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-                          onSpeak={(text) => handleSpeak(text, msg.id)}
-                          isSpeaking={isSpeaking && speakingMessageId === msg.id}
-                          userAvatar={googleProfile?.picture}
-                        />
-                      ))}
-                      {/* Show thinking indicator when loading but no streaming content yet */}
-                      {isLoading && !isStreaming && <AIThinkingIndicator />}
-                      {/* Show thinking indicator if streaming started but no content yet */}
-                      {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !messages[messages.length - 1].content && (
-                        <AIThinkingIndicator />
+                      
+                      {vaultLoading ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-3" />
+                          <p className="text-sm text-muted-foreground">Loading vault...</p>
+                        </div>
+                      ) : vaultItems.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+                            <Archive className="w-8 h-8 text-amber-500/50" />
+                          </div>
+                          <h4 className="font-semibold text-foreground mb-1">No saved items yet</h4>
+                          <p className="text-sm text-muted-foreground max-w-[200px]">
+                            Ask the AI to research keywords or create content plans, then save them here.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {vaultItems.map((item) => (
+                            <motion.div
+                              key={item.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="group p-3 rounded-xl bg-gradient-to-r from-muted/50 via-background to-muted/30 border border-border/50 hover:border-amber-500/30 transition-all cursor-pointer"
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Type icon */}
+                                <div className={cn(
+                                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                                  item.report_type === 'keyword_research' 
+                                    ? "bg-cyan-500/10 text-cyan-400"
+                                    : item.report_type === 'content_plan'
+                                    ? "bg-violet-500/10 text-violet-400"
+                                    : "bg-amber-500/10 text-amber-400"
+                                )}>
+                                  <FileText className="w-4 h-4" />
+                                </div>
+                                
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                                    {item.is_favorite && (
+                                      <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                                    )}
+                                  </div>
+                                  
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                    {item.summary}
+                                  </p>
+                                  
+                                  {/* Tags */}
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.tags?.slice(0, 3).map((tag, i) => (
+                                      <span 
+                                        key={i}
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] rounded bg-muted/50 text-muted-foreground"
+                                      >
+                                        <Tag className="w-2 h-2" />
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Date */}
+                              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+                                <span className="text-[10px] text-muted-foreground capitalize">
+                                  {item.report_type.replace('_', ' ')}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(item.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
                       )}
-                      <div ref={messagesEndRef} />
                     </div>
-                  )}
-                </ScrollArea>
+                  </ScrollArea>
+                ) : (
+                  <ScrollArea className="flex-1 relative">
+                    {messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                        <div className="relative mb-6">
+                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 via-cyan-500/20 to-violet-500/20 flex items-center justify-center">
+                            <Brain className="w-10 h-10 text-cyan-400" />
+                          </div>
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-violet-500/20 blur-xl animate-pulse" />
+                        </div>
+                        <h3 className="font-bold mb-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">What can I help with?</h3>
+                        <p className="text-sm text-muted-foreground mb-6 max-w-[250px]">
+                          Keyword research, competitor analysis, or SEO troubleshooting.
+                        </p>
+                        <div className="grid gap-2 w-full max-w-[280px]">
+                          {[
+                            { text: "🔍 Research keywords", full: "Research keywords for my domain" },
+                            { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy" },
+                            { text: "🚀 Improve rankings", full: "How can I improve my search rankings?" },
+                            { text: "🔗 Find backlink opportunities", full: "Find backlink partner opportunities for my site" },
+                          ].map((suggestion, i) => (
+                            <Button
+                              key={i}
+                              variant="outline"
+                              size="sm"
+                              className="justify-start text-left h-auto py-2.5 px-3 bg-gradient-to-r from-muted/30 to-transparent border-border/50 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all"
+                              onClick={() => {
+                                setInputValue(suggestion.full);
+                                inputRef.current?.focus();
+                              }}
+                            >
+                              {suggestion.text}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        {messages.map((msg, i) => (
+                          <ChatMessage 
+                            key={msg.id} 
+                            message={msg} 
+                            isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+                            onSpeak={(text) => handleSpeak(text, msg.id)}
+                            isSpeaking={isSpeaking && speakingMessageId === msg.id}
+                            userAvatar={googleProfile?.picture}
+                          />
+                        ))}
+                        {/* Show thinking indicator when loading but no streaming content yet */}
+                        {isLoading && !isStreaming && <AIThinkingIndicator />}
+                        {/* Show thinking indicator if streaming started but no content yet */}
+                        {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !messages[messages.length - 1].content && (
+                          <AIThinkingIndicator />
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
 
                 {/* Usage Warning */}
                 {usage && !usage.canUse && !usage.isUnlimited && (
