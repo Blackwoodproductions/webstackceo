@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive, FileText, Star, RefreshCw, Loader2, Sparkles, 
-  ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2, Wand2
+  ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2, Wand2,
+  Brain, Cpu, Globe, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,112 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+// AI Activity Indicator Component - shows when AI is working
+const AIActivityIndicator = memo(function AIActivityIndicator() {
+  const [status, setStatus] = useState<'thinking' | 'streaming' | 'processing'>('thinking');
+  
+  // Cycle through statuses for visual variety
+  useEffect(() => {
+    const statuses: Array<'thinking' | 'streaming' | 'processing'> = ['thinking', 'streaming', 'processing'];
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % statuses.length;
+      setStatus(statuses[index]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  const statusConfig = {
+    thinking: { icon: Brain, label: 'AI Analyzing...', color: 'from-violet-500 to-cyan-500' },
+    streaming: { icon: Zap, label: 'Generating Reports...', color: 'from-cyan-500 to-emerald-500' },
+    processing: { icon: Cpu, label: 'Processing Data...', color: 'from-amber-500 to-orange-500' },
+  };
+  
+  const config = statusConfig[status];
+  const Icon = config.icon;
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="flex flex-col items-center justify-center py-8 px-4"
+    >
+      {/* Animated AI Orb */}
+      <div className="relative mb-4">
+        {/* Outer glow rings */}
+        <div className="absolute inset-0 w-20 h-20 rounded-full bg-gradient-to-r from-cyan-500/30 to-violet-500/30 blur-xl animate-pulse" />
+        <div className="absolute inset-2 w-16 h-16 rounded-full bg-gradient-to-r from-violet-500/20 to-cyan-500/20 blur-lg animate-pulse" style={{ animationDelay: '0.3s' }} />
+        
+        {/* Core orb */}
+        <motion.div 
+          className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg shadow-cyan-500/30`}
+          animate={{ 
+            scale: [1, 1.05, 1],
+            rotate: [0, 5, -5, 0],
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={status}
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 180 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Icon className="w-8 h-8 text-white drop-shadow-lg" />
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+        
+        {/* Ping rings */}
+        <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-cyan-400/50 animate-ping" />
+        <div className="absolute inset-0 w-16 h-16 rounded-full border border-violet-400/30 animate-pulse" style={{ animationDelay: '0.5s' }} />
+      </div>
+      
+      {/* Status text with scanning line effect */}
+      <div className="relative overflow-hidden">
+        <motion.p 
+          className={`text-sm font-medium bg-gradient-to-r ${config.color} bg-clip-text text-transparent`}
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          {config.label}
+        </motion.p>
+      </div>
+      
+      {/* Progress dots */}
+      <div className="flex items-center gap-1 mt-3">
+        {[0, 1, 2, 3].map((i) => (
+          <motion.div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
+            animate={{ 
+              scale: [1, 1.5, 1],
+              opacity: [0.3, 1, 0.3],
+            }}
+            transition={{ 
+              duration: 1,
+              repeat: Infinity,
+              delay: i * 0.2,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Info text */}
+      <p className="text-xs text-muted-foreground mt-3 text-center max-w-[200px]">
+        Webstack AI is generating SEO reports that will be saved here automatically
+      </p>
+    </motion.div>
+  );
+});
 
 interface VaultItem {
   id: string;
@@ -45,6 +152,7 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
   const [isLoading, setIsLoading] = useState(false);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [aiIsActive, setAiIsActive] = useState(false);
 
   // Fetch vault items for the current domain
   const fetchVaultItems = useCallback(async () => {
@@ -76,6 +184,26 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
       setIsLoading(false);
     }
   }, [user, domain]);
+
+  // Listen for AI activity events
+  useEffect(() => {
+    const handleAIActivity = (e: CustomEvent<{ isActive: boolean; status: string; domain: string | null }>) => {
+      // Only show activity if AI is working on our domain or no domain filter
+      const isRelevant = !domain || !e.detail.domain || e.detail.domain === domain;
+      setAiIsActive(e.detail.isActive && isRelevant);
+      
+      // Auto-refresh vault when AI finishes
+      if (!e.detail.isActive && aiIsActive) {
+        // AI just finished - refresh the vault to show new items
+        setTimeout(() => fetchVaultItems(), 1000);
+      }
+    };
+    
+    window.addEventListener('ai-activity-change', handleAIActivity as EventListener);
+    return () => {
+      window.removeEventListener('ai-activity-change', handleAIActivity as EventListener);
+    };
+  }, [domain, aiIsActive, fetchVaultItems]);
 
   // Initial load
   useEffect(() => {
@@ -277,11 +405,18 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
 
       {/* Vault Items List */}
       <ScrollArea className={scrollHeight}>
-        {isLoading ? (
+        {/* Show AI Activity Indicator when AI is working */}
+        <AnimatePresence>
+          {aiIsActive && (
+            <AIActivityIndicator />
+          )}
+        </AnimatePresence>
+        
+        {isLoading && !aiIsActive ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : vaultItems.length === 0 ? (
+        ) : !aiIsActive && vaultItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
               <Archive className="w-8 h-8 text-amber-400/50" />
