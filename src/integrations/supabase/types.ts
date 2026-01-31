@@ -1860,6 +1860,119 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_enrichments: {
+        Row: {
+          company_domain: string | null
+          company_industry: string | null
+          company_linkedin: string | null
+          company_name: string | null
+          company_revenue: string | null
+          company_size: string | null
+          company_website: string | null
+          contact_email: string | null
+          contact_linkedin: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_title: string | null
+          created_at: string
+          domain: string | null
+          enrichment_confidence: number | null
+          enrichment_source: string | null
+          id: string
+          ip_address: string | null
+          ip_as: string | null
+          ip_city: string | null
+          ip_country: string | null
+          ip_country_code: string | null
+          ip_isp: string | null
+          ip_org: string | null
+          ip_region: string | null
+          ip_timezone: string | null
+          match_type: string | null
+          matched_lead_id: string | null
+          raw_enrichment_data: Json | null
+          session_id: string
+          tech_stack: Json | null
+          updated_at: string
+        }
+        Insert: {
+          company_domain?: string | null
+          company_industry?: string | null
+          company_linkedin?: string | null
+          company_name?: string | null
+          company_revenue?: string | null
+          company_size?: string | null
+          company_website?: string | null
+          contact_email?: string | null
+          contact_linkedin?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
+          created_at?: string
+          domain?: string | null
+          enrichment_confidence?: number | null
+          enrichment_source?: string | null
+          id?: string
+          ip_address?: string | null
+          ip_as?: string | null
+          ip_city?: string | null
+          ip_country?: string | null
+          ip_country_code?: string | null
+          ip_isp?: string | null
+          ip_org?: string | null
+          ip_region?: string | null
+          ip_timezone?: string | null
+          match_type?: string | null
+          matched_lead_id?: string | null
+          raw_enrichment_data?: Json | null
+          session_id: string
+          tech_stack?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          company_domain?: string | null
+          company_industry?: string | null
+          company_linkedin?: string | null
+          company_name?: string | null
+          company_revenue?: string | null
+          company_size?: string | null
+          company_website?: string | null
+          contact_email?: string | null
+          contact_linkedin?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
+          created_at?: string
+          domain?: string | null
+          enrichment_confidence?: number | null
+          enrichment_source?: string | null
+          id?: string
+          ip_address?: string | null
+          ip_as?: string | null
+          ip_city?: string | null
+          ip_country?: string | null
+          ip_country_code?: string | null
+          ip_isp?: string | null
+          ip_org?: string | null
+          ip_region?: string | null
+          ip_timezone?: string | null
+          match_type?: string | null
+          matched_lead_id?: string | null
+          raw_enrichment_data?: Json | null
+          session_id?: string
+          tech_stack?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_enrichments_matched_lead_id_fkey"
+            columns: ["matched_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visitor_sessions: {
         Row: {
           domain: string | null

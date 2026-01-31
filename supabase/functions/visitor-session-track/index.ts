@@ -113,6 +113,12 @@ Deno.serve(async (req) => {
       const referrer = payload.referrer ?? null;
       const userAgent = payload.user_agent ?? null;
 
+      // Get the client IP address from headers
+      const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
+        || req.headers.get("x-real-ip") 
+        || req.headers.get("cf-connecting-ip")
+        || null;
+
       const { error } = await serviceClient
         .from("visitor_sessions")
         .upsert(
@@ -139,6 +145,26 @@ Deno.serve(async (req) => {
           .from("visitor_sessions")
           .update({ user_id: userId })
           .eq("session_id", sessionId);
+      }
+
+      // Trigger async enrichment (fire-and-forget, don't block the response)
+      if (clientIp && domain) {
+        // Use fetch to call the enrichment function asynchronously
+        const enrichUrl = `${SUPABASE_URL}/functions/v1/visitor-enrich`;
+        fetch(enrichUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            ip_address: clientIp,
+            domain: domain,
+          }),
+        }).catch((err: unknown) => {
+          console.error("Failed to trigger enrichment:", err);
+        });
       }
 
       return jsonResponse({ success: true, domain });

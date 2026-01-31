@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.webstack-ai-assistant]
 verify_jwt = false
+
+[functions.visitor-enrich]
+verify_jwt = false
