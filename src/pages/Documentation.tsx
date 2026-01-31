@@ -35,6 +35,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { APIPartnersGrid, apiPartners } from '@/components/marketing/APIPartnersBadges';
+import { Database } from 'lucide-react';
 
 // Core Platform Services
 const coreServices = [
@@ -395,7 +397,42 @@ const Documentation = memo(function Documentation() {
 
           <Separator className="mb-20" />
 
-          {/* Integrations */}
+          {/* API Integrations - NEW SECTION */}
+          <section className="mb-20">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Database className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">API Integrations</h2>
+                <p className="text-muted-foreground text-sm">Enterprise-grade data from industry-leading APIs</p>
+              </div>
+            </div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <Card className="glass-card border-border/50 p-6">
+                <div className="mb-6">
+                  <Badge variant="outline" className="mb-3 border-blue-500/30 text-blue-400">
+                    {apiPartners.length} Active Integrations
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    Webstack.ceo connects to the world's most trusted SEO, analytics, and business APIs to provide 
+                    real-time data and actionable insights. All API connections are enterprise-grade with automatic 
+                    failover and rate limiting.
+                  </p>
+                </div>
+                <APIPartnersGrid showCategories={true} />
+              </Card>
+            </motion.div>
+          </section>
+
+          <Separator className="mb-20" />
+
+          {/* Platform Integrations */}
           <section className="mb-20">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">

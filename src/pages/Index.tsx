@@ -24,6 +24,7 @@ import ogImages from "@/assets/og";
 import { CartProvider } from "@/contexts/CartContext";
 import { ProductCatalog, CartDrawer } from "@/components/shop";
 import { TrustBadges } from "@/components/marketing/PromoComponents";
+import { APIPartnersBanner } from "@/components/marketing/APIPartnersBadges";
 
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
@@ -67,6 +68,9 @@ const Index = () => {
           
           {/* Trust badges after stats */}
           <TrustBadges />
+          
+          {/* API Partners Banner */}
+          <APIPartnersBanner />
           
           <SectionDivider />
           <TestimonialsSection />
