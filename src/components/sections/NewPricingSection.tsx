@@ -293,7 +293,7 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-12">
-            <TabsList className="bg-slate-900/50 border border-white/10 p-1 rounded-2xl">
+            <TabsList className="bg-muted/50 dark:bg-slate-900/50 border border-border/50 dark:border-white/10 p-1 rounded-2xl">
               <TabsTrigger 
                 value="plans" 
                 className="px-6 py-3 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-violet-500 data-[state=active]:text-white"
@@ -366,7 +366,7 @@ const NewPricingSectionInner = memo(function NewPricingSectionInner() {
                     <Card className={`relative h-full p-6 overflow-hidden transition-all duration-300 ${
                       plan.highlighted
                         ? 'bg-gradient-to-b from-primary/20 to-primary/5 border-2 border-primary shadow-[0_0_40px_hsl(var(--primary)/0.3)]'
-                        : 'bg-slate-900/50 border-white/10 hover:border-white/20'
+                        : 'bg-card/95 dark:bg-slate-900/50 border-border dark:border-white/10 hover:border-primary/30 dark:hover:border-white/20'
                     }`}>
                       {/* Glow effect */}
                       <div className={`absolute inset-0 bg-gradient-to-br ${plan.color} opacity-5`} />
