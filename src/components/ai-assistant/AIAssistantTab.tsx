@@ -630,6 +630,23 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     };
   }, [isOpen, selectedDomain, setSelectedDomain, sendMessage]);
 
+  // Broadcast AI activity status for other components (like CADE vault)
+  useEffect(() => {
+    const activityDetail = {
+      isActive: isLoading || isStreaming,
+      status: isStreaming ? 'streaming' : isLoading ? 'thinking' : 'idle',
+      domain: selectedDomain,
+    };
+    window.dispatchEvent(new CustomEvent('ai-activity-change', { detail: activityDetail }));
+    
+    return () => {
+      // Broadcast idle when unmounting or stopping
+      window.dispatchEvent(new CustomEvent('ai-activity-change', { 
+        detail: { isActive: false, status: 'idle', domain: selectedDomain } 
+      }));
+    };
+  }, [isLoading, isStreaming, selectedDomain]);
+
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
