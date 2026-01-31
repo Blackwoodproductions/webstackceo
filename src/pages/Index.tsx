@@ -89,11 +89,6 @@ const Index = () => {
           <SectionDivider />
           <TestimonialsSection />
           <SectionDivider />
-          <FeaturesSection />
-          <SectionDivider />
-          
-          {/* À La Carte Product Catalog */}
-          <ProductCatalog />
           
           <SectionDivider />
           <PricingSection />
