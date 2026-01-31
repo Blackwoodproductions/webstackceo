@@ -149,99 +149,54 @@ const ShopSideTabInner = memo(function ShopSideTabInner() {
               onMouseLeave={() => setIsHovered(false)}
             >
               {/* Holographic Glass Tab - Horizontal pink design */}
-              <motion.button
-                onClick={handleClick}
-                whileHover={{ scale: 1.08, x: 6 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative group"
+            <button
+              onClick={handleClick}
+              className="relative group"
+            >
+              {/* Outer glow ring - Pink themed - static */}
+              <div
+                className={`absolute -inset-1.5 rounded-r-2xl blur-lg transition-all duration-300 ${
+                  isHovered 
+                    ? 'opacity-100 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600' 
+                    : 'opacity-50 bg-pink-500/60'
+                }`}
+              />
+              
+              {/* Main button container - Horizontal layout */}
+              <div
+                className={`relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-r-2xl border border-l-0 backdrop-blur-xl transition-all duration-300 overflow-hidden ${
+                  isHovered
+                    ? 'bg-gradient-to-br from-pink-950/95 via-rose-900/90 to-pink-950/95 border-pink-400/50 shadow-[0_0_30px_rgba(236,72,153,0.4)] translate-x-1.5 scale-105'
+                    : 'bg-gradient-to-br from-pink-950/80 via-rose-950/70 to-pink-950/80 border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                }`}
+                style={{ contain: 'layout style paint' }}
               >
-                {/* Outer glow ring - Pink themed */}
-                <motion.div
-                  className={`absolute -inset-1.5 rounded-r-2xl blur-lg transition-all duration-500 ${
-                    isHovered 
-                      ? 'opacity-100 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600' 
-                      : 'opacity-50 bg-pink-500/60'
-                  }`}
-                  animate={isHovered ? { 
-                    scale: [1, 1.05, 1],
-                  } : {}}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
+                {/* SHOP text - Horizontal on top, bigger */}
+                <span className={`relative text-sm font-black uppercase tracking-widest transition-all duration-300 ${
+                  isHovered 
+                    ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]'
+                    : 'bg-gradient-to-r from-pink-200 via-rose-200 to-pink-200 bg-clip-text text-transparent'
+                }`}>
+                  SHOP
+                </span>
                 
-                {/* Main button container - Horizontal layout */}
-                <div
-                  className={`relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-r-2xl border border-l-0 backdrop-blur-xl transition-all duration-500 overflow-hidden ${
-                    isHovered
-                      ? 'bg-gradient-to-br from-pink-950/95 via-rose-900/90 to-pink-950/95 border-pink-400/50 shadow-[0_0_50px_rgba(236,72,153,0.5)]'
-                      : 'bg-gradient-to-br from-pink-950/80 via-rose-950/70 to-pink-950/80 border-pink-500/30 shadow-[0_0_25px_rgba(236,72,153,0.25)]'
-                  }`}
-                >
-                  {/* Scanning line animation */}
-                  <motion.div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ opacity: isHovered ? 1 : 0.5 }}
-                  >
-                    <motion.div
-                      className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-400 to-transparent"
-                      animate={{ top: ['0%', '100%', '0%'] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                    />
-                  </motion.div>
+                {/* Icons row below text - no infinite animations */}
+                <div className="flex items-center gap-1.5">
+                  {/* Static pulsing dot using CSS animation */}
+                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-rose-400 animate-pulse" />
                   
-                  {/* SHOP text - Horizontal on top, bigger */}
-                  <span className={`relative text-sm font-black uppercase tracking-widest transition-all duration-300 ${
-                    isHovered 
-                      ? 'text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]'
-                      : 'bg-gradient-to-r from-pink-200 via-rose-200 to-pink-200 bg-clip-text text-transparent'
-                  }`}>
-                    SHOP
-                  </span>
+                  {/* Store icon */}
+                  <Store className={`w-5 h-5 transition-all duration-300 ${
+                    isHovered ? 'text-white' : 'text-pink-300'
+                  }`} />
                   
-                  {/* Icons row below text */}
-                  <div className="flex items-center gap-1.5">
-                    {/* Pulsing dot */}
-                    <motion.div
-                      className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-rose-400"
-                      animate={{ 
-                        scale: [1, 1.4, 1],
-                        opacity: [0.6, 1, 0.6],
-                      }}
-                      transition={{ duration: 1.2, repeat: Infinity }}
-                    />
-                    
-                    {/* Store icon */}
-                    <motion.div
-                      animate={isHovered ? { y: [-1, 1, -1] } : {}}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                    >
-                      <Store className={`w-5 h-5 transition-all duration-300 ${
-                        isHovered ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-pink-300'
-                      }`} />
-                    </motion.div>
-                    
-                    {/* Sparkle icon */}
-                    <motion.div
-                      animate={isHovered ? { 
-                        rotate: [0, 20, -20, 0],
-                        scale: [1, 1.2, 1],
-                      } : {}}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                    >
-                      <Sparkles className={`w-4 h-4 transition-all duration-300 ${
-                        isHovered ? 'text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'text-pink-400'
-                      }`} />
-                    </motion.div>
-                  </div>
-                  
-                  {/* Shimmer overlay on hover */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    initial={{ x: '-100%' }}
-                    animate={isHovered ? { x: '100%' } : { x: '-100%' }}
-                    transition={{ duration: 0.6, ease: 'easeInOut' }}
-                  />
+                  {/* Sparkle icon */}
+                  <Sparkles className={`w-4 h-4 transition-all duration-300 ${
+                    isHovered ? 'text-amber-300' : 'text-pink-400'
+                  }`} />
                 </div>
-              </motion.button>
+              </div>
+            </button>
             </motion.div>
           </>
         )}

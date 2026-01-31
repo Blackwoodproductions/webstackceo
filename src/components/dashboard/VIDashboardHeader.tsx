@@ -10,11 +10,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Users, LogOut, RefreshCw, BarChart3, Sun, Moon, Bell, FlaskConical
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Users, LogOut, RefreshCw, BarChart3, Sun, Moon, Download, FlaskConical
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { generateAPIDocs } from '@/lib/generateAPIDocs';
 
 export type DashboardTab = 
   | 'visitor-intelligence' 
@@ -24,6 +32,8 @@ export type DashboardTab =
   | 'social-signals' 
   | 'on-page-seo' 
   | 'landing-pages';
+
+type OperatorStatus = 'online' | 'busy' | 'away' | 'offline';
 
 interface VIDashboardHeaderProps {
   user: User | null;
@@ -36,6 +46,10 @@ interface VIDashboardHeaderProps {
   onRefresh: () => void;
   onFormTestOpen: () => void;
   currentUserProfile: { avatar_url: string | null; full_name: string | null } | null;
+  // New: Operator status & API docs
+  operatorStatus?: OperatorStatus;
+  onOperatorStatusChange?: (status: OperatorStatus) => void;
+  chatOnline?: boolean;
 }
 
 export const VIDashboardHeader = memo(function VIDashboardHeader({
@@ -49,6 +63,9 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
   onRefresh,
   onFormTestOpen,
   currentUserProfile,
+  operatorStatus = 'online',
+  onOperatorStatusChange,
+  chatOnline = true,
 }: VIDashboardHeaderProps) {
   const navigate = useNavigate();
 
@@ -56,6 +73,15 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
     await supabase.auth.signOut();
     navigate('/');
   }, [navigate]);
+
+  const getStatusColor = (status: OperatorStatus) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'busy': return 'bg-amber-500';
+      case 'away': return 'bg-yellow-500';
+      case 'offline': return 'bg-gray-500';
+    }
+  };
 
   return (
     <div 
@@ -81,6 +107,56 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
 
       {/* Right: Stats & Actions */}
       <div className="flex items-center gap-3">
+        {/* Operator Status Selector - Only show when chat is online */}
+        {chatOnline && onOperatorStatusChange && (
+          <Select value={operatorStatus} onValueChange={(v) => onOperatorStatusChange(v as OperatorStatus)}>
+            <SelectTrigger className="h-8 w-[110px] text-xs bg-card/80 backdrop-blur-sm border-border/50 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${getStatusColor(operatorStatus)} animate-pulse`} />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-[60]">
+              <SelectItem value="online">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Online
+                </div>
+              </SelectItem>
+              <SelectItem value="busy">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Busy
+                </div>
+              </SelectItem>
+              <SelectItem value="away">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                  Away
+                </div>
+              </SelectItem>
+              <SelectItem value="offline">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-gray-500" />
+                  Offline
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* API Docs Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => generateAPIDocs()}
+          className="h-8 gap-1.5 text-xs bg-card/80 backdrop-blur-sm border-border/50"
+          title="Download API Documentation PDF"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">API Docs</span>
+        </Button>
+
         {/* Live Stats Pill */}
         <div className="flex items-center gap-4 px-4 py-1.5 rounded-full bg-background/50 border border-border/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-xs">

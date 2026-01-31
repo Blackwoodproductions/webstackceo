@@ -1923,6 +1923,60 @@ const MarketingDashboard = () => {
           
           {/* Right: User Controls */}
           <div className="flex items-center gap-2">
+            {/* Operator Status Selector */}
+            {chatOnline && (
+              <Select value={operatorStatus} onValueChange={(v) => setOperatorStatus(v as typeof operatorStatus)}>
+                <SelectTrigger className="h-8 w-[105px] text-xs bg-card/80 backdrop-blur-sm border-border/50 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full animate-pulse ${
+                      operatorStatus === 'online' ? 'bg-green-500' :
+                      operatorStatus === 'busy' ? 'bg-amber-500' :
+                      operatorStatus === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                    }`} />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-[60]">
+                  <SelectItem value="online">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      Online
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="busy">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Busy
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="away">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                      Away
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="offline">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-gray-500" />
+                      Offline
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* API Docs Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateAPIDocs()}
+              className="h-8 gap-1.5 text-xs bg-card/80 backdrop-blur-sm border-border/50"
+              title="Download API Documentation PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">API Docs</span>
+            </Button>
+            
             {/* Theme Toggle - always visible */}
             <Button
               variant="ghost"
@@ -3510,26 +3564,13 @@ f.parentNode.insertBefore(j,f);
         </FeatureGate>
       )}
 
-      {/* Floating Chat Bar - Show on all tabs */}
+      {/* Floating Chat Bar - Show on all tabs (status moved to header) */}
       <FloatingChatBar 
         isOnline={chatOnline} 
         selectedChatId={selectedChatId} 
         onChatClose={() => setSelectedChatId(null)}
         operatorStatus={operatorStatus}
-        onOperatorStatusChange={(v) => setOperatorStatus(v as typeof operatorStatus)}
       />
-      
-      {/* Fixed API Docs Button - Bottom Right */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => generateAPIDocs()}
-        className="fixed bottom-6 right-6 z-[100] h-9 gap-2 text-xs bg-card/90 backdrop-blur-xl border-border shadow-lg hover:bg-card hover:shadow-xl transition-all"
-        title="Download API Documentation PDF"
-      >
-        <Download className="w-4 h-4" />
-        <span>API Docs</span>
-      </Button>
 
       {/* Close Lead Dialog */}
       <Dialog open={closeLeadDialog.open} onOpenChange={(open) => setCloseLeadDialog({ open, lead: open ? closeLeadDialog.lead : null })}>

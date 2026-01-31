@@ -322,44 +322,7 @@ const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose, operatorStatus
 
   return (
     <div className="fixed bottom-0 right-0 z-50 flex items-end gap-3 p-4">
-      {/* Operator Status Selector - Always visible when online */}
-      {onOperatorStatusChange && (
-        <div className="mb-2 mr-2">
-          <Select value={operatorStatus} onValueChange={(v) => onOperatorStatusChange(v as OperatorStatus)}>
-            <SelectTrigger className="h-8 w-[110px] text-xs bg-card border-border shadow-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-[60]">
-              <SelectItem value="online">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  Online
-                </div>
-              </SelectItem>
-              <SelectItem value="busy">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Busy
-                </div>
-              </SelectItem>
-              <SelectItem value="away">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                  Away
-                </div>
-              </SelectItem>
-              <SelectItem value="offline">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-gray-500" />
-                  Offline
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      
-      {/* Always show status indicator when online */}
+      {/* Always show status indicator when online and no chats */}
       {openChats.length === 0 && pendingCount === 0 && (
         <motion.div
           initial={{ scale: 0 }}

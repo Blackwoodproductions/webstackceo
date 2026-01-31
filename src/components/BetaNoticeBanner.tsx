@@ -207,92 +207,55 @@ const BetaNoticeBanner = memo(() => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Futuristic Tab Handle - Horizontal layout with text on top */}
-        <motion.button
+        {/* Futuristic Tab Handle - Horizontal layout with text on top - STATIC */}
+        <button
           onClick={() => {
             setDialogOpen(true);
             setSubmitted(false);
           }}
-          whileHover={{ scale: 1.08, x: -6 }}
-          whileTap={{ scale: 0.95 }}
           className="relative group"
         >
-          {/* Outer glow ring - Violet themed */}
-          <motion.div
-            className={`absolute -inset-1.5 rounded-l-2xl blur-lg transition-all duration-500 ${
+          {/* Outer glow ring - Violet themed - static */}
+          <div
+            className={`absolute -inset-1.5 rounded-l-2xl blur-lg transition-all duration-300 ${
               isHovered 
                 ? 'opacity-100 bg-gradient-to-r from-violet-500 via-purple-500 to-cyan-500' 
                 : 'opacity-50 bg-violet-500/60'
             }`}
-            animate={isHovered ? { 
-              scale: [1, 1.05, 1],
-            } : {}}
-            transition={{ duration: 1.5, repeat: Infinity }}
           />
           
           {/* Main button container - Horizontal layout */}
           <div
-            className={`relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-l-2xl border border-r-0 backdrop-blur-xl transition-all duration-500 overflow-hidden ${
+            className={`relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-l-2xl border border-r-0 backdrop-blur-xl transition-all duration-300 overflow-hidden ${
               isHovered
-                ? 'bg-gradient-to-br from-violet-600/95 via-purple-600/90 to-cyan-600/95 border-violet-400/50 shadow-[0_0_50px_rgba(139,92,246,0.5)]'
-                : 'bg-gradient-to-br from-violet-700/80 via-purple-700/70 to-cyan-700/80 border-violet-500/30 shadow-[0_0_25px_rgba(139,92,246,0.25)]'
+                ? 'bg-gradient-to-br from-violet-600/95 via-purple-600/90 to-cyan-600/95 border-violet-400/50 shadow-[0_0_30px_rgba(139,92,246,0.4)] -translate-x-1.5 scale-105'
+                : 'bg-gradient-to-br from-violet-700/80 via-purple-700/70 to-cyan-700/80 border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.2)]'
             }`}
+            style={{ contain: 'layout style paint' }}
           >
-            {/* Scanning line animation */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{ opacity: isHovered ? 1 : 0.5 }}
-            >
-              <motion.div
-                className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
-                animate={{ top: ['0%', '100%', '0%'] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              />
-            </motion.div>
-            
             {/* BETA text - Horizontal on top, bigger */}
             <span className={`relative text-sm font-black uppercase tracking-widest transition-all duration-300 ${
               isHovered 
-                ? 'text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]'
+                ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]'
                 : 'bg-gradient-to-r from-violet-200 via-purple-200 to-cyan-200 bg-clip-text text-transparent'
             }`}>
               BETA
             </span>
             
-            {/* Icons row below text */}
+            {/* Icons row below text - no infinite animations */}
             <div className="flex items-center gap-1.5">
               {/* Flask icon */}
-              <motion.div
-                animate={isHovered ? { rotate: [-5, 5, -5] } : {}}
-                transition={{ duration: 0.6, repeat: Infinity }}
-              >
-                <FlaskConical className={`w-5 h-5 transition-all duration-300 ${
-                  isHovered ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'text-violet-200'
-                }`} />
-              </motion.div>
+              <FlaskConical className={`w-5 h-5 transition-all duration-300 ${
+                isHovered ? 'text-white' : 'text-violet-200'
+              }`} />
               
               {/* Feedback icon */}
-              <motion.div
-                animate={isHovered ? { 
-                  scale: [1, 1.2, 1],
-                } : {}}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              >
-                <MessageSquarePlus className={`w-4 h-4 transition-all duration-300 ${
-                  isHovered ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-cyan-400'
-                }`} />
-              </motion.div>
+              <MessageSquarePlus className={`w-4 h-4 transition-all duration-300 ${
+                isHovered ? 'text-cyan-300' : 'text-cyan-400'
+              }`} />
             </div>
-            
-            {/* Shimmer overlay on hover */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              initial={{ x: '-100%' }}
-              animate={isHovered ? { x: '100%' } : { x: '-100%' }}
-              transition={{ duration: 0.6, ease: 'easeInOut' }}
-            />
           </div>
-        </motion.button>
+        </button>
       </div>
 
       {/* Feedback Dialog */}
