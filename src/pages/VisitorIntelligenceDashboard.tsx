@@ -2760,7 +2760,6 @@ f.parentNode.insertBefore(j,f);
             externalSelectedSite={matchingGscSiteUrl || selectedTrackedDomain}
             externalDateRange={integratedGscDateRange}
             hideDateSelector={true}
-            isSuperAdmin={isSuperAdmin}
             onSiteChange={(site) => {
               const cleanDomain = normalizeDomain(site);
               setSelectedGscDomain(cleanDomain);

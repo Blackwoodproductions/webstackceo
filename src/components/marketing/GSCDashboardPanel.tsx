@@ -413,15 +413,14 @@ export const GSCDashboardPanel = ({
   }, [externalSelectedSite]);
   
   // Check if the externally selected site is in GSC
-  // Super admins bypass GSC verification requirements entirely
+  // All users follow the same verification flow regardless of role
   const isExternalSiteInGsc = useMemo(() => {
-    if (isSuperAdmin) return true; // Super admins can view all domains without verification
     if (!externalSelectedSite) return true; // No site selected
     if (!isAuthenticated) return true; // Not authenticated, can't check
     if (sites.length === 0) return true; // Sites not loaded yet
     const normalizedExternal = normalizeGscDomain(externalSelectedSite);
     return sites.some(site => normalizeGscDomain(site.siteUrl) === normalizedExternal);
-  }, [externalSelectedSite, sites, isAuthenticated, isSuperAdmin]);
+  }, [externalSelectedSite, sites, isAuthenticated]);
 
   const storeGoogleProfile = useCallback((profile: GoogleUserProfile | null) => {
     if (!profile) return;
@@ -1367,7 +1366,8 @@ export const GSCDashboardPanel = ({
   }
 
   // If domain is not in GSC (and we have sites loaded), show only the inline onboarding wizard
-  const showOnboardingWizardOnly = isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0 && !isSuperAdmin;
+  // All users see the same onboarding flow regardless of role
+  const showOnboardingWizardOnly = isAuthenticated && externalSelectedSite && !isExternalSiteInGsc && sites.length > 0;
   
   if (showOnboardingWizardOnly) {
     return (
