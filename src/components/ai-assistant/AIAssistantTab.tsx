@@ -1,6 +1,6 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio, Archive, Lock, FileText, Star, Tag } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio, Archive, Lock, FileText, Star, Tag, BarChart3, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -664,6 +664,61 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     setSelectedDomain(domain === '__none__' ? null : domain);
   };
 
+  // Run all 4 SEO reports automatically
+  const runAllReports = useCallback(() => {
+    if (!selectedDomain) {
+      toast.error('Please select a domain first');
+      return;
+    }
+    if (isLoading) {
+      toast.warning('Please wait for the current request to finish');
+      return;
+    }
+    
+    const reportsPrompt = `Run a comprehensive SEO analysis for ${selectedDomain}. Execute these 4 reports and save them to the SEO Vault:
+
+1. **Keyword Research Report**: Find the top 20 keyword opportunities with search volume and difficulty
+2. **SERP Analysis Report**: Analyze current rankings and SERP features
+3. **Backlink Analysis Report**: Review the backlink profile and find link building opportunities  
+4. **Competitor Analysis Report**: Identify main competitors and their top keywords
+
+For each report, provide actionable insights and save the findings to the SEO Vault with domain="${selectedDomain}". After completing all reports, summarize the key opportunities.`;
+    
+    sendMessage(reportsPrompt);
+    toast.success('Running all 4 SEO reports...');
+  }, [selectedDomain, isLoading, sendMessage]);
+
+  // Generate content ideas for CADE
+  const generateCadeIdeas = useCallback((topic?: string) => {
+    if (!selectedDomain) {
+      toast.error('Please select a domain first');
+      return;
+    }
+    
+    const prompt = topic 
+      ? `For ${selectedDomain}, generate content ideas for: "${topic}". Include:
+- 5 blog post titles with target keywords
+- 3 FAQ questions with detailed answers
+- 2 pillar page concepts
+Save the content plan to the SEO Vault for CADE to use.`
+      : `For ${selectedDomain}, analyze the SEO Vault for existing research and generate a content strategy. Include:
+- 10 blog post ideas based on keyword opportunities
+- 5 FAQ questions targeting long-tail keywords
+- 3 content cluster topics
+Save the content plan to the SEO Vault with domain="${selectedDomain}" so CADE can use it for content generation.`;
+    
+    sendMessage(prompt);
+    toast.success('Generating content ideas for CADE...');
+  }, [selectedDomain, sendMessage]);
+
+  // Expose generateCadeIdeas globally for CADE dashboard
+  useEffect(() => {
+    (window as any).aiGenerateCadeIdeas = generateCadeIdeas;
+    return () => {
+      delete (window as any).aiGenerateCadeIdeas;
+    };
+  }, [generateCadeIdeas]);
+
   if (!user) return null;
 
   return (
@@ -785,6 +840,32 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* Run All Reports Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={runAllReports}
+                      disabled={isLoading || !selectedDomain}
+                      className="relative hover:bg-emerald-500/10 group"
+                    >
+                      <div className="relative">
+                        <BarChart3 className="w-4 h-4 text-emerald-500 group-hover:text-emerald-400 transition-colors" />
+                        <PlayCircle className="w-2 h-2 absolute -bottom-0.5 -right-0.5 text-emerald-600" />
+                      </div>
+                      {/* Glow effect on hover */}
+                      <div className="absolute inset-0 rounded-md bg-emerald-500/10 opacity-0 group-hover:opacity-100 blur-sm transition-opacity" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-center">
+                      <p className="font-semibold">Run All Reports</p>
+                      <p className="text-xs text-muted-foreground">Generate 4 SEO reports</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                
                 {/* SEO Vault Button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
