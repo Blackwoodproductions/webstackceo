@@ -474,16 +474,79 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error('Popup blocked. Please allow popups for this site.');
     }
 
-    // Poll for popup close
+    // Listen for message from popup AND poll for close
     return new Promise<void>((resolve, reject) => {
-      const pollInterval = setInterval(async () => {
-        try {
-          if (popup.closed) {
-            clearInterval(pollInterval);
+      let resolved = false;
+      
+      // Handle message from popup
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type === 'supabase_auth_callback') {
+          window.removeEventListener('message', handleMessage);
+          clearInterval(pollInterval);
+          
+          if (resolved) return;
+          resolved = true;
+          
+          if (event.data.success) {
+            // Add a small delay to ensure auth state is propagated
+            await new Promise(r => setTimeout(r, 500));
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
               resolve();
             } else {
+              // Keep polling a bit more
+              let attempts = 0;
+              const retryInterval = setInterval(async () => {
+                attempts++;
+                const { data: { session: retrySession } } = await supabase.auth.getSession();
+                if (retrySession) {
+                  clearInterval(retryInterval);
+                  resolve();
+                } else if (attempts >= 5) {
+                  clearInterval(retryInterval);
+                  reject(new Error('Session not found after auth'));
+                }
+              }, 300);
+            }
+          } else {
+            reject(new Error('Authentication failed'));
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      // Also poll for popup close as fallback
+      const pollInterval = setInterval(async () => {
+        try {
+          if (popup.closed) {
+            clearInterval(pollInterval);
+            window.removeEventListener('message', handleMessage);
+            
+            if (resolved) return;
+            
+            // Wait a moment for auth state to propagate
+            await new Promise(r => setTimeout(r, 500));
+            
+            // Try multiple times to get session
+            for (let i = 0; i < 5; i++) {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session) {
+                resolved = true;
+                resolve();
+                return;
+              }
+              await new Promise(r => setTimeout(r, 300));
+            }
+            
+            // Final check
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              resolved = true;
+              resolve();
+            } else if (!resolved) {
+              resolved = true;
               reject(new Error('Authentication cancelled'));
             }
           }
@@ -491,6 +554,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Ignore cross-origin errors
         }
       }, 500);
+      
+      // Cleanup after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        window.removeEventListener('message', handleMessage);
+        if (!resolved) {
+          resolved = true;
+          reject(new Error('Authentication timed out'));
+        }
+      }, 120000);
     });
   }, []);
 

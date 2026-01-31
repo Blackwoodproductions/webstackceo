@@ -128,8 +128,15 @@ const AuthCallback = () => {
         } catch (e) {
           console.error("[AuthCallback] Failed to post message to opener:", e);
         }
-        // Close the popup immediately
-        window.close();
+        // Close the popup after a short delay to ensure message is sent
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (e) {
+            // If close fails, show message
+            console.log("[AuthCallback] Could not auto-close popup, please close manually");
+          }
+        }, 100);
       } else {
         // Not a popup - dispatch event and redirect to dashboard immediately
         if (session) {

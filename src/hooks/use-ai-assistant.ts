@@ -27,6 +27,18 @@ export interface UsageInfo {
   isAdmin?: boolean;
 }
 
+// Available AI models - all free via Lovable AI Gateway
+export const AI_MODELS = [
+  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', provider: 'Google', description: 'Fast & capable', icon: '⚡' },
+  { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', description: 'Balanced performance', icon: '🔮' },
+  { id: 'google/gemini-2.5-flash-lite', name: 'Gemini 2.5 Lite', provider: 'Google', description: 'Fastest responses', icon: '🚀' },
+  { id: 'google/gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google', description: 'Most capable', icon: '💎' },
+  { id: 'openai/gpt-5-mini', name: 'GPT-5 Mini', provider: 'OpenAI', description: 'Strong reasoning', icon: '🧠' },
+  { id: 'openai/gpt-5-nano', name: 'GPT-5 Nano', provider: 'OpenAI', description: 'Fast & efficient', icon: '⚙️' },
+] as const;
+
+export type AIModelId = typeof AI_MODELS[number]['id'];
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webstack-ai-assistant`;
 
 export function useAIAssistant() {
@@ -38,6 +50,7 @@ export function useAIAssistant() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>('google/gemini-3-flash-preview');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load conversations
@@ -216,6 +229,7 @@ export function useAIAssistant() {
           messages: apiMessages,
           conversationId,
           domain: selectedDomain,
+          model: selectedModel,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -353,6 +367,8 @@ export function useAIAssistant() {
     usage,
     selectedDomain,
     setSelectedDomain,
+    selectedModel,
+    setSelectedModel,
     loadConversations,
     createConversation,
     selectConversation,
