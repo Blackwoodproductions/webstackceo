@@ -24,6 +24,7 @@ export interface UsageInfo {
   tier: string;
   canUse: boolean;
   isUnlimited: boolean;
+  isAdmin?: boolean;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webstack-ai-assistant`;
