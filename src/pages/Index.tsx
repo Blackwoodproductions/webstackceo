@@ -26,6 +26,14 @@ import { ProductCatalog, CartDrawer } from "@/components/shop";
 import { TrustBadges } from "@/components/marketing/PromoComponents";
 import { APIPartnersBanner } from "@/components/marketing/APIPartnersBadges";
 
+// CRO (Conversion Rate Optimization) components
+import { 
+  ExitIntentPopup, 
+  SocialProofToast, 
+  UrgencyBanner, 
+  StickyBottomCTA 
+} from "@/components/cro";
+
 const SectionDivider = () => (
   <div className="max-w-6xl mx-auto px-6">
     <Separator className="bg-border/50" />
@@ -39,6 +47,12 @@ const Index = () => {
   return (
     <CartProvider>
       <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* CRO Elements */}
+        <UrgencyBanner />
+        <ExitIntentPopup />
+        <SocialProofToast />
+        <StickyBottomCTA />
+        
         {/* VI Dashboard Background Effects - exact replica */}
         <VIDashboardEffects />
         <InteractiveGrid className="fixed inset-0 opacity-30 pointer-events-none z-0" glowRadius={120} glowIntensity={0.12} />
