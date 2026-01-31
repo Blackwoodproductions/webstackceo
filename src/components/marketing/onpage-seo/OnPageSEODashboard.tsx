@@ -130,13 +130,21 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlat
   // Ensure we're using the selected domain, not a hardcoded value
   const activeDomain = domain || 'example.com';
   
+  // Initialize autopilot from localStorage
+  const getInitialAutopilot = () => {
+    const stored = localStorage.getItem(`seo_autopilot_${domain || 'default'}`);
+    if (stored !== null) return stored === 'true';
+    // Default to true for Lovable/PHP-BRON sites
+    return connectedPlatform === 'lovable' || connectedPlatform === 'php-bron';
+  };
+  
   const [stats, setStats] = useState<OptimizationStats>({
     pagesScanned: 47,
     issuesFound: 23,
     issuesFixed: 18,
     seoScore: 78,
     lastScan: new Date().toISOString(),
-    autopilotActive: false,
+    autopilotActive: getInitialAutopilot(),
   });
   const [issues, setIssues] = useState<SEOIssue[]>(mockIssues);
   const [isScanning, setIsScanning] = useState(false);
@@ -192,12 +200,14 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlat
     }
   }, [domain]);
 
-  // Auto-enable autopilot for Lovable sites
+  // Auto-enable autopilot for Lovable sites (only on first load if not already set)
   useEffect(() => {
-    if (activePlatform === 'lovable' || activePlatform === 'php-bron') {
+    if ((activePlatform === 'lovable' || activePlatform === 'php-bron') && 
+        localStorage.getItem(`seo_autopilot_${domain || 'default'}`) === null) {
       setStats(prev => ({ ...prev, autopilotActive: true }));
+      localStorage.setItem(`seo_autopilot_${domain || 'default'}`, 'true');
     }
-  }, [activePlatform]);
+  }, [activePlatform, domain]);
 
   // Check if platform supports auto-fix (all platforms do)
   const supportsAutoFix = (platform: string): boolean => {
@@ -205,11 +215,14 @@ export const OnPageSEODashboard = ({ domain, isSubscribed = false, connectedPlat
   };
 
   const handleToggleAutopilot = () => {
-    setStats(prev => ({ ...prev, autopilotActive: !prev.autopilotActive }));
-    toast.success(stats.autopilotActive ? 'Autopilot disabled' : 'Autopilot enabled', {
-      description: stats.autopilotActive 
-        ? 'Manual approval required for all changes'
-        : 'AI will automatically fix detected issues',
+    const newValue = !stats.autopilotActive;
+    setStats(prev => ({ ...prev, autopilotActive: newValue }));
+    // Persist to localStorage
+    localStorage.setItem(`seo_autopilot_${domain || 'default'}`, String(newValue));
+    toast.success(newValue ? 'Autopilot enabled' : 'Autopilot disabled', {
+      description: newValue 
+        ? 'AI will automatically fix detected issues'
+        : 'Manual approval required for all changes',
     });
   };
 

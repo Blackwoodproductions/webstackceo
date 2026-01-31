@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive, FileText, Star, RefreshCw, Loader2, Sparkles, 
   ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2, Wand2,
-  Brain, Cpu, Globe, Zap
+  Brain, Cpu, Globe, Zap, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { generateVaultPDF } from "@/lib/generateVaultPDF";
 
 // AI Activity Indicator Component - shows when AI is working
 const AIActivityIndicator = memo(function AIActivityIndicator() {
@@ -593,6 +594,26 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
                               >
                                 <ExternalLink className="w-3 h-3 mr-1" />
                                 View Full
+                              </Button>
+                              {/* Download PDF Button */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    toast.info('Generating PDF...');
+                                    const filename = await generateVaultPDF(item);
+                                    toast.success(`Downloaded: ${filename}`);
+                                  } catch (err) {
+                                    console.error('PDF generation error:', err);
+                                    toast.error('Failed to generate PDF');
+                                  }
+                                }}
+                                className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                PDF
                               </Button>
                               {/* Delete Button */}
                               <Button
