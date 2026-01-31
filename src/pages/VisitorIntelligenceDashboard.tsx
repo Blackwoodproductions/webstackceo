@@ -2003,78 +2003,66 @@ const MarketingDashboard = () => {
           </div>
         </div>
         
-        {/* Row 2: Domain Selector & Tabs - Integrated into header */}
+        {/* Row 2: Domain Selector Left & Tabs Right */}
         <div
           className="relative z-[200] px-8 py-2 flex items-center justify-between bg-card/95 backdrop-blur-xl"
         >
-          {/* Dashboard Tabs - Left side */}
+          {/* Left: Domain Selector & Live Badge */}
+          <div className="flex items-center gap-3">
+            <DomainSearchDropdown
+              domains={(() => {
+                // Build normalized GSC domain list for comparison
+                const gscDomainSet = new Set(
+                  gscSites.map(site => 
+                    site.siteUrl.toLowerCase().trim()
+                      .replace('sc-domain:', '')
+                      .replace(/^(https?:\/\/)?(www\.)?/, '')
+                      .replace(/\/$/, '')
+                      .split('/')[0]
+                  )
+                );
+                
+                return userOwnedDomains
+                  .map(d => {
+                    const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                    const isInGsc = gscDomainSet.has(normalized);
+                    return {
+                      ...d,
+                      normalized,
+                      isDemo: !isInGsc && d.source !== 'gsc'
+                    };
+                  })
+                  .filter(d => isSuperAdmin || !d.isDemo);
+              })()}
+              selectedDomain={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''}
+              onSelectDomain={(value) => {
+                setSelectedTrackedDomain(value);
+                setSelectedDomainKey(value);
+                const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
+                setGscDomainHasTracking(hasTracking);
+              }}
+              onAddDomain={() => setAddDomainDialogOpen(true)}
+              isLoading={isLoadingUserDomains}
+              isSuperAdmin={isSuperAdmin}
+            />
+            
+            {/* Live indicator */}
+            <span className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              LIVE
+            </span>
+          </div>
+          
+          {/* Right: Dashboard Tabs */}
           <div className="flex items-center gap-4">
             <VIDashboardTabs
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               variant="compact"
             />
-          </div>
-          
-          {/* Center: Domain Selector & Time Range */}
-          <div className="flex items-center gap-3">
-            {/* Domain Selector with Search */}
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10">
-                <Globe className="w-4 h-4 text-primary" />
-              </div>
-
-              <DomainSearchDropdown
-                domains={(() => {
-                  // Build normalized GSC domain list for comparison
-                  const gscDomainSet = new Set(
-                    gscSites.map(site => 
-                      site.siteUrl.toLowerCase().trim()
-                        .replace('sc-domain:', '')
-                        .replace(/^(https?:\/\/)?(www\.)?/, '')
-                        .replace(/\/$/, '')
-                        .split('/')[0]
-                    )
-                  );
-                  
-                  return userOwnedDomains
-                    .map(d => {
-                      const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                      const isInGsc = gscDomainSet.has(normalized);
-                      return {
-                        ...d,
-                        normalized,
-                        isDemo: !isInGsc && d.source !== 'gsc'
-                      };
-                    })
-                    .filter(d => isSuperAdmin || !d.isDemo);
-                })()}
-                selectedDomain={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''}
-                onSelectDomain={(value) => {
-                  setSelectedTrackedDomain(value);
-                  setSelectedDomainKey(value);
-                  const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
-                  setGscDomainHasTracking(hasTracking);
-                }}
-                onAddDomain={() => setAddDomainDialogOpen(true)}
-                isLoading={isLoadingUserDomains}
-                isSuperAdmin={isSuperAdmin}
-              />
-              
-              {/* Live indicator */}
-              <span className="flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                LIVE
-              </span>
-            </div>
-
-          </div>
-          
-          {/* Right side is now empty - actions moved elsewhere */}
-          <div className="flex items-center gap-3 flex-shrink-0">
           </div>
         </div>
         </header>

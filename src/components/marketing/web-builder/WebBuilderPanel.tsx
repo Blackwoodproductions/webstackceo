@@ -229,58 +229,101 @@ export function WebBuilderPanel({ selectedDomain, whiteLabelHideWebTab, onToggle
     <div className="relative min-h-[600px]">
       <HighTechBackground variant="default" showParticles showGrid showScanLine />
       
-      {/* Header */}
+      {/* Premium Header with Glassmorphism */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 mb-6"
+        className="relative z-10 mb-8"
       >
-        <div className="glass-card rounded-2xl p-6 border border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-background to-fuchsia-500/10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
-                <Globe className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold">AI Website Generator</h2>
-                  <LiveBadge label="POWERED BY WEBSTACK.CEO" color="violet" />
+        <div className="relative overflow-hidden rounded-2xl border border-fuchsia-500/30">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-fuchsia-600/15 to-purple-600/20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
+          
+          {/* Decorative elements */}
+          <div className="absolute top-0 left-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-fuchsia-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+          
+          {/* Scanning line effect */}
+          <motion.div
+            className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-fuchsia-400/60 to-transparent"
+            animate={{ top: ['0%', '100%'] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+          />
+          
+          <div className="relative p-8">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex items-center gap-5">
+                {/* Premium Icon with animated glow */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl blur-xl opacity-50 animate-pulse" />
+                  <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-fuchsia-500/30 border border-white/20">
+                    <Wand2 className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Build professional websites using our proven architecture • Domain owners get full reporting
-                </p>
+                
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white via-fuchsia-200 to-violet-200 bg-clip-text text-transparent">
+                      AI Website Generator
+                    </h2>
+                    <Badge className="bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 backdrop-blur-sm">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      POWERED BY WEBSTACK.CEO
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground max-w-xl">
+                    Build stunning, professional websites in seconds using AI. Includes full analytics dashboards for domain owners.
+                  </p>
+                  
+                  {/* Feature highlights */}
+                  <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      SEO Optimized
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                      Full Reporting
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      Agency Ready
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {onToggleWebTab && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => onToggleWebTab(!whiteLabelHideWebTab)}
-                  className="text-xs text-muted-foreground"
-                >
-                  <Settings2 className="w-3 h-3 mr-1" />
-                  {whiteLabelHideWebTab ? 'Show WEB Tab' : 'Hide WEB Tab'}
-                </Button>
-              )}
               
-              {isSubscribed ? (
-                <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0">
-                  <Crown className="w-3 h-3 mr-1" />
-                  Pro Subscriber
-                </Badge>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowPaywall(true)}
-                  className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
-                >
-                  <Lock className="w-3 h-3 mr-1" />
-                  From {formatLocalPrice(4900)}/mo
-                </Button>
-              )}
+              <div className="flex flex-col items-end gap-3">
+                {onToggleWebTab && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => onToggleWebTab(!whiteLabelHideWebTab)}
+                    className="text-xs text-muted-foreground"
+                  >
+                    <Settings2 className="w-3 h-3 mr-1" />
+                    {whiteLabelHideWebTab ? 'Show WEB Tab' : 'Hide WEB Tab'}
+                  </Button>
+                )}
+                
+                {isSubscribed ? (
+                  <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0 shadow-lg shadow-fuchsia-500/25 px-4 py-1.5">
+                    <Crown className="w-4 h-4 mr-1.5" />
+                    Pro Subscriber
+                  </Badge>
+                ) : (
+                  <Button 
+                    size="lg"
+                    onClick={() => setShowPaywall(true)}
+                    className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-purple-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-purple-700 text-white shadow-xl shadow-fuchsia-500/30 border border-white/10"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    From {formatLocalPrice(4900)}/mo
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -296,81 +339,113 @@ export function WebBuilderPanel({ selectedDomain, whiteLabelHideWebTab, onToggle
             exit={{ opacity: 0, y: -20 }}
             className="relative z-10 space-y-6"
           >
-            {/* Template Selection */}
-            <div className="glass-card rounded-2xl p-6 border border-border/50">
-              <div className="flex items-center gap-2 mb-4">
-                <Layout className="w-4 h-4 text-violet-400" />
-                <h3 className="font-bold">Choose a Template</h3>
-                <Badge variant="outline" className="text-[10px]">Based on webstack.ceo</Badge>
-              </div>
+            {/* Template Selection - Premium Design */}
+            <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-card via-card/95 to-violet-500/5">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/5 rounded-full blur-3xl" />
               
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {SITE_TEMPLATES.map((template) => (
-                  <HighTechCardWrapper key={template.id} showGlow={selectedTemplate === template.id}>
-                    <button
-                      onClick={() => setSelectedTemplate(template.id)}
-                      className={`w-full glass-card rounded-xl p-4 text-center transition-all duration-300 ${
-                        selectedTemplate === template.id 
-                          ? 'border-violet-500 bg-violet-500/10 ring-1 ring-violet-500/30' 
-                          : 'border-border/50 hover:border-violet-500/30'
-                      }`}
-                    >
-                      <template.icon className={`w-6 h-6 mx-auto mb-2 ${selectedTemplate === template.id ? 'text-violet-400' : 'text-muted-foreground'}`} />
-                      <p className="text-sm font-medium">{template.name}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{template.description}</p>
-                    </button>
-                  </HighTechCardWrapper>
-                ))}
-              </div>
-            </div>
-
-            {/* Prompt Input */}
-            <div className="glass-card rounded-2xl p-6 border border-border/50">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="w-4 h-4 text-violet-400" />
-                <h3 className="font-bold">Describe Your Website</h3>
-              </div>
-              
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Example: I need a modern plumbing company website with a hero section showing emergency services, a services grid, customer testimonials carousel, and a contact form with booking calendar. Use dark blue and orange colors with professional imagery..."
-                className="min-h-[120px] bg-background/50 border-border/50 focus:border-violet-500/50 resize-none"
-              />
-              
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Sparkles className="w-3 h-3 text-violet-400" />
-                  <span>AI builds sites following webstack.ceo architecture for optimal SEO</span>
+              <div className="relative p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center">
+                    <Layout className="w-4 h-4 text-violet-400" />
+                  </div>
+                  <h3 className="font-bold text-lg">Choose a Template</h3>
+                  <Badge variant="outline" className="text-[10px] border-violet-500/30 text-violet-300">Based on webstack.ceo</Badge>
                 </div>
                 
-                <Button 
-                  onClick={handleGenerate}
-                  className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white"
-                  disabled={!prompt.trim() || isGenerating}
-                >
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Generate Website
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {SITE_TEMPLATES.map((template, idx) => (
+                    <motion.button
+                      key={template.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => setSelectedTemplate(template.id)}
+                      className={`group relative rounded-xl p-5 text-center transition-all duration-300 border ${
+                        selectedTemplate === template.id 
+                          ? 'border-fuchsia-500 bg-gradient-to-b from-fuchsia-500/20 to-violet-500/10 shadow-lg shadow-fuchsia-500/10' 
+                          : 'border-border/50 bg-card/50 hover:border-violet-500/40 hover:bg-violet-500/5'
+                      }`}
+                    >
+                      {selectedTemplate === template.id && (
+                        <div className="absolute -top-px left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-b-full" />
+                      )}
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center transition-all ${
+                        selectedTemplate === template.id 
+                          ? 'bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-fuchsia-500/25' 
+                          : 'bg-muted/50 group-hover:bg-violet-500/10'
+                      }`}>
+                        <template.icon className={`w-6 h-6 transition-colors ${
+                          selectedTemplate === template.id ? 'text-white' : 'text-muted-foreground group-hover:text-violet-400'
+                        }`} />
+                      </div>
+                      <p className={`font-semibold text-sm ${selectedTemplate === template.id ? 'text-white' : ''}`}>{template.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">{template.description}</p>
+                    </motion.button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Value Propositions */}
+            {/* Prompt Input - Enhanced */}
+            <div className="relative overflow-hidden rounded-2xl border border-fuchsia-500/20 bg-gradient-to-br from-card via-card/95 to-fuchsia-500/5">
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-500/5 rounded-full blur-3xl" />
+              
+              <div className="relative p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-500/20 to-violet-500/20 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-fuchsia-400" />
+                  </div>
+                  <h3 className="font-bold text-lg">Describe Your Website</h3>
+                </div>
+                
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Example: I need a modern plumbing company website with a hero section showing emergency services, a services grid, customer testimonials carousel, and a contact form with booking calendar. Use dark blue and orange colors with professional imagery..."
+                  className="min-h-[140px] bg-background/50 border-border/50 focus:border-fuchsia-500/50 resize-none text-sm leading-relaxed"
+                />
+                
+                <div className="flex items-center justify-between mt-5">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Sparkles className="w-4 h-4 text-fuchsia-400" />
+                    <span>AI builds sites following webstack.ceo architecture for optimal SEO</span>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleGenerate}
+                    size="lg"
+                    className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-purple-600 hover:from-violet-700 hover:via-fuchsia-700 hover:to-purple-700 text-white shadow-xl shadow-fuchsia-500/25 border border-white/10"
+                    disabled={!prompt.trim() || isGenerating}
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Generate Website
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Value Propositions - Premium Cards */}
             <div className="grid md:grid-cols-4 gap-4">
               {[
-                { icon: Zap, label: 'Instant Generation', desc: 'Full website in under 30 seconds', color: 'text-amber-400' },
-                { icon: BarChart3, label: 'Full Reporting', desc: 'All analytics panels included', color: 'text-cyan-400' },
-                { icon: TrendingUp, label: 'SEO Optimized', desc: 'webstack.ceo architecture', color: 'text-violet-400' },
-                { icon: Users, label: 'Agency Discounts', desc: 'Up to 60% off for bulk sites', color: 'text-emerald-400' },
-              ].map((feature) => (
-                <HighTechCardWrapper key={feature.label}>
-                  <div className="glass-card rounded-xl p-4 text-center h-full">
-                    <feature.icon className={`w-6 h-6 mx-auto mb-2 ${feature.color}`} />
-                    <p className="text-sm font-semibold">{feature.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{feature.desc}</p>
+                { icon: Zap, label: 'Instant Generation', desc: 'Full website in under 30 seconds', color: 'amber', gradient: 'from-amber-500/20 to-orange-500/10' },
+                { icon: BarChart3, label: 'Full Reporting', desc: 'All analytics panels included', color: 'cyan', gradient: 'from-cyan-500/20 to-blue-500/10' },
+                { icon: TrendingUp, label: 'SEO Optimized', desc: 'webstack.ceo architecture', color: 'violet', gradient: 'from-violet-500/20 to-fuchsia-500/10' },
+                { icon: Users, label: 'Agency Discounts', desc: 'Up to 60% off for bulk sites', color: 'emerald', gradient: 'from-emerald-500/20 to-green-500/10' },
+              ].map((feature, idx) => (
+                <motion.div
+                  key={feature.label}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + idx * 0.1 }}
+                  className={`group relative overflow-hidden rounded-xl p-5 text-center border border-${feature.color}-500/20 bg-gradient-to-b ${feature.gradient} hover:border-${feature.color}-500/40 transition-all duration-300`}
+                >
+                  <div className={`w-14 h-14 mx-auto mb-3 rounded-xl bg-${feature.color}-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className={`w-7 h-7 text-${feature.color}-400`} />
                   </div>
-                </HighTechCardWrapper>
+                  <p className="font-bold">{feature.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{feature.desc}</p>
+                </motion.div>
               ))}
             </div>
           </motion.div>
