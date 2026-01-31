@@ -51,7 +51,9 @@ export function useAIAssistant() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(() => {
     // Initialize from localStorage immediately on hook creation
-    return localStorage.getItem('webstack_selected_domain') || 
+    // Priority: bron_last_selected_domain (dashboard's source of truth) > webstack fallbacks
+    return localStorage.getItem('bron_last_selected_domain') ||
+           localStorage.getItem('webstack_selected_domain') || 
            sessionStorage.getItem('webstack_current_domain') || 
            null;
   });
@@ -62,7 +64,9 @@ export function useAIAssistant() {
   // Sync domain from localStorage on mount and when storage changes
   useEffect(() => {
     const syncDomainFromStorage = () => {
-      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+      // Priority: bron_last_selected_domain (dashboard's source of truth) > webstack fallbacks
+      const storedDomain = localStorage.getItem('bron_last_selected_domain') ||
+                          localStorage.getItem('webstack_selected_domain') || 
                           sessionStorage.getItem('webstack_current_domain');
       if (storedDomain && storedDomain !== selectedDomain) {
         setSelectedDomain(storedDomain);
@@ -75,7 +79,7 @@ export function useAIAssistant() {
     
     // Listen for storage changes (cross-tab sync)
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'webstack_selected_domain' || e.key === 'webstack_current_domain') {
+      if (e.key === 'bron_last_selected_domain' || e.key === 'webstack_selected_domain' || e.key === 'webstack_current_domain') {
         syncDomainFromStorage();
       }
     };
