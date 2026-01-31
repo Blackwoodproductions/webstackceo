@@ -880,12 +880,20 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                 {showVault ? (
                   <ScrollArea className="flex-1 relative">
                     <div className="p-4">
-                      {/* Vault Header */}
+                      {/* Vault Header with Back Button */}
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowVault(false)}
+                          className="h-10 w-10 rounded-xl bg-muted/50 hover:bg-muted shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30 shrink-0">
                           <Archive className="w-5 h-5 text-amber-400" />
                         </div>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <h3 className="font-bold text-foreground">SEO Vault</h3>
                           <p className="text-xs text-muted-foreground">{vaultItems.length} saved reports & plans</p>
                         </div>
@@ -928,15 +936,15 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                                   <FileText className="w-4 h-4" />
                                 </div>
                                 
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                                    <span className="font-medium text-sm text-foreground line-clamp-2" title={item.title}>{item.title}</span>
                                     {item.is_favorite && (
                                       <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                                     )}
                                   </div>
                                   
-                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                  <p className="text-xs text-muted-foreground line-clamp-3 mb-2" title={item.summary || ''}>
                                     {item.summary}
                                   </p>
                                   
