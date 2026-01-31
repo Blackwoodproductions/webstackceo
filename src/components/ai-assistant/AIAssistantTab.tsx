@@ -332,6 +332,35 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     }));
   }, [isOpen, isExpanded]);
 
+  // Listen for AI bubble prompts from domain selector bar
+  useEffect(() => {
+    const handleAIPrompt = (e: CustomEvent<{ prompt: string; domain: string | null }>) => {
+      const { prompt, domain } = e.detail;
+      
+      // Open the assistant if not already open
+      if (!isOpen) {
+        setIsOpen(true);
+      }
+      
+      // Set the domain if provided
+      if (domain && domain !== selectedDomain) {
+        setSelectedDomain(domain);
+      }
+      
+      // Set the input and auto-send after a brief delay
+      setInputValue(prompt);
+      setTimeout(() => {
+        sendMessage(prompt);
+        setInputValue('');
+      }, 300);
+    };
+    
+    window.addEventListener('ai-assistant-prompt', handleAIPrompt as EventListener);
+    return () => {
+      window.removeEventListener('ai-assistant-prompt', handleAIPrompt as EventListener);
+    };
+  }, [isOpen, selectedDomain, setSelectedDomain, sendMessage]);
+
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -371,25 +400,84 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
   return (
     <TooltipProvider>
-      {/* Floating Tab Button - Modernized */}
+      {/* Floating AI Button - Bottom Position with Ultra Futuristic Design */}
       <AnimatePresence>
         {!isOpen && (
-          <motion.button
-            initial={{ x: -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -100, opacity: 0 }}
-            onClick={() => setIsOpen(true)}
-            className="fixed left-0 top-24 z-50 flex items-center gap-2 bg-gradient-to-r from-violet-600 via-cyan-500 to-violet-600 bg-[length:200%_100%] animate-gradient-slow text-white px-4 py-3 rounded-r-2xl shadow-lg shadow-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/30 transition-all group border border-white/10"
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
           >
-            <div className="relative">
-              <Brain className="w-5 h-5" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsOpen(true)}
+              className="group relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl overflow-hidden"
+            >
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-cyan-500/20 to-violet-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Scanning line effect */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute h-px w-full bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-scan-line" />
+              </div>
+              
+              {/* AI Core orb */}
+              <div className="relative">
+                <div className={cn(
+                  "absolute inset-0 rounded-full blur-md transition-all duration-500",
+                  isListening 
+                    ? "bg-gradient-to-r from-cyan-400 to-violet-400 scale-150 animate-pulse" 
+                    : "bg-gradient-to-r from-cyan-500/50 to-violet-500/50 scale-100"
+                )} />
+                <div className="relative w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-600 via-cyan-500 to-violet-600 shadow-inner shadow-white/10">
+                  <Brain className="w-5 h-5 text-white drop-shadow-lg" />
+                  <div className="absolute inset-0 rounded-full border border-cyan-400/50 animate-ping" style={{ animationDuration: '2s' }} />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 bg-emerald-400" />
+              </div>
+              
+              {/* Text content */}
+              <div className="flex flex-col items-start relative z-10">
+                <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-medium">Webstack</span>
+                <span className="text-sm font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">AI Assistant</span>
+              </div>
+              
+              {/* Sparkle icon */}
+              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse relative z-10" />
+              
+              {/* Corner accents */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500/50 rounded-tl-lg" />
+              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan-500/50 rounded-tr-lg" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan-500/50 rounded-bl-lg" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500/50 rounded-br-lg" />
+            </motion.button>
+            
+            {/* Floating particles */}
+            <div className="absolute -inset-4 pointer-events-none">
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full bg-cyan-400/60"
+                  animate={{
+                    y: [0, -15, 0],
+                    opacity: [0.6, 1, 0.6],
+                  }}
+                  transition={{
+                    duration: 2 + i * 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                  }}
+                  style={{
+                    left: `${25 + i * 25}%`,
+                    top: '0%',
+                  }}
+                />
+              ))}
             </div>
-            <span className="max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-300 whitespace-nowrap text-sm font-medium">
-              AI Assistant
-            </span>
-            <Zap className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-amber-300" />
-          </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 

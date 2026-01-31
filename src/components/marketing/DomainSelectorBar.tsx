@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Globe, Plus, CalendarIcon, Filter, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { AIHelpBubbles } from '@/components/ai-assistant/AIHelpBubbles';
 
 export type TimeRange = 'live' | 'yesterday' | 'week' | 'month' | '6months' | '1year' | 'custom';
 
@@ -44,6 +45,8 @@ interface DomainSelectorBarProps {
   onPageFilterClear?: () => void;
   centerContent?: React.ReactNode;
   rightContent?: React.ReactNode;
+  showAIBubbles?: boolean;
+  isAIOpen?: boolean;
 }
 
 export function DomainSelectorBar({
@@ -63,8 +66,17 @@ export function DomainSelectorBar({
   onPageFilterClear,
   centerContent,
   rightContent,
+  showAIBubbles = true,
+  isAIOpen = false,
 }: DomainSelectorBarProps) {
   const [deleteConfirmDomain, setDeleteConfirmDomain] = useState<string | null>(null);
+  
+  // Handle AI bubble click - dispatch event to open AI with prompt
+  const handleAIBubbleClick = useCallback((prompt: string) => {
+    window.dispatchEvent(new CustomEvent('ai-assistant-prompt', { 
+      detail: { prompt, domain: selectedDomain } 
+    }));
+  }, [selectedDomain]);
   
   const normalizeDomainKey = (input: string) =>
     input
@@ -186,6 +198,15 @@ export function DomainSelectorBar({
                 LIVE
               </span>
             </div>
+
+            {/* AI Help Bubbles */}
+            {showAIBubbles && (
+              <AIHelpBubbles 
+                selectedDomain={selectedValue || null}
+                onBubbleClick={handleAIBubbleClick}
+                isAIOpen={isAIOpen}
+              />
+            )}
 
             <div className="w-px h-5 bg-border/50" />
           </>
