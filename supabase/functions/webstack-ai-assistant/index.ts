@@ -625,9 +625,14 @@ serve(async (req) => {
           toolResults = [{ error: "Tool execution failed. Please try again.", message: toolError instanceof Error ? toolError.message : "Unknown error" }];
         }
         
-        // Build messages with tool results
+        // Count successful vs failed tool calls
+        const successCount = toolResults.filter(r => !r?.error).length;
+        const failCount = toolResults.filter(r => r?.error).length;
+        console.log(`Tool execution complete: ${successCount} succeeded, ${failCount} failed`);
+        
+        // Build messages with tool results (including errors - AI should handle gracefully)
         const messagesWithTools = [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + `\n\nIMPORTANT: Some tools may have returned errors. When tools fail, acknowledge the issue briefly and still provide helpful advice based on what you know. Never show blank responses - always give the user something actionable.` },
           ...messages,
           assistantMessage,
           ...toolResults.map((result: any, index: number) => ({
