@@ -466,14 +466,11 @@ export const BRONKeywordsTab = memo(({
     return clusters;
   }, [filteredKeywords, selectedDomain]);
 
-  // Show tracking-only keywords if there are NO content keywords (otherwise users see "no keywords found")
-  // When content keywords exist, hide tracking-only from the main list (still counted in stats)
+  // Only show real BRON keywords and their clusters - filter out synthetic SERP-derived entries
   const displayClusters = useMemo(() => {
-    const contentClusters = groupedKeywords.filter(
-      (c) => !(c.parent.status === 'tracking_only' || String(c.parent.id).startsWith('serp_'))
+    return groupedKeywords.filter(
+      (c) => !String(c.parent.id).startsWith('serp_')
     );
-    // If we have content keywords, show only those; otherwise show all (including tracking-only)
-    return contentClusters.length > 0 ? contentClusters : groupedKeywords;
   }, [groupedKeywords]);
 
   // Stats
