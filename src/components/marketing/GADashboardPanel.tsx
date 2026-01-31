@@ -1275,43 +1275,13 @@ export const GADashboardPanel = ({
   // This ensures new users with new domains see the complete 4-step setup flow
   if (isAuthenticated && propertiesLoaded && properties.length === 0) {
     return (
-      <Card className="relative overflow-hidden border-border bg-card group">
-        {/* High-tech background grid */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
-        <div className="absolute top-[15%] left-[5%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
-        <div className="absolute bottom-[25%] right-[7%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
-        <CardHeader className="relative z-10 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics Setup</span>
-                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Account Connected</Badge>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Complete setup to track <span className="font-medium text-foreground">{externalSelectedSite ? normalizeDomain(externalSelectedSite) : 'your domain'}</span>
-                </CardDescription>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="relative z-10">
-          <GAInlineOnboardingWizard
-            domain={externalSelectedSite || 'your-domain.com'}
-            properties={properties}
-            onRefresh={handleWizardRefresh}
-            isRefreshing={isWizardRefreshing}
-            accessToken={accessToken}
-          />
-        </CardContent>
-      </Card>
+      <GAInlineOnboardingWizard
+        domain={externalSelectedSite || 'your-domain.com'}
+        properties={properties}
+        onRefresh={handleWizardRefresh}
+        isRefreshing={isWizardRefreshing}
+        accessToken={accessToken}
+      />
     );
   }
 
@@ -1337,43 +1307,13 @@ export const GADashboardPanel = ({
   // Only show once streams have loaded, otherwise we might falsely prompt while still fetching streams.
   if (isAuthenticated && externalSelectedSite && propertiesLoaded && streamsLoaded && !streamsError && !isExternalSiteInGA) {
     return (
-      <Card className="relative overflow-hidden border-border bg-card group">
-        {/* High-tech background grid */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(hsl(24 95% 53%) 1px, transparent 1px), linear-gradient(90deg, hsl(24 95% 53%) 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
-        <div className="absolute top-[15%] left-[5%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
-        <div className="absolute bottom-[25%] right-[7%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
-        <CardHeader className="relative z-10 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics Setup</span>
-                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Account Connected</Badge>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Complete setup to track <span className="font-medium text-foreground">{normalizeDomain(externalSelectedSite)}</span>
-                </CardDescription>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="relative z-10">
-          <GAInlineOnboardingWizard
-            domain={externalSelectedSite}
-            properties={properties}
-            onRefresh={handleWizardRefresh}
-            isRefreshing={isWizardRefreshing}
-            accessToken={accessToken}
-          />
-        </CardContent>
-      </Card>
+      <GAInlineOnboardingWizard
+        domain={externalSelectedSite}
+        properties={properties}
+        onRefresh={handleWizardRefresh}
+        isRefreshing={isWizardRefreshing}
+        accessToken={accessToken}
+      />
     );
   }
 
