@@ -600,8 +600,26 @@ serve(async (req) => {
       if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
         console.log("Tool calls detected:", assistantMessage.tool_calls.length);
         
-        // Execute tool calls
-        const toolResults = await executeToolCalls(assistantMessage.tool_calls, supabase, user.id, tier);
+        // Execute tool calls with timeout protection
+        let toolResults: any[];
+        try {
+          const toolTimeout = setTimeout(() => {
+            console.warn("Tool execution timeout warning - some tools may be slow");
+          }, 20000);
+          
+          toolResults = await executeToolCalls(assistantMessage.tool_calls, supabase, user.id, tier);
+          clearTimeout(toolTimeout);
+          
+          // Log any tool errors for debugging
+          toolResults.forEach((result, i) => {
+            if (result?.error) {
+              console.warn(`Tool ${i} returned error:`, result.error);
+            }
+          });
+        } catch (toolError) {
+          console.error("Tool execution failed:", toolError);
+          toolResults = [{ error: "Tool execution failed. Please try again.", message: toolError instanceof Error ? toolError.message : "Unknown error" }];
+        }
         
         // Build messages with tool results
         const messagesWithTools = [
@@ -610,29 +628,53 @@ serve(async (req) => {
           assistantMessage,
           ...toolResults.map((result: any, index: number) => ({
             role: "tool",
-            tool_call_id: assistantMessage.tool_calls[index].id,
+            tool_call_id: assistantMessage.tool_calls[index]?.id || `tool_${index}`,
             content: JSON.stringify(result),
           })),
         ];
         
-        // Get final response with tool results (streaming)
-        const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: messagesWithTools,
-            stream: true,
-          }),
-        });
+        // Get final response with tool results (streaming) - with retry logic
+        let finalResponse: Response | null = null;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: selectedModel,
+                messages: messagesWithTools,
+                stream: true,
+              }),
+            });
+            
+            if (finalResponse.ok) break;
+            
+            console.warn(`Final response attempt ${retryCount + 1} failed:`, finalResponse.status);
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              await new Promise(r => setTimeout(r, 1000 * retryCount));
+            }
+          } catch (fetchError) {
+            console.error(`Fetch error on attempt ${retryCount + 1}:`, fetchError);
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              await new Promise(r => setTimeout(r, 1000 * retryCount));
+            } else {
+              throw fetchError;
+            }
+          }
+        }
 
-        if (!finalResponse.ok) {
-          const errorText = await finalResponse.text();
-          console.error("Final response error:", errorText);
-          return new Response(JSON.stringify({ error: "AI service unavailable" }), {
+        if (!finalResponse || !finalResponse.ok) {
+          const errorText = finalResponse ? await finalResponse.text() : "No response after retries";
+          console.error("Final response error after retries:", errorText);
+          return new Response(JSON.stringify({ error: "AI service temporarily unavailable. Please try again." }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });

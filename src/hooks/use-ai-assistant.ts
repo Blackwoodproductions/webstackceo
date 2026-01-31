@@ -373,7 +373,7 @@ export function useAIAssistant() {
       }
 
       // Save assistant message to database
-      if (assistantContent) {
+      if (assistantContent && assistantContent.trim()) {
         await supabase.from('ai_assistant_messages').insert({
           conversation_id: conversationId,
           role: 'assistant',
@@ -393,6 +393,15 @@ export function useAIAssistant() {
           ));
           setCurrentConversation(prev => prev ? { ...prev, title } : null);
         }
+      } else {
+        // No content received - show error message and remove placeholder
+        console.error('[AI Assistant] Empty response received from API');
+        setMessages(prev => prev.map(m => 
+          m.id === assistantId 
+            ? { ...m, content: "I apologize, but I wasn't able to generate a response. This might be due to a temporary issue with the SEO tools. Please try again." }
+            : m
+        ));
+        toast.error('AI response was empty. Please try again.');
       }
 
       // Refresh usage
@@ -403,11 +412,19 @@ export function useAIAssistant() {
         console.log('Request aborted');
       } else {
         console.error('AI Assistant error:', error);
-        toast.error('Failed to get response');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to get response';
+        toast.error(errorMessage);
+        
+        // Show error in chat instead of removing message
+        setMessages(prev => prev.map(m => 
+          m.id === assistantId && !assistantContent
+            ? { ...m, content: `⚠️ Error: ${errorMessage}. Please try again.` }
+            : m
+        ));
       }
-      // Remove empty assistant message on error
+      // Only remove empty assistant message if no content and not showing error
       if (!assistantContent) {
-        setMessages(prev => prev.filter(m => m.id !== assistantId));
+        // Keep the error message we set above
       }
     } finally {
       setIsLoading(false);
