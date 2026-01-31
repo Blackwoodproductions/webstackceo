@@ -32,6 +32,7 @@ interface LiveVisitor {
   display_name?: string | null;
   email?: string | null;
   is_current_user?: boolean;
+  is_admin?: boolean;
 }
 
 interface VIChatSidebarProps {
@@ -96,14 +97,20 @@ const VisitorCard = memo(function VisitorCard({
               <img 
                 src={visitor.avatar_url!} 
                 alt={visitor.display_name || 'User'} 
-                className={`w-10 h-10 rounded-full object-cover ring-2 ${isCurrentUser ? 'ring-cyan-500/60' : 'ring-primary/40'}`}
+                className={`w-10 h-10 rounded-full object-cover ring-2 ${
+                  isCurrentUser ? 'ring-cyan-500/60' : visitor.is_admin ? 'ring-amber-500/60' : 'ring-primary/40'
+                }`}
               />
-              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                isCurrentUser ? 'bg-cyan-400' : visitor.is_admin ? 'bg-amber-400' : 'bg-emerald-400'
+              }`} />
             </div>
           ) : (
             <div className={`relative w-10 h-10 rounded-lg bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg`}>
               <VisitorIcon className="w-5 h-5 text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-background" />
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                visitor.is_admin ? 'bg-amber-400' : 'bg-emerald-400'
+              }`} />
             </div>
           )}
           
@@ -119,7 +126,12 @@ const VisitorCard = memo(function VisitorCard({
                   YOU
                 </span>
               )}
-              {!isCurrentUser && visitor.user_id && (
+              {!isCurrentUser && visitor.is_admin && (
+                <span className="text-[9px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-full shadow-sm">
+                  OPERATOR
+                </span>
+              )}
+              {!isCurrentUser && !visitor.is_admin && visitor.user_id && (
                 <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
                   LOGGED IN
                 </span>
