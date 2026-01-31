@@ -79,17 +79,58 @@ const HeroSection = () => {
     }, 500);
   };
 
+  // Determine if light mode for enhanced blob visibility
+  const isLight = mounted && resolvedTheme === 'light';
+  
   return (
     <section id="hero" ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
-      {/* Background Effects with Mouse + Scroll Parallax */}
+      {/* Background Effects with Mouse + Scroll Parallax - Enhanced for light mode */}
+      {/* Primary cyan blob - top left */}
       <motion.div 
         style={{ x: blob1X, y: bgY1 }}
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse-glow" 
+        className={`absolute top-[10%] left-[15%] w-[500px] h-[500px] rounded-full blur-[100px] animate-pulse-glow ${
+          isLight ? 'bg-cyan-500/50' : 'bg-cyan-400/20'
+        }`}
+        aria-hidden="true"
       />
+      {/* Secondary violet blob - bottom right */}
       <motion.div 
         style={{ x: blob2X, y: bgY2 }}
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse-glow" 
+        className={`absolute bottom-[15%] right-[10%] w-[450px] h-[450px] rounded-full blur-[100px] animate-pulse-glow ${
+          isLight ? 'bg-violet-500/55' : 'bg-violet-500/20'
+        }`}
+        aria-hidden="true"
       />
+      {/* Additional accent blob - center right */}
+      <motion.div 
+        style={{ x: blob1X, y: bgY2 }}
+        className={`absolute top-[40%] right-[5%] w-[350px] h-[350px] rounded-full blur-[120px] ${
+          isLight ? 'bg-primary/45' : 'bg-primary/10'
+        }`}
+        aria-hidden="true"
+      />
+      {/* Amber accent blob - top right corner */}
+      <motion.div 
+        style={{ x: blob2X, y: bgY1 }}
+        className={`absolute top-[5%] right-[20%] w-[300px] h-[300px] rounded-full blur-[90px] ${
+          isLight ? 'bg-amber-400/40' : 'bg-amber-400/5'
+        }`}
+        aria-hidden="true"
+      />
+      {/* Bottom left emerald accent */}
+      <motion.div 
+        className={`absolute bottom-[30%] left-[5%] w-[250px] h-[250px] rounded-full blur-[80px] ${
+          isLight ? 'bg-emerald-400/35' : 'bg-emerald-400/5'
+        }`}
+        aria-hidden="true"
+      />
+      {/* Center rose accent - light mode only */}
+      {isLight && (
+        <motion.div 
+          className="absolute top-[60%] left-[40%] w-[400px] h-[400px] rounded-full blur-[130px] bg-rose-400/25"
+          aria-hidden="true"
+        />
+      )}
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-6xl mx-auto text-center">
