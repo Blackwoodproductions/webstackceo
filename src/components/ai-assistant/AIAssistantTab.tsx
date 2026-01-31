@@ -402,6 +402,18 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     }));
   }, [isOpen, isExpanded]);
 
+  // Listen for open-ai-assistant event from side tab button
+  useEffect(() => {
+    const handleOpenAI = () => {
+      setIsOpen(true);
+    };
+    
+    window.addEventListener('open-ai-assistant', handleOpenAI);
+    return () => {
+      window.removeEventListener('open-ai-assistant', handleOpenAI);
+    };
+  }, []);
+
   // Listen for AI bubble prompts from domain selector bar
   useEffect(() => {
     const handleAIPrompt = (e: CustomEvent<{ prompt: string; domain: string | null }>) => {
