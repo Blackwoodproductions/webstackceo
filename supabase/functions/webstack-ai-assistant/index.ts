@@ -512,7 +512,20 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { messages: rawMessages, conversationId, domain, checkUsage, model } = body;
+    const { messages: rawMessages, conversationId, domain, checkUsage, model, endSession } = body;
+    
+    // Handle end session - stop usage tracking
+    if (endSession) {
+      console.log(`[AI Assistant] Session ended for user: ${user.id}`);
+      // Clear any rate limit entry for the user to reset their state
+      rateLimitMap.delete(user.id);
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "AI session ended. Usage tracking stopped." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     // Security: Sanitize all input messages
     const messages = Array.isArray(rawMessages) ? rawMessages.map((m: any) => ({
