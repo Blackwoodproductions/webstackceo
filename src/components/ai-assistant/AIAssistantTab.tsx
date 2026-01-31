@@ -697,25 +697,41 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
               {/* Main Chat Area */}
               <div className="flex-1 flex flex-col min-w-0">
-                {/* Domain & Model Selectors */}
+                {/* Domain Context Header & Model Selector */}
                 <div className="p-3 border-b border-border/50 space-y-2">
-                  {/* Domain Selector */}
-                  <Select value={selectedDomain || '__none__'} onValueChange={handleDomainSelect}>
-                    <SelectTrigger className="w-full h-9">
-                      <div className="flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-muted-foreground" />
-                        <SelectValue placeholder="Select a domain for context..." />
+                  {/* Active Domain Display - Synced from Global Selector */}
+                  {selectedDomain ? (
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-cyan-500/10 via-violet-500/5 to-cyan-500/10 border border-cyan-500/20">
+                      <div className="relative flex-shrink-0">
+                        <img 
+                          src={`https://www.google.com/s2/favicons?domain=${selectedDomain}&sz=64`}
+                          alt={selectedDomain}
+                          className="w-10 h-10 rounded-lg border border-border/50 bg-background object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
                       </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">No specific domain</SelectItem>
-                      {domains.map(d => (
-                        <SelectItem key={d.id} value={d.domain}>
-                          {d.domain}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground truncate">{selectedDomain}</span>
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                            ACTIVE
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">AI research context loaded</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <Globe className="w-6 h-6 text-amber-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-400">No domain selected</p>
+                        <p className="text-[10px] text-muted-foreground">Select a domain in the dashboard to enable context</p>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* AI Model Selector */}
                   <Select value={selectedModel} onValueChange={(v) => setSelectedModel(v as AIModelId)}>
