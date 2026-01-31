@@ -689,27 +689,52 @@ For each report, provide actionable insights and save the findings to the SEO Va
     toast.success('Running all 4 SEO reports...');
   }, [selectedDomain, isLoading, sendMessage]);
 
-  // Generate content ideas for CADE
+  // Generate content ideas for CADE - runs ALL 4 REPORTS simultaneously
   const generateCadeIdeas = useCallback((topic?: string) => {
     if (!selectedDomain) {
       toast.error('Please select a domain first');
       return;
     }
     
-    const prompt = topic 
-      ? `For ${selectedDomain}, generate content ideas for: "${topic}". Include:
-- 5 blog post titles with target keywords
-- 3 FAQ questions with detailed answers
-- 2 pillar page concepts
-Save the content plan to the SEO Vault for CADE to use.`
-      : `For ${selectedDomain}, analyze the SEO Vault for existing research and generate a content strategy. Include:
-- 10 blog post ideas based on keyword opportunities
-- 5 FAQ questions targeting long-tail keywords
-- 3 content cluster topics
-Save the content plan to the SEO Vault with domain="${selectedDomain}" so CADE can use it for content generation.`;
+    // Comprehensive prompt that triggers all 4 SEO reports and saves each to the vault
+    const fullReportsPrompt = `🚀 **COMPREHENSIVE SEO ANALYSIS for ${selectedDomain}**
+
+Execute ALL 4 of these SEO reports SIMULTANEOUSLY and save EACH report to the SEO Vault:
+
+## REPORT 1: KEYWORD RESEARCH
+- Find 15-20 keyword opportunities with search volume, CPC, and difficulty
+- Group them by intent (informational, transactional, navigational)
+- Save to SEO Vault with report_type="keyword_research" and domain="${selectedDomain}"
+
+## REPORT 2: SERP ANALYSIS  
+- Analyze current SERP positions for ${selectedDomain}
+- Identify featured snippet opportunities
+- Find keyword gaps vs competitors
+- Save to SEO Vault with report_type="serp_analysis" and domain="${selectedDomain}"
+
+## REPORT 3: BACKLINK ANALYSIS
+- Review the backlink profile quality and quantity
+- Identify referring domains and anchor text distribution
+- Find link building opportunities
+- Save to SEO Vault with report_type="backlink_report" and domain="${selectedDomain}"
+
+## REPORT 4: CONTENT PLAN
+Based on all research above, create an actionable content strategy:
+- 10 blog post ideas with target keywords
+- 5 FAQ questions targeting long-tail keywords  
+- 3 content cluster topics for topical authority
+- Priority order for content creation
+- Save to SEO Vault with report_type="content_plan" and domain="${selectedDomain}"
+
+${topic ? `\n**FOCUS TOPIC:** "${topic}" - prioritize keywords and content around this theme.\n` : ''}
+
+**IMPORTANT:** You MUST use the save_to_seo_vault tool to save EACH of the 4 reports separately so CADE can access them for content generation. Each report should have a clear title and comprehensive summary.`;
     
-    sendMessage(prompt);
-    toast.success('Generating content ideas for CADE...');
+    sendMessage(fullReportsPrompt);
+    toast.success('Running all 4 SEO reports for CADE...', {
+      description: 'Keyword Research • SERP • Backlinks • Content Plan',
+      duration: 5000,
+    });
   }, [selectedDomain, sendMessage]);
 
   // Expose generateCadeIdeas globally for CADE dashboard
