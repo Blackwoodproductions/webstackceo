@@ -184,6 +184,15 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
   const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(!!cachedData);
 
+  // CADE level thresholds for Social Signals access
+  // cade_level: 0=none, 1=Starter, 2=Basic, 3=Standard, 4=Pro, 5=Premium, 6=Enterprise, 7=Agency, 8=White Label
+  // Social Signals requires level 1-4 (Starter through Pro)
+  const SOCIAL_SIGNALS_MIN_LEVEL = 1;
+  const SOCIAL_SIGNALS_MAX_LEVEL = 4;
+  
+  const cadeLevel = bronSubscription?.cade_level ?? 0;
+  const hasSocialAccess = cadeLevel >= SOCIAL_SIGNALS_MIN_LEVEL && cadeLevel <= SOCIAL_SIGNALS_MAX_LEVEL;
+
   // Check subscription via BRON API
   const checkCadeSubscription = useCallback(async (isBackground = false) => {
     if (!selectedDomain) return;
@@ -195,7 +204,11 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
     try {
       const subscription = await fetchSubscription(selectedDomain);
       
-      if (subscription && subscription.has_cade && subscription.status === 'active') {
+      // Check if user has social access based on cade_level 1-4
+      const level = subscription?.cade_level ?? 0;
+      const hasAccess = level >= SOCIAL_SIGNALS_MIN_LEVEL && level <= SOCIAL_SIGNALS_MAX_LEVEL;
+      
+      if (hasAccess) {
         setHasCadeSubscription(true);
         setBronSubscription(subscription);
       } else {
@@ -279,12 +292,14 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
           scanWebsiteForSocials(),
           checkCadeSubscription(true),
         ]).then(([, subscription]) => {
-          // Save updated cache
+          // Save updated cache - check cade_level 1-4 for social access
           if (profiles.length > 0) {
+            const level = subscription?.cade_level ?? 0;
+            const hasAccess = level >= 1 && level <= 4;
             saveCachedSocialData(
               selectedDomain, 
               profiles, 
-              subscription?.has_cade === true && subscription?.status === 'active',
+              hasAccess,
               subscription || null
             );
           }
@@ -342,15 +357,17 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold">Social Media Dashboard</h2>
-                {/* CADE Subscription Detected Badge - shows on left after dashboard loads */}
-                {hasCadeSubscription && !isCheckingCade && (
+                {/* CADE Level Badge - shows on left after dashboard loads */}
+                {hasSocialAccess && !isCheckingCade && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8, x: -10 }}
                     animate={{ opacity: 1, scale: 1, x: 0 }}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/40"
                   >
                     <Sparkles className="w-3 h-3 text-violet-400" />
-                    <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-wide">CADE Active</span>
+                    <span className="text-[10px] font-semibold text-violet-300 uppercase tracking-wide">
+                      CADE L{cadeLevel}
+                    </span>
                   </motion.div>
                 )}
               </div>
@@ -418,9 +435,10 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               <Badge variant="outline" className="text-violet-400 border-violet-500/30 bg-violet-500/10 text-xs">
                 <Loader2 className="w-3 h-3 mr-1 animate-spin" />CADE...
               </Badge>
-            ) : !hasCadeSubscription ? (
+            ) : !hasSocialAccess ? (
               <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10 text-xs">
-                <AlertCircle className="w-3 h-3 mr-1" />No Sub
+                <AlertCircle className="w-3 h-3 mr-1" />
+                {cadeLevel === 0 ? 'No Sub' : cadeLevel > 4 ? 'L5+ (No Social)' : 'Upgrade'}
               </Badge>
             ) : connectedCount > 0 ? (
               <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-xs">
@@ -486,10 +504,10 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               
               <div className="text-center">
                 <p className="text-base font-semibold bg-gradient-to-r from-violet-400 to-purple-400 bg-clip-text text-transparent">
-                  Verifying CADE Subscription
+                  Verifying CADE Level (1-4 required)
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Checking access for <span className="font-medium text-foreground">{selectedDomain}</span>
+                  Checking Social Signals access for <span className="font-medium text-foreground">{selectedDomain}</span>
                 </p>
               </div>
               
@@ -505,8 +523,8 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
               </div>
             </div>
           </motion.div>
-        ) : !hasCadeSubscription ? (
-          /* CADE Sales Pitch - No Subscription */
+        ) : !hasSocialAccess ? (
+          /* CADE Sales Pitch - No Social Access (level 0 or 5+) */
           <motion.div
             key="sales"
             initial={{ opacity: 0, y: 20 }}
@@ -658,8 +676,8 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
         ) : null}
       </AnimatePresence>
 
-      {/* Connect Accounts Section - Only show when CADE subscription is active */}
-      {hasCadeSubscription && (
+      {/* Connect Accounts Section - Only show when user has Social Signals access (CADE L1-4) */}
+      {hasSocialAccess && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -676,13 +694,13 @@ export const SocialPanel = ({ selectedDomain }: SocialPanelProps) => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">CADE Subscription</span>
+                        <span className="text-sm font-semibold text-foreground">CADE Level {cadeLevel}</span>
                         <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
-                          <CheckCircle className="w-3 h-3 mr-1" />Active
+                          <CheckCircle className="w-3 h-3 mr-1" />Social Access
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {bronSubscription.plan || 'Pro Plan'} • Social signals automation enabled
+                        {bronSubscription.plan || `Level ${cadeLevel}`} • Social signals automation enabled (L1-4)
                       </p>
                     </div>
                   </div>
