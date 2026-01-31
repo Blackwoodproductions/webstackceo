@@ -8,3 +8,4 @@ export { CADEActivationPitch } from "./CADEActivationPitch";
 export { CADEPlatformCards } from "./CADEPlatformCards";
 export { CADEInlineContentEditor } from "./CADEInlineContentEditor";
 export { CADEInlineFAQEditor } from "./CADEInlineFAQEditor";
+export { CADEVaultIntegration } from "./CADEVaultIntegration";
