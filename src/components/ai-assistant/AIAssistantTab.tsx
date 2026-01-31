@@ -1029,6 +1029,50 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                             </Button>
                           ))}
                         </div>
+                        
+                        {/* Credit/Usage Info */}
+                        {usage && (
+                          <div className="mt-6 pt-4 border-t border-border/30 w-full max-w-[280px]">
+                            <div className="flex items-center justify-between text-xs mb-2">
+                              <span className="text-muted-foreground flex items-center gap-1.5">
+                                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                                Credits This Month
+                              </span>
+                            </div>
+                            {usage.isUnlimited || usage.isAdmin ? (
+                              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-amber-500/10 via-violet-500/10 to-cyan-500/10 border border-amber-500/20">
+                                <Shield className="w-4 h-4 text-amber-400" />
+                                <span className="text-sm font-semibold text-amber-400">Unlimited Access</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span className="text-lg font-bold text-foreground">
+                                    {usage.minutesLimit - usage.minutesUsed}
+                                    <span className="text-xs font-normal text-muted-foreground ml-1">min remaining</span>
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {usage.minutesUsed} / {usage.minutesLimit} used
+                                  </span>
+                                </div>
+                                <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                                  <div 
+                                    className={cn(
+                                      "h-full transition-all rounded-full",
+                                      (usage.minutesUsed / usage.minutesLimit) >= 0.8 
+                                        ? "bg-gradient-to-r from-destructive to-orange-500" 
+                                        : "bg-gradient-to-r from-cyan-500 to-violet-500"
+                                    )}
+                                    style={{ width: `${Math.min((usage.minutesUsed / usage.minutesLimit) * 100, 100)}%` }}
+                                  />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                                  ~1 min per query • Resets monthly
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div>
