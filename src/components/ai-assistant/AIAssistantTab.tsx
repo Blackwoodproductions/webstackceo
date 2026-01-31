@@ -492,6 +492,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     deleteConversation,
     clearCurrentConversation,
     syncDomainNow,
+    endSession,
   } = useAIAssistant();
 
   // Voice recognition
@@ -967,14 +968,23 @@ Save the content plan to the SEO Vault with domain="${selectedDomain}" so CADE c
                     <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</TooltipContent>
                   </Tooltip>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        // End the AI session to stop usage tracking and charges
+                        endSession();
+                        setIsOpen(false);
+                      }}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Close (stops AI usage)</TooltipContent>
+                </Tooltip>
               </div>
             </div>
 

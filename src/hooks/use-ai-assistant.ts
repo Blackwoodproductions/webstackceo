@@ -433,6 +433,33 @@ export function useAIAssistant() {
     }
   };
 
+  // End session to stop AI usage tracking (called when chat panel closes)
+  const endSession = useCallback(async () => {
+    // Cancel any ongoing request
+    abortControllerRef.current?.abort();
+    
+    if (!user) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Call the edge function to end the session
+      await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ endSession: true }),
+      });
+      
+      console.log('[AI Assistant] Session ended - usage tracking stopped');
+    } catch (error) {
+      console.error('Error ending AI session:', error);
+    }
+  }, [user]);
+
   const stopStreaming = useCallback(() => {
     abortControllerRef.current?.abort();
   }, []);
@@ -489,5 +516,6 @@ export function useAIAssistant() {
     clearCurrentConversation,
     checkUsage,
     syncDomainNow,
+    endSession,
   };
 }
