@@ -1303,11 +1303,12 @@ export const GADashboardPanel = ({
         </CardHeader>
         
         <CardContent className="relative z-10">
-          <GAOnboardingWizard
+          <GAInlineOnboardingWizard
             domain={externalSelectedSite || 'your-domain.com'}
             properties={properties}
             onRefresh={handleWizardRefresh}
             isRefreshing={isWizardRefreshing}
+            accessToken={accessToken}
           />
         </CardContent>
       </Card>
@@ -1364,11 +1365,12 @@ export const GADashboardPanel = ({
         </CardHeader>
         
         <CardContent className="relative z-10">
-          <GAOnboardingWizard
+          <GAInlineOnboardingWizard
             domain={externalSelectedSite}
             properties={properties}
             onRefresh={handleWizardRefresh}
             isRefreshing={isWizardRefreshing}
+            accessToken={accessToken}
           />
         </CardContent>
       </Card>
