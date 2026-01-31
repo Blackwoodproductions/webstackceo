@@ -710,8 +710,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
           </SectionCard>
         </div>
 
-        {/* SEO Vault Card - 3 columns (larger) */}
-        <div className="md:col-span-3">
+        {/* SEO Vault Card - 2 columns */}
+        <div className="md:col-span-2">
           <SectionCard title="SEO Vault" accentColor="emerald" className="h-full">
             <CADEVaultIntegration 
               domain={domain}
