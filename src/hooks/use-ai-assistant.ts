@@ -49,13 +49,43 @@ export function useAIAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
-  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(() => {
+    // Initialize from localStorage immediately on hook creation
+    return localStorage.getItem('webstack_selected_domain') || 
+           sessionStorage.getItem('webstack_current_domain') || 
+           null;
+  });
   const [selectedModel, setSelectedModel] = useState<AIModelId>('google/gemini-3-flash-preview');
   const [pendingDomainConfirmation, setPendingDomainConfirmation] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   
+  // Sync domain from localStorage on mount and when storage changes
+  useEffect(() => {
+    const syncDomainFromStorage = () => {
+      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+                          sessionStorage.getItem('webstack_current_domain');
+      if (storedDomain && storedDomain !== selectedDomain) {
+        setSelectedDomain(storedDomain);
+        console.log('[AI Assistant] Synced domain from storage:', storedDomain);
+      }
+    };
+    
+    // Sync on mount
+    syncDomainFromStorage();
+    
+    // Listen for storage changes (cross-tab sync)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'webstack_selected_domain' || e.key === 'webstack_current_domain') {
+        syncDomainFromStorage();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [selectedDomain]);
+  
   // Listen for global domain changes from dashboard/domain selector bar
-  // This syncs the AI domain with the dashboard's selected domain
+  // This syncs the AI domain with the dashboard's selected domain in real-time
   useEffect(() => {
     const handleDomainChange = (e: CustomEvent<{ domain: string | null }>) => {
       if (e.detail.domain) {
@@ -70,15 +100,14 @@ export function useAIAssistant() {
     };
   }, []);
   
-  // Also listen for when AI opens - fetch the current domain from localStorage or sessionStorage
+  // Also listen for when AI opens - re-sync domain from localStorage
   useEffect(() => {
     const handleAIOpen = () => {
-      // Try to get domain from localStorage (DomainSelectorBar stores it there)
       const storedDomain = localStorage.getItem('webstack_selected_domain') || 
                           sessionStorage.getItem('webstack_current_domain');
-      if (storedDomain && !selectedDomain) {
+      if (storedDomain) {
         setSelectedDomain(storedDomain);
-        console.log('[AI Assistant] Restored domain from storage:', storedDomain);
+        console.log('[AI Assistant] Restored domain on open:', storedDomain);
       }
     };
     
@@ -86,7 +115,7 @@ export function useAIAssistant() {
     return () => {
       window.removeEventListener('open-ai-assistant', handleAIOpen);
     };
-  }, [selectedDomain]);
+  }, []);
 
   // Load conversations
   useEffect(() => {
