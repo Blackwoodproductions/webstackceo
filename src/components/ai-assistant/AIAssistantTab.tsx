@@ -490,7 +490,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50"
           >
             <motion.button
               whileHover={{ scale: 1.02 }}
