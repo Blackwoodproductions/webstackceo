@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Zap, Users, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useCROSettings, trackCROInteraction } from '@/hooks/use-cro-settings';
 
 interface TimeLeft {
   hours: number;
@@ -19,8 +20,18 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({ hours: 23, minutes: 59, seconds: 59 });
   const [spotsLeft, setSpotsLeft] = useState(7);
   const navigate = useNavigate();
+  const { isEnabled, getConfig, loading: settingsLoading } = useCROSettings();
+
+  // Get config from admin settings
+  const discount = getConfig('urgency_banner', 'discount', 30);
+  const showCountdown = getConfig('urgency_banner', 'show_countdown', true);
+  const showSpots = getConfig('urgency_banner', 'show_spots', true);
 
   useEffect(() => {
+    // Check if disabled in admin
+    if (settingsLoading) return;
+    if (!isEnabled('urgency_banner')) return;
+    
     // Check if banner was dismissed today
     const dismissed = localStorage.getItem('urgency_banner_dismissed');
     if (dismissed) {
@@ -35,7 +46,10 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
     }
 
     // Show banner after short delay
-    const showTimer = setTimeout(() => setIsVisible(true), 3000);
+    const showTimer = setTimeout(() => {
+      setIsVisible(true);
+      trackCROInteraction('urgency_banner', 'view');
+    }, 3000);
 
     // Initialize countdown based on time until midnight
     const updateCountdown = () => {
@@ -69,14 +83,16 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
       clearInterval(interval);
       clearInterval(spotsInterval);
     };
-  }, []);
+  }, [isEnabled, settingsLoading]);
 
   const handleDismiss = () => {
     setIsVisible(false);
     localStorage.setItem('urgency_banner_dismissed', Date.now().toString());
+    trackCROInteraction('urgency_banner', 'dismiss');
   };
 
   const handleClaim = () => {
+    trackCROInteraction('urgency_banner', 'click');
     navigate('/pricing');
     handleDismiss();
   };
@@ -99,38 +115,42 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
               <div className="flex items-center gap-3">
                 <Flame className="w-5 h-5 text-amber-300 animate-pulse" />
                 <span className="font-semibold text-sm sm:text-base">
-                  🔥 Flash Sale: <span className="text-amber-300">30% OFF</span> all plans today only!
+                  🔥 Flash Sale: <span className="text-amber-300">{discount}% OFF</span> all plans today only!
                 </span>
               </div>
               
               {/* Center: Countdown & Spots */}
               <div className="hidden md:flex items-center gap-6">
                 {/* Countdown */}
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">Ends in:</span>
-                  <div className="flex items-center gap-1 font-mono font-bold">
-                    <span className="bg-white/20 px-2 py-0.5 rounded">
-                      {formatTime(timeLeft.hours)}
-                    </span>
-                    <span>:</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded">
-                      {formatTime(timeLeft.minutes)}
-                    </span>
-                    <span>:</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded">
-                      {formatTime(timeLeft.seconds)}
-                    </span>
+                {showCountdown && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">Ends in:</span>
+                    <div className="flex items-center gap-1 font-mono font-bold">
+                      <span className="bg-white/20 px-2 py-0.5 rounded">
+                        {formatTime(timeLeft.hours)}
+                      </span>
+                      <span>:</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded">
+                        {formatTime(timeLeft.minutes)}
+                      </span>
+                      <span>:</span>
+                      <span className="bg-white/20 px-2 py-0.5 rounded">
+                        {formatTime(timeLeft.seconds)}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Spots left */}
-                <div className="flex items-center gap-2 text-amber-200">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">
-                    Only <span className="font-bold">{spotsLeft}</span> spots left!
-                  </span>
-                </div>
+                {showSpots && (
+                  <div className="flex items-center gap-2 text-amber-200">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      Only <span className="font-bold">{spotsLeft}</span> spots left!
+                    </span>
+                  </div>
+                )}
               </div>
               
               {/* Right: CTA & Close */}

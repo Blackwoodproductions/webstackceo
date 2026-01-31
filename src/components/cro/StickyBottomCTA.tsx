@@ -4,6 +4,7 @@ import { X, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCROSettings, trackCROInteraction } from '@/hooks/use-cro-settings';
 
 /**
  * Sticky Bottom CTA - Persistent conversion bar for non-logged-in users
@@ -12,29 +13,39 @@ import { useAuth } from '@/contexts/AuthContext';
 export const StickyBottomCTA = memo(function StickyBottomCTA() {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isEnabled, getConfig, loading: settingsLoading } = useCROSettings();
+
+  const scrollThreshold = getConfig('sticky_bottom_cta', 'scroll_threshold', 600);
 
   useEffect(() => {
-    // Don't show to logged-in users or if dismissed this session
-    if (user || isDismissed) return;
+    // Don't show to logged-in users, if dismissed, or if disabled
+    if (user || isDismissed || settingsLoading) return;
+    if (!isEnabled('sticky_bottom_cta')) return;
 
     const handleScroll = () => {
-      // Show after scrolling 600px
-      const scrolled = window.scrollY > 600;
+      const scrolled = window.scrollY > scrollThreshold;
+      if (scrolled && !hasTrackedView) {
+        trackCROInteraction('sticky_bottom_cta', 'view');
+        setHasTrackedView(true);
+      }
       setIsVisible(scrolled);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [user, isDismissed]);
+  }, [user, isDismissed, isEnabled, settingsLoading, scrollThreshold, hasTrackedView]);
 
   const handleDismiss = () => {
     setIsDismissed(true);
     setIsVisible(false);
+    trackCROInteraction('sticky_bottom_cta', 'dismiss');
   };
 
   const handleCTA = () => {
+    trackCROInteraction('sticky_bottom_cta', 'click');
     navigate('/pricing');
   };
 

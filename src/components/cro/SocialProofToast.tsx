@@ -1,6 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, MapPin, Clock, Star, ShoppingBag, UserPlus } from 'lucide-react';
+import { useCROSettings, trackCROInteraction } from '@/hooks/use-cro-settings';
 
 interface ProofEvent {
   type: 'signup' | 'purchase' | 'review';
@@ -46,39 +47,50 @@ export const SocialProofToast = memo(function SocialProofToast({
   const [currentEvent, setCurrentEvent] = useState<ProofEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [eventIndex, setEventIndex] = useState(0);
+  const { isEnabled, getConfig, loading: settingsLoading } = useCROSettings();
+
+  // Get config from admin settings
+  const configInterval = getConfig('social_proof_toast', 'interval_ms', intervalMs);
+  const configDisplay = getConfig('social_proof_toast', 'display_ms', displayMs);
+  const configInitialDelay = getConfig('social_proof_toast', 'initial_delay_ms', initialDelayMs);
 
   useEffect(() => {
-    // Check if user dismissed toasts
+    // Check if user dismissed toasts or if disabled in admin
     const dismissed = sessionStorage.getItem('social_proof_dismissed');
-    if (dismissed) return;
+    if (dismissed || settingsLoading) return;
+    if (!isEnabled('social_proof_toast')) return;
 
     // Initial delay
     const initialTimer = setTimeout(() => {
       showNextToast();
-    }, initialDelayMs);
+    }, configInitialDelay);
 
     return () => clearTimeout(initialTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isEnabled, settingsLoading]);
 
   const showNextToast = () => {
     const event = PROOF_EVENTS[eventIndex % PROOF_EVENTS.length];
     setCurrentEvent(event);
     setIsVisible(true);
     setEventIndex((prev) => prev + 1);
+    
+    // Track view
+    trackCROInteraction('social_proof_toast', 'view');
 
     // Hide after display duration
     setTimeout(() => {
       setIsVisible(false);
       
       // Schedule next toast
-      setTimeout(showNextToast, intervalMs);
-    }, displayMs);
+      setTimeout(showNextToast, configInterval);
+    }, configDisplay);
   };
 
   const handleDismiss = () => {
     setIsVisible(false);
     sessionStorage.setItem('social_proof_dismissed', 'true');
+    trackCROInteraction('social_proof_toast', 'dismiss');
   };
 
   const getIcon = (type: ProofEvent['type']) => {

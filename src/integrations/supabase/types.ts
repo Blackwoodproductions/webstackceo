@@ -652,6 +652,63 @@ export type Database = {
           },
         ]
       }
+      cro_interactions: {
+        Row: {
+          action: string
+          component: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          page_path: string | null
+          session_id: string | null
+        }
+        Insert: {
+          action: string
+          component: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          action?: string
+          component?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
+      cro_settings: {
+        Row: {
+          config: Json | null
+          enabled: boolean
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config?: Json | null
+          enabled?: boolean
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       directory_categories: {
         Row: {
           created_at: string
