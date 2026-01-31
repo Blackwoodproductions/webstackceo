@@ -297,3 +297,23 @@
 .animate-shimmer {
   animation: shimmer 2s linear infinite;
 }
+
+/* AI Assistant Animations */
+@keyframes gradient-slow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-slow {
+  background-size: 200% 200%;
+  animation: gradient-slow 4s ease infinite;
+}
+
+@keyframes voice-wave {
+  0%, 100% { height: 20%; }
+  25% { height: 60%; }
+  50% { height: 100%; }
+  75% { height: 40%; }
+}
+.animate-voice-wave {
+  animation: voice-wave 0.8s ease-in-out infinite;
+}
