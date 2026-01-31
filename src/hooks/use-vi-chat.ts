@@ -23,6 +23,7 @@ interface LiveVisitor {
   display_name?: string | null;
   email?: string | null;
   is_current_user?: boolean;
+  is_admin?: boolean;
 }
 
 /**
@@ -164,9 +165,11 @@ export const useVIChat = (user: User | null) => {
       uniqueSessions.push(s);
     }
     
-    // Filter out sessions with active chats
+    // Filter out sessions with active chats (EXCEPT logged-in users who should stay visible)
     const chatSessionIds = chatSessionIdsRef.current;
-    const filteredSessions = uniqueSessions.filter(v => !chatSessionIds.includes(v.session_id));
+    const filteredSessions = uniqueSessions.filter(v => 
+      v.user_id || !chatSessionIds.includes(v.session_id)
+    );
     
     // Fetch page view counts
     const sessionIds = filteredSessions.map(s => s.session_id);
@@ -183,8 +186,10 @@ export const useVIChat = (user: User | null) => {
     // Fetch profiles for logged-in users
     const userIds = filteredSessions.filter(s => s.user_id).map(s => s.user_id!);
     let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null; email: string | null }> = {};
+    let adminUserIds: Set<string> = new Set();
     
     if (userIds.length > 0) {
+      // Fetch profiles
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, avatar_url, full_name, email')
@@ -199,6 +204,17 @@ export const useVIChat = (user: User | null) => {
           };
         });
       }
+      
+      // Check which users are admins
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('user_id', userIds)
+        .in('role', ['admin', 'super_admin']);
+      
+      if (adminRoles) {
+        adminRoles.forEach(r => adminUserIds.add(r.user_id));
+      }
     }
     
     // Sort by time on site
@@ -210,19 +226,26 @@ export const useVIChat = (user: User | null) => {
     });
     
     // Map with profiles
-    const visitorsWithProfiles = sorted.slice(0, 10).map(s => ({
+    const visitorsWithProfiles = sorted.slice(0, 15).map(s => ({
       ...s,
       page_count: pageCountMap[s.session_id] || 1,
       avatar_url: s.user_id ? profilesMap[s.user_id]?.avatar_url : null,
       display_name: s.user_id ? profilesMap[s.user_id]?.full_name : null,
       email: s.user_id ? profilesMap[s.user_id]?.email : null,
       is_current_user: s.session_id === currentSessionId || (!!currentUserId && s.user_id === currentUserId),
+      is_admin: s.user_id ? adminUserIds.has(s.user_id) : false,
     }));
     
-    // Sort to put current user first
+    // Sort: current user first, then admins/operators, then by time on site
     const finalSorted = visitorsWithProfiles.sort((a, b) => {
       if (a.is_current_user) return -1;
       if (b.is_current_user) return 1;
+      // Admins/operators next
+      if (a.is_admin && !b.is_admin) return -1;
+      if (b.is_admin && !a.is_admin) return 1;
+      // Then logged-in users
+      if (a.user_id && !b.user_id) return -1;
+      if (b.user_id && !a.user_id) return 1;
       return 0;
     });
     
