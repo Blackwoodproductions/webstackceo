@@ -53,6 +53,95 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_assistant_conversations: {
+        Row: {
+          created_at: string | null
+          domain: string | null
+          id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_assistant_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_assistant_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_assistant_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_assistant_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          minutes_used: number | null
+          updated_at: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          minutes_used?: number | null
+          updated_at?: string | null
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          minutes_used?: number | null
+          updated_at?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           content: string

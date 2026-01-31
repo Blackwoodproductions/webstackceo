@@ -227,6 +227,8 @@ export function useDomainFeatureAccess(feature: FeatureType, domain: string | nu
         return status.hasWebBuilder;
       case 'vi-domain':
         return status.hasViAccess;
+      case 'ai-assistant':
+        return true; // Everyone gets some free usage, gating happens in the AI hook
       default:
         return false;
     }
