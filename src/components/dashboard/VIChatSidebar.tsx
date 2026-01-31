@@ -30,6 +30,7 @@ interface LiveVisitor {
   user_id?: string | null;
   avatar_url?: string | null;
   display_name?: string | null;
+  email?: string | null;
   is_current_user?: boolean;
 }
 
@@ -109,17 +110,28 @@ const VisitorCard = memo(function VisitorCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-sm font-medium text-foreground truncate">
-                {isCurrentUser ? 'You' : visitor.display_name || visitor.first_page || '/'}
+                {isCurrentUser 
+                  ? 'You' 
+                  : visitor.display_name || visitor.email?.split('@')[0] || visitor.first_page || '/'}
               </p>
               {isCurrentUser && (
                 <span className="text-[9px] font-bold bg-gradient-to-r from-cyan-500 to-violet-500 text-white px-1.5 py-0.5 rounded-full">
                   YOU
                 </span>
               )}
+              {!isCurrentUser && visitor.user_id && (
+                <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+                  LOGGED IN
+                </span>
+              )}
             </div>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className={`w-1 h-1 rounded-full animate-pulse ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
-              {isCurrentUser ? 'Your session' : `${timeLabel} • Click to engage`}
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 truncate">
+              <span className={`w-1 h-1 rounded-full animate-pulse flex-shrink-0 ${isCurrentUser ? 'bg-cyan-400' : 'bg-emerald-400'}`} />
+              {isCurrentUser 
+                ? 'Your session' 
+                : visitor.email 
+                  ? `${visitor.email} • ${timeLabel}`
+                  : `${visitor.first_page || '/'} • ${timeLabel}`}
             </p>
           </div>
         </div>

@@ -21,6 +21,7 @@ interface LiveVisitor {
   user_id?: string | null;
   avatar_url?: string | null;
   display_name?: string | null;
+  email?: string | null;
   is_current_user?: boolean;
 }
 
@@ -181,17 +182,21 @@ export const useVIChat = (user: User | null) => {
     
     // Fetch profiles for logged-in users
     const userIds = filteredSessions.filter(s => s.user_id).map(s => s.user_id!);
-    let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null }> = {};
+    let profilesMap: Record<string, { avatar_url: string | null; full_name: string | null; email: string | null }> = {};
     
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, avatar_url, full_name')
+        .select('user_id, avatar_url, full_name, email')
         .in('user_id', userIds);
       
       if (profiles) {
         profiles.forEach(p => {
-          profilesMap[p.user_id] = { avatar_url: p.avatar_url, full_name: p.full_name };
+          profilesMap[p.user_id] = { 
+            avatar_url: p.avatar_url, 
+            full_name: p.full_name,
+            email: p.email,
+          };
         });
       }
     }
@@ -210,6 +215,7 @@ export const useVIChat = (user: User | null) => {
       page_count: pageCountMap[s.session_id] || 1,
       avatar_url: s.user_id ? profilesMap[s.user_id]?.avatar_url : null,
       display_name: s.user_id ? profilesMap[s.user_id]?.full_name : null,
+      email: s.user_id ? profilesMap[s.user_id]?.email : null,
       is_current_user: s.session_id === currentSessionId || (!!currentUserId && s.user_id === currentUserId),
     }));
     
