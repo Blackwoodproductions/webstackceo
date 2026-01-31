@@ -14,7 +14,11 @@ import {
   ExternalLink,
   Award,
   CheckCircle2,
-  Star
+  Star,
+  Bot,
+  Sparkles,
+  Brain,
+  Cpu
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -27,11 +31,46 @@ interface APIPartner {
   bgColor: string;
   borderColor: string;
   glowColor: string;
-  category: 'seo' | 'google' | 'payment' | 'analytics';
+  category: 'seo' | 'google' | 'payment' | 'analytics' | 'ai';
   url?: string;
 }
 
 const apiPartners: APIPartner[] = [
+  // AI Partners (Free via Lovable AI Gateway)
+  {
+    name: 'Google Gemini',
+    description: 'Advanced AI Models',
+    icon: Sparkles,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/40',
+    glowColor: 'shadow-blue-500/20',
+    category: 'ai',
+    url: 'https://deepmind.google/technologies/gemini/'
+  },
+  {
+    name: 'OpenAI GPT-5',
+    description: 'Powerful Language AI',
+    icon: Brain,
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/40',
+    glowColor: 'shadow-emerald-500/20',
+    category: 'ai',
+    url: 'https://openai.com'
+  },
+  {
+    name: 'Lovable AI',
+    description: 'Unified AI Gateway',
+    icon: Bot,
+    color: 'text-violet-400',
+    bgColor: 'bg-violet-500/10',
+    borderColor: 'border-violet-500/40',
+    glowColor: 'shadow-violet-500/20',
+    category: 'ai',
+    url: 'https://lovable.dev'
+  },
+  // SEO Partners
   {
     name: 'DataForSEO',
     description: 'Keyword Research & SERP Data',
@@ -54,6 +93,7 @@ const apiPartners: APIPartner[] = [
     category: 'seo',
     url: 'https://ahrefs.com'
   },
+  // Google Partners
   {
     name: 'Google Search Console',
     description: 'Search Performance & Indexation',
@@ -120,6 +160,7 @@ const apiPartners: APIPartner[] = [
     category: 'google',
     url: 'https://developers.google.com/maps/documentation/places'
   },
+  // Payment
   {
     name: 'Stripe',
     description: 'Secure Payment Processing',
@@ -352,9 +393,10 @@ export const APIPartnersGrid = memo(function APIPartnersGrid({
   showCategories?: boolean;
   maxItems?: number;
 }) {
+  const aiAPIs = apiPartners.filter(p => p.category === 'ai');
   const seoAPIs = apiPartners.filter(p => p.category === 'seo');
   const googleAPIs = apiPartners.filter(p => p.category === 'google');
-  const otherAPIs = apiPartners.filter(p => !['seo', 'google'].includes(p.category));
+  const otherAPIs = apiPartners.filter(p => !['seo', 'google', 'ai'].includes(p.category));
   
   const displayedPartners = maxItems ? apiPartners.slice(0, maxItems) : apiPartners;
   
@@ -370,6 +412,20 @@ export const APIPartnersGrid = memo(function APIPartnersGrid({
   
   return (
     <div className="space-y-8">
+      {/* AI APIs */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Bot className="w-5 h-5 text-primary" />
+          AI & Machine Learning
+          <Badge variant="secondary" className="ml-2 text-[10px]">FREE</Badge>
+        </h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {aiAPIs.map((partner) => (
+            <APIPartnerBadge key={partner.name} partner={partner} />
+          ))}
+        </div>
+      </div>
+      
       {/* SEO Data APIs */}
       <div>
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">

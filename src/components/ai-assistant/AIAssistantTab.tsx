@@ -1,10 +1,10 @@
 import { memo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, ChevronDown, Shield } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, ChevronDown, Shield, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useAIAssistant, type AIMessage, type AIConversation } from '@/hooks/use-ai-assistant';
+import { useAIAssistant, type AIMessage, type AIConversation, AI_MODELS, type AIModelId } from '@/hooks/use-ai-assistant';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserDomains } from '@/hooks/use-user-domains';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 // Message component
 const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { message: AIMessage; isStreaming?: boolean }) {
   const isUser = message.role === 'user';
@@ -190,12 +191,17 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     usage,
     selectedDomain,
     setSelectedDomain,
+    selectedModel,
+    setSelectedModel,
     selectConversation,
     sendMessage,
     stopStreaming,
     deleteConversation,
     clearCurrentConversation,
   } = useAIAssistant();
+
+  // Get current model info
+  const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   // Dispatch event when panel opens/closes so dashboard can adjust layout
   useEffect(() => {
@@ -344,10 +350,11 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
               {/* Main Chat Area */}
               <div className="flex-1 flex flex-col min-w-0">
-                {/* Domain Selector */}
-                <div className="p-3 border-b border-border/50">
+                {/* Domain & Model Selectors */}
+                <div className="p-3 border-b border-border/50 space-y-2">
+                  {/* Domain Selector */}
                   <Select value={selectedDomain || '__none__'} onValueChange={handleDomainSelect}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full h-9">
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-muted-foreground" />
                         <SelectValue placeholder="Select a domain for context..." />
@@ -358,6 +365,35 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                       {domains.map(d => (
                         <SelectItem key={d.id} value={d.domain}>
                           {d.domain}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* AI Model Selector */}
+                  <Select value={selectedModel} onValueChange={(v) => setSelectedModel(v as AIModelId)}>
+                    <SelectTrigger className="w-full h-9">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{currentModel.icon} {currentModel.name}</span>
+                        <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0">
+                          {currentModel.provider}
+                        </Badge>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        Free AI Models
+                      </div>
+                      {AI_MODELS.map(model => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{model.icon}</span>
+                            <span>{model.name}</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {model.description}
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -200,7 +200,18 @@ serve(async (req) => {
       });
     }
 
-    const { messages, conversationId, domain, checkUsage } = await req.json();
+    const { messages, conversationId, domain, checkUsage, model } = await req.json();
+    
+    // Validate and sanitize model selection - only allow approved free models
+    const allowedModels = [
+      'google/gemini-3-flash-preview',
+      'google/gemini-2.5-flash',
+      'google/gemini-2.5-flash-lite',
+      'google/gemini-2.5-pro',
+      'openai/gpt-5-mini',
+      'openai/gpt-5-nano',
+    ];
+    const selectedModel = allowedModels.includes(model) ? model : 'google/gemini-3-flash-preview';
 
     // Check usage only mode
     if (checkUsage) {
@@ -254,7 +265,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: selectedModel,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -298,7 +309,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: selectedModel,
             messages: messagesWithTools,
             stream: true,
           }),
@@ -330,7 +341,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: selectedModel,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
