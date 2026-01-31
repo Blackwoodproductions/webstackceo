@@ -244,11 +244,11 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 zIndex: isActive ? 20 : isHovered ? 15 : 10 - index,
                 contain: 'layout style',
               }}
-              className={`group relative flex flex-col items-center ${
+              className={`group relative flex flex-row items-center justify-center ${
                 isCompact 
-                  ? 'w-[70px] min-w-[70px] py-2 px-2' 
-                  : 'w-[90px] min-w-[90px] py-3 px-3'
-              } rounded-t-2xl border border-b-0 backdrop-blur-xl transition-all duration-300 ${
+                  ? 'min-w-[80px] py-1.5 px-3 gap-2' 
+                  : 'min-w-[100px] py-2 px-4 gap-2'
+              } rounded-t-xl border border-b-0 backdrop-blur-xl transition-all duration-300 ${
                 isActive 
                   ? `${color.border} ${color.bg} shadow-lg` 
                   : `border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10`
@@ -263,7 +263,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute inset-0 rounded-t-2xl overflow-hidden"
+                    className="absolute inset-0 rounded-t-xl overflow-hidden"
                     style={{
                       boxShadow: isActive 
                         ? `0 -10px 40px -10px rgba(${color.rgb}, 0.4), inset 0 1px 0 rgba(${color.rgb}, 0.2)`
@@ -297,8 +297,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 className={`relative z-10 flex items-center justify-center ${
-                  isCompact ? 'w-8 h-8' : 'w-10 h-10'
-                } rounded-xl transition-all duration-300 ${
+                  isCompact ? 'w-6 h-6' : 'w-7 h-7'
+                } rounded-lg transition-all duration-300 ${
                   isActive 
                     ? color.iconBg 
                     : 'bg-white/5 group-hover:bg-white/10'
@@ -309,7 +309,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                     : 'none',
                 }}
               >
-                <Icon className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} transition-colors duration-300 ${
+                <Icon className={`${isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} transition-colors duration-300 ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`} />
               </motion.div>
@@ -317,8 +317,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               {/* Label with elegant typography */}
               <motion.span 
                 className={`relative z-10 ${
-                  isCompact ? 'text-[10px] mt-1' : 'text-xs mt-1.5'
-                } font-semibold tracking-wide transition-colors duration-300 ${
+                  isCompact ? 'text-[10px]' : 'text-[11px]'
+                } font-semibold tracking-wide transition-colors duration-300 whitespace-nowrap ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`}
               >
@@ -349,7 +349,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
 
               {/* Subtle border glow on hover */}
               <div 
-                className={`absolute inset-0 rounded-t-2xl transition-opacity duration-300 pointer-events-none ${
+                className={`absolute inset-0 rounded-t-xl transition-opacity duration-300 pointer-events-none ${
                   isHovered && !isActive ? 'opacity-100' : 'opacity-0'
                 }`}
                 style={{

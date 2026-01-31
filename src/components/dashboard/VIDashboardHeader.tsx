@@ -71,18 +71,18 @@ export const VIDashboardHeader = memo(function VIDashboardHeader({
             <BarChart3 className="w-5 h-5 text-white" />
           </div>
         </div>
-        <div className="hidden sm:block">
+        <div className="flex flex-col">
           <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 via-primary to-violet-400 bg-clip-text text-transparent">
-            Webstack
+            webstack<span className="text-primary/80">.ceo</span>
           </span>
-          <span className="text-[10px] text-muted-foreground block -mt-0.5">.ceo</span>
+          <span className="text-[9px] text-muted-foreground -mt-1">a Lovable Web Application</span>
         </div>
       </Link>
 
       {/* Right: Stats & Actions */}
       <div className="flex items-center gap-3">
         {/* Live Stats Pill */}
-        <div className="hidden md:flex items-center gap-4 px-4 py-1.5 rounded-full bg-background/50 border border-border/50 backdrop-blur-sm">
+        <div className="flex items-center gap-4 px-4 py-1.5 rounded-full bg-background/50 border border-border/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-xs">
             <div 
               className="w-2 h-2 rounded-full bg-emerald-400"
