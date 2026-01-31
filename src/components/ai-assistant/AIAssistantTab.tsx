@@ -406,11 +406,12 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   useEffect(() => {
     const handleOpenAI = () => {
       setIsOpen(true);
-      // Re-sync domain from localStorage when panel opens
+      // FORCE re-sync domain from localStorage when panel opens (no conditional)
       const storedDomain = localStorage.getItem('webstack_selected_domain') || 
                           sessionStorage.getItem('webstack_current_domain');
-      if (storedDomain && storedDomain !== selectedDomain) {
+      if (storedDomain) {
         setSelectedDomain(storedDomain);
+        console.log('[AI Tab] Force synced domain on event:', storedDomain);
       }
     };
     
@@ -418,19 +419,20 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     return () => {
       window.removeEventListener('open-ai-assistant', handleOpenAI);
     };
-  }, [selectedDomain, setSelectedDomain]);
+  }, [setSelectedDomain]);
   
-  // Sync domain when panel becomes visible
+  // Sync domain when panel becomes visible - FORCE sync on every open
   useEffect(() => {
     if (isOpen) {
       const storedDomain = localStorage.getItem('webstack_selected_domain') || 
                           sessionStorage.getItem('webstack_current_domain');
-      if (storedDomain && storedDomain !== selectedDomain) {
+      if (storedDomain) {
+        // Always update, even if it's the same - this ensures UI refresh
         setSelectedDomain(storedDomain);
         console.log('[AI Tab] Synced domain on open:', storedDomain);
       }
     }
-  }, [isOpen, selectedDomain, setSelectedDomain]);
+  }, [isOpen, setSelectedDomain]);
 
   // Listen for AI bubble prompts from domain selector bar
   useEffect(() => {
