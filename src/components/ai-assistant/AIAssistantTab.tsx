@@ -1,6 +1,6 @@
 import { memo, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, ChevronDown } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, ChevronDown, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -93,24 +93,26 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { messag
 const UsageMeter = memo(function UsageMeter({ usage }: { usage: any }) {
   if (!usage) return null;
   
-  const percentage = usage.isUnlimited ? 100 : Math.min((usage.minutesUsed / usage.minutesLimit) * 100, 100);
-  const isLow = percentage >= 80;
+  const isAdmin = usage.isAdmin || usage.tier === 'admin';
+  const percentage = usage.isUnlimited || isAdmin ? 100 : Math.min((usage.minutesUsed / usage.minutesLimit) * 100, 100);
+  const isLow = !isAdmin && !usage.isUnlimited && percentage >= 80;
   
   return (
     <div className="px-3 py-2 border-b border-border/50 bg-muted/30">
       <div className="flex items-center justify-between text-xs mb-1">
         <span className="text-muted-foreground flex items-center gap-1">
           <Clock className="w-3 h-3" />
-          {usage.isUnlimited ? 'Unlimited' : `${usage.minutesUsed}/${usage.minutesLimit} min`}
+          {usage.isUnlimited || isAdmin ? `${usage.minutesUsed} min used` : `${usage.minutesUsed}/${usage.minutesLimit} min`}
         </span>
         <span className={cn(
-          "font-medium capitalize",
-          usage.tier === 'free' ? 'text-muted-foreground' : 'text-primary'
+          "font-medium capitalize flex items-center gap-1",
+          isAdmin ? 'text-amber-500' : usage.tier === 'free' ? 'text-muted-foreground' : 'text-primary'
         )}>
-          {usage.tier.replace('_', ' ')}
+          {isAdmin && <Shield className="w-3 h-3" />}
+          {isAdmin ? 'Admin (Unlimited)' : usage.tier.replace('_', ' ')}
         </span>
       </div>
-      {!usage.isUnlimited && (
+      {!usage.isUnlimited && !isAdmin && (
         <div className="h-1 bg-muted rounded-full overflow-hidden">
           <div 
             className={cn(
@@ -119,6 +121,11 @@ const UsageMeter = memo(function UsageMeter({ usage }: { usage: any }) {
             )}
             style={{ width: `${percentage}%` }}
           />
+        </div>
+      )}
+      {(usage.isUnlimited || isAdmin) && (
+        <div className="h-1 bg-gradient-to-r from-amber-500/30 via-primary/30 to-cyan-500/30 rounded-full overflow-hidden">
+          <div className="h-full w-full bg-gradient-to-r from-amber-500 via-primary to-cyan-500 animate-pulse" />
         </div>
       )}
     </div>

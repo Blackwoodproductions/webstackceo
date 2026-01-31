@@ -8,7 +8,7 @@ import {
   Activity, Globe, ArrowLeft, MousePointer,
   Mail, UserCheck, DollarSign, Target, RefreshCw, X, Check,
   Cpu, Gauge, BarChart2, PieChart, Layers, Sparkles, Signal,
-  ArrowUpRight, ArrowDownRight, Percent, Timer, Zap, MessageSquare
+  ArrowUpRight, ArrowDownRight, Percent, Timer, Zap, MessageSquare, Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import AdminPartnersTab from "@/components/admin/AdminPartnersTab";
 import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
 import { SystemHealthPanel } from "@/components/admin/SystemHealthPanel";
 import AdminFeedbackTab from "@/components/admin/AdminFeedbackTab";
+import AdminAIUsageTab from "@/components/admin/AdminAIUsageTab";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import {
@@ -702,10 +703,14 @@ const Admin = () => {
 
       <main className="container mx-auto px-6 py-8 max-w-7xl relative z-10">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50">
             <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-violet-500/20">
               <Gauge className="w-4 h-4" />
               <span className="hidden sm:inline">Command</span>
+            </TabsTrigger>
+            <TabsTrigger value="ai-usage" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/20 data-[state=active]:to-purple-500/20">
+              <Bot className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Usage</span>
             </TabsTrigger>
             <TabsTrigger value="health" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-green-500/20">
               <Activity className="w-4 h-4" />
@@ -1066,6 +1071,11 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </motion.div>
+          </TabsContent>
+
+          {/* AI Usage Analytics */}
+          <TabsContent value="ai-usage">
+            <AdminAIUsageTab />
           </TabsContent>
 
           {/* System Health */}
