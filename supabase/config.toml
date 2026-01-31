@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.visitor-enrich]
 verify_jwt = false
+
+[functions.bron-monthly-reports]
+verify_jwt = false
+
+[functions.keyword-metrics]
+verify_jwt = false
