@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive, FileText, Star, RefreshCw, Loader2, Sparkles, 
-  ChevronRight, ExternalLink, Play, Tag, Calendar, Target
+  ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,6 +75,26 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
   useEffect(() => {
     fetchVaultItems();
   }, [fetchVaultItems]);
+
+  // Delete vault item
+  const handleDeleteItem = useCallback(async (id: string) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('seo_vault')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setVaultItems(prev => prev.filter(item => item.id !== id));
+      toast.success('Report deleted from vault');
+    } catch (err) {
+      console.error('Failed to delete vault item:', err);
+      toast.error('Failed to delete report');
+    }
+  }, [user]);
 
   // Generate article from vault plan
   const handleGenerateFromVault = useCallback(async (item: VaultItem) => {
@@ -376,6 +396,19 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
                               >
                                 <ExternalLink className="w-3 h-3 mr-1" />
                                 View Full
+                              </Button>
+                              {/* Delete Button */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteItem(item.id);
+                                }}
+                                className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Delete
                               </Button>
                             </div>
 

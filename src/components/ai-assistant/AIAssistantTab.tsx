@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserDomains } from '@/hooks/use-user-domains';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -444,6 +445,26 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
       console.error('Failed to load vault items:', err);
     } finally {
       setVaultLoading(false);
+    }
+  }, [user]);
+  
+  // Delete vault item
+  const deleteVaultItem = useCallback(async (id: string) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('seo_vault')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setVaultItems(prev => prev.filter(item => item.id !== id));
+      toast.success('Report deleted from vault');
+    } catch (err) {
+      console.error('Failed to delete vault item:', err);
+      toast.error('Failed to delete report');
     }
   }, [user]);
   
@@ -1030,7 +1051,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                               key={item.id}
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="group p-3 rounded-xl bg-gradient-to-r from-muted/50 via-background to-muted/30 border border-border/50 hover:border-amber-500/30 transition-all cursor-pointer"
+                              className="group p-3 rounded-xl bg-gradient-to-r from-muted/50 via-background to-muted/30 border border-border/50 hover:border-amber-500/30 transition-all"
                             >
                               <div className="flex items-start gap-3">
                                 {/* Type icon */}
@@ -1047,10 +1068,22 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                                 
                                 <div className="flex-1 min-w-0 overflow-hidden">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-sm text-foreground line-clamp-2" title={item.title}>{item.title}</span>
+                                    <span className="font-medium text-sm text-foreground line-clamp-2 flex-1" title={item.title}>{item.title}</span>
                                     {item.is_favorite && (
                                       <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                                     )}
+                                    {/* Delete button */}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteVaultItem(item.id);
+                                      }}
+                                    >
+                                      <Trash2 className="w-3 h-3 text-red-400" />
+                                    </Button>
                                   </div>
                                   
                                   <p className="text-xs text-muted-foreground line-clamp-3 mb-2" title={item.summary || ''}>
@@ -1072,10 +1105,13 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                                 </div>
                               </div>
                               
-                              {/* Date */}
+                              {/* Date and domain */}
                               <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
                                 <span className="text-[10px] text-muted-foreground capitalize">
                                   {item.report_type.replace('_', ' ')}
+                                  {item.domain && (
+                                    <span className="ml-2 text-cyan-400/70">• {item.domain}</span>
+                                  )}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
                                   {new Date(item.created_at).toLocaleDateString()}
