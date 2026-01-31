@@ -1614,8 +1614,11 @@ const MarketingDashboard = () => {
   };
 
   const checkAdminRole = useCallback(async (userId: string) => {
+    // CRITICAL: Mark as loaded FIRST so UI renders immediately
+    setIsLoading(false);
+    
     try {
-      // Run both checks in parallel for speed
+      // Run both checks in parallel for speed - non-blocking
       const [adminRes, superRes] = await Promise.all([
         supabase.rpc('is_admin', { _user_id: userId }),
         supabase.rpc('is_super_admin', { _user_id: userId }),
@@ -1627,15 +1630,17 @@ const MarketingDashboard = () => {
       setIsSuperAdmin(superStatus);
       setIsAdmin(adminStatus);
 
-      // Only fetch all data if admin - regular users don't need this
+      // Only fetch all data if admin - FIRE AND FORGET pattern
       if (adminStatus) {
-        // Don't await - let it load in background
-        fetchAllData();
+        // Background fetch - uses requestIdleCallback for lower priority
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => fetchAllData(), { timeout: 2000 });
+        } else {
+          setTimeout(fetchAllData, 100);
+        }
       }
     } catch (error) {
       console.error('Error checking admin role:', error);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -1654,11 +1659,11 @@ const MarketingDashboard = () => {
       if (session?.user) {
         setSession(session);
         setUser(session.user);
-        // Run admin check and profile fetch in parallel
-        Promise.all([
-          checkAdminRole(session.user.id),
-          fetchUserProfile(session.user.id),
-        ]);
+        // CRITICAL: Mark loading false IMMEDIATELY so UI renders
+        setIsLoading(false);
+        // Run admin check and profile fetch in background - non-blocking
+        checkAdminRole(session.user.id);
+        fetchUserProfile(session.user.id);
       } else {
         setIsLoading(false);
       }
