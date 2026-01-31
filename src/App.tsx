@@ -91,6 +91,7 @@ const FloatingCodeBox = lazy(() => import("@/components/ui/floating-code-box"));
 const FloatingLiveStats = lazy(() => import("@/components/ui/floating-live-stats"));
 const BetaNoticeBanner = lazy(() => import("@/components/BetaNoticeBanner"));
 const ShopSideTab = lazy(() => import("@/components/marketing/ShopSideTab"));
+const VisitorChatWidget = lazy(() => import("@/components/ui/visitor-chat-widget"));
 
 // Minimal loading fallback - no heavy animations
 const PageLoader = () => (
@@ -132,6 +133,9 @@ const FloatingElements = () => {
       </ErrorBoundary>
       <ErrorBoundary fallback={<></>}>
         <FloatingLiveStats />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={<></>}>
+        <VisitorChatWidget />
       </ErrorBoundary>
     </Suspense>
   );
