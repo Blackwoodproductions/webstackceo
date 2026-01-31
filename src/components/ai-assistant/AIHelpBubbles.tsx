@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, TrendingUp, Search, Link2, BarChart2, Zap, Target, Globe } from 'lucide-react';
+import { Sparkles, TrendingUp, Search, Link2, BarChart2, Zap, Target, Globe, PlayCircle } from 'lucide-react';
 
 interface HelpBubble {
   id: string;
@@ -48,6 +48,16 @@ const HELP_BUBBLES: HelpBubble[] = [
   },
 ];
 
+// Combined prompt for running all services
+const FULL_ANALYSIS_PROMPT = `Run a complete SEO analysis for my domain. Include:
+1. Research high-value keywords and opportunities
+2. Analyze top competitors and their SEO strategies
+3. Find backlink partner opportunities
+4. Provide actionable recommendations to improve rankings
+5. Run a comprehensive SEO audit with priorities
+
+Give me a structured report with all findings.`;
+
 interface AIHelpBubblesProps {
   selectedDomain: string | null;
   onBubbleClick: (prompt: string) => void;
@@ -61,11 +71,13 @@ export const AIHelpBubbles = memo(function AIHelpBubbles({
 }: AIHelpBubblesProps) {
   const [visibleBubbles, setVisibleBubbles] = useState<string[]>([]);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
+  const [showRunAll, setShowRunAll] = useState(false);
 
   // Animate bubbles appearing one by one
   useEffect(() => {
     if (!selectedDomain || isAIOpen) {
       setVisibleBubbles([]);
+      setShowRunAll(false);
       return;
     }
 
@@ -76,6 +88,12 @@ export const AIHelpBubbles = memo(function AIHelpBubbles({
       }, 300 + index * 150);
       timers.push(timer);
     });
+
+    // Show "Run All" button after all bubbles appear
+    const runAllTimer = setTimeout(() => {
+      setShowRunAll(true);
+    }, 300 + HELP_BUBBLES.length * 150 + 200);
+    timers.push(runAllTimer);
 
     return () => timers.forEach(clearTimeout);
   }, [selectedDomain, isAIOpen]);
@@ -133,6 +151,42 @@ export const AIHelpBubbles = memo(function AIHelpBubbles({
             </motion.button>
           )
         ))}
+
+        {/* Run All button */}
+        {showRunAll && (
+          <motion.button
+            key="run-all"
+            initial={{ scale: 0, opacity: 0, x: -10 }}
+            animate={{ scale: 1, opacity: 1, x: 0 }}
+            exit={{ scale: 0, opacity: 0, x: -10 }}
+            whileHover={{ scale: 1.08, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onMouseEnter={() => setHoveredBubble('run-all')}
+            onMouseLeave={() => setHoveredBubble(null)}
+            onClick={() => onBubbleClick(FULL_ANALYSIS_PROMPT)}
+            className="
+              relative flex items-center gap-1.5 px-3 py-1 rounded-full 
+              bg-gradient-to-r from-fuchsia-600 via-violet-600 to-cyan-500
+              text-white text-[10px] font-bold uppercase tracking-wide
+              shadow-lg shadow-fuchsia-500/30 hover:shadow-xl hover:shadow-fuchsia-500/40
+              border border-white/20 backdrop-blur-sm
+              transition-all duration-200 cursor-pointer
+            "
+          >
+            <PlayCircle className="w-3.5 h-3.5" />
+            <span className="whitespace-nowrap">Run All</span>
+            
+            {/* Glow effect on hover */}
+            {hoveredBubble === 'run-all' && (
+              <motion.div
+                className="absolute inset-0 rounded-full bg-white/15"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            )}
+          </motion.button>
+        )}
       </AnimatePresence>
     </div>
   );
