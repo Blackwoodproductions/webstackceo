@@ -189,23 +189,23 @@ export function getPositionDelta(val?: string | number): number {
 function getKeywordIntent(keyword: string) {
   const kw = keyword.toLowerCase();
   
-  // Softer blue-gray palette for intent badges - less visual noise, more professional
+  // High-end glassmorphism palette for intent badges - refined and modern
   const transactionalPatterns = ['buy', 'purchase', 'order', 'book', 'hire', 'get', 'download', 'subscribe', 'sign up', 'register', 'schedule', 'appointment', 'quote', 'pricing', 'cost', 'price', 'deal', 'discount', 'coupon', 'free trial'];
   if (transactionalPatterns.some(p => kw.includes(p))) {
-    return { type: 'transactional' as const, icon: ShoppingCart, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
+    return { type: 'transactional' as const, icon: ShoppingCart, color: 'text-emerald-400', bgColor: 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30' };
   }
   
   const commercialPatterns = ['best', 'top', 'review', 'vs', 'versus', 'compare', 'comparison', 'alternative', 'affordable', 'cheap', 'premium', 'professional', 'rated', 'recommended', 'trusted'];
   if (commercialPatterns.some(p => kw.includes(p))) {
-    return { type: 'commercial' as const, icon: Target, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
+    return { type: 'commercial' as const, icon: Target, color: 'text-amber-400', bgColor: 'bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-amber-500/30' };
   }
   
   const navigationalPatterns = ['login', 'sign in', 'website', 'official', 'contact', 'near me', 'location', 'address', 'hours', 'directions'];
   if (navigationalPatterns.some(p => kw.includes(p))) {
-    return { type: 'navigational' as const, icon: Compass, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
+    return { type: 'navigational' as const, icon: Compass, color: 'text-sky-400', bgColor: 'bg-gradient-to-br from-sky-500/20 to-sky-600/10 border-sky-500/30' };
   }
   
-  return { type: 'informational' as const, icon: Info, color: 'text-slate-300', bgColor: 'bg-slate-500/15 border-slate-400/30' };
+  return { type: 'informational' as const, icon: Info, color: 'text-violet-400', bgColor: 'bg-gradient-to-br from-violet-500/20 to-violet-600/10 border-violet-500/30' };
 }
 
 function getMovementFromDelta(movement: number) {
@@ -325,24 +325,24 @@ const RankingsDisplay = memo(({
       // Improved ranking (lower position number means higher rank)
       return {
         textColor: 'text-emerald-400',
-        bgColor: 'bg-emerald-500/20 border border-emerald-500/40',
+        bgColor: 'bg-gradient-to-r from-emerald-500/25 to-emerald-500/15 border border-emerald-500/40',
         icon: <TrendingUp className="w-3 h-3" strokeWidth={2.5} />,
-        glow: 'shadow-[0_0_8px_rgba(16,185,129,0.3)]',
+        glow: 'shadow-[0_0_12px_rgba(16,185,129,0.35)]',
       };
     }
     if (movement < 0) {
       // Dropped ranking
       return {
         textColor: 'text-amber-400',
-        bgColor: 'bg-amber-500/20 border border-amber-500/40',
+        bgColor: 'bg-gradient-to-r from-amber-500/25 to-amber-500/15 border border-amber-500/40',
         icon: <TrendingDown className="w-3 h-3" strokeWidth={2.5} />,
-        glow: '',
+        glow: 'shadow-[0_0_8px_rgba(245,158,11,0.2)]',
       };
     }
     // No movement - show 0 with blue background when we have a position
     return {
-      textColor: 'text-blue-400',
-      bgColor: hasPosition ? 'bg-blue-500/15 border border-blue-500/30' : '',
+      textColor: 'text-sky-400',
+      bgColor: hasPosition ? 'bg-gradient-to-r from-sky-500/20 to-sky-500/10 border border-sky-500/30' : '',
       icon: null, // No icon for zero movement
       glow: '',
     };
@@ -388,7 +388,7 @@ const RankingsDisplay = memo(({
     };
     
     return (
-      <div className={`flex items-center justify-center gap-0.5 h-6 px-1.5 rounded ${styles.bgColor} ${styles.glow}`}>
+      <div className={`flex items-center justify-center gap-0.5 h-7 px-2 rounded-lg ${styles.bgColor} ${styles.glow} transition-all duration-200`}>
         {styles.icon && (
           <div className={`flex items-center ${styles.textColor}`}>
             {styles.icon}
@@ -397,12 +397,12 @@ const RankingsDisplay = memo(({
         <span className={`text-[10px] font-semibold ${styles.textColor}`}>
           {formatMovement(effectiveMovement)}
         </span>
-        <span className={`text-xs font-semibold ${styles.textColor}`}>
+        <span className={`text-xs font-bold ${styles.textColor}`}>
           #{pos}
         </span>
         {prevDelta !== 0 && !isBaselineReport && (
           <span
-            className="text-[8px] text-muted-foreground/80"
+            className="text-[8px] text-muted-foreground/70 ml-0.5"
             title="Change vs previous report"
           >
             p{prevDelta > 0 ? `+${prevDelta}` : prevDelta}
@@ -601,22 +601,23 @@ export const BronKeywordCard = memo(({
   
   return (
     <div
-      className={`${deleted ? 'opacity-50' : ''} no-theme-transition`}
+      className={`${deleted ? 'opacity-50' : ''} no-theme-transition group/card`}
       style={{ contain: 'layout style paint' }}
       data-no-theme-transition
     >
       <div 
         className={`
-          rounded-lg border overflow-hidden no-theme-transition
+          rounded-xl border overflow-hidden no-theme-transition
+          backdrop-blur-sm
           ${isNested 
-            ? 'bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10'
+            ? 'bg-gradient-to-r from-cyan-500/[0.08] via-cyan-500/[0.04] to-cyan-500/[0.08] border-cyan-500/25 hover:border-cyan-400/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.12)]'
             : isTrackingOnly 
-              ? 'bg-muted/30 border-muted-foreground/20'
+              ? 'bg-muted/20 border-muted-foreground/15 hover:bg-muted/30'
               : isMainKeyword
-                ? 'bg-gradient-to-r from-cyan-500/10 via-violet-500/10 to-cyan-500/10 border-cyan-500/30 hover:from-cyan-500/15 hover:via-violet-500/15 hover:to-cyan-500/15 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                : 'bg-card/80 border-border/40 hover:bg-card'
+                ? 'bg-gradient-to-r from-cyan-500/[0.12] via-violet-500/[0.08] to-primary/[0.12] border-cyan-500/35 hover:border-cyan-400/50 shadow-[0_0_25px_rgba(6,182,212,0.15),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_0_35px_rgba(6,182,212,0.25)]'
+                : 'bg-gradient-to-r from-background/80 via-card/60 to-background/80 border-border/30 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.08)]'
           }
-          transition-colors duration-150
+          transition-all duration-300 ease-out
         `}
         style={{ contain: 'layout style' }}
       >
@@ -641,7 +642,7 @@ export const BronKeywordCard = memo(({
                       e.stopPropagation();
                       onOpenAnalysis(kw);
                     }}
-                    className="w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-violet-500/30 to-cyan-500/30 text-violet-400 hover:from-violet-500/40 hover:to-cyan-500/40 border border-violet-500/40 transition-all shadow-[0_0_10px_rgba(139,92,246,0.2)]"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-violet-500/30 via-primary/20 to-cyan-500/30 text-violet-400 hover:from-violet-500/45 hover:via-primary/30 hover:to-cyan-500/45 border border-violet-500/40 hover:border-violet-400/60 transition-all duration-300 shadow-[0_0_15px_rgba(139,92,246,0.25)] hover:shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:scale-105"
                     title="View Keyword Analysis"
                   >
                     <BarChart3 className="w-5 h-5" />
