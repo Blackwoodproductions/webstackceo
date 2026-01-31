@@ -611,11 +611,11 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
 
 
 
-      {/* Row 1: Website Crawl + SEO Vault (larger) + Live Activity */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+      {/* Row 1: Website Crawl + SEO Vault + Live Activity - even spacing */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        {/* Website Crawl Card - 2 columns */}
-        <div className="md:col-span-2">
+        {/* Website Crawl Card */}
+        <div className="md:col-span-1">
           <SectionCard title="Website Crawl" accentColor="orange" className="h-full">
             <div className="space-y-4 flex flex-col h-full">
               {/* AI Animation Section - Top */}
@@ -710,8 +710,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
           </SectionCard>
         </div>
 
-        {/* SEO Vault Card - 2 columns */}
-        <div className="md:col-span-2">
+        {/* SEO Vault Card */}
+        <div className="md:col-span-1">
           <SectionCard title="SEO Vault" accentColor="emerald" className="h-full">
             <CADEVaultIntegration 
               domain={domain}
@@ -724,8 +724,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
           </SectionCard>
         </div>
 
-        {/* Live Activity Mini Dashboard - 2 columns */}
-        <div className="md:col-span-2">
+        {/* Live Activity Mini Dashboard */}
+        <div className="md:col-span-1">
           <SectionCard title="Live Activity" accentColor="violet" className="h-full">
             <div className="space-y-4">
               {/* Dials Row */}
