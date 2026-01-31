@@ -2040,6 +2040,9 @@ const MarketingDashboard = () => {
                 setSelectedDomainKey(value);
                 const hasTracking = trackedDomains.includes(value) && !userAddedDomains.includes(value);
                 setGscDomainHasTracking(hasTracking);
+                
+                // Dispatch domain-selected event for AI chat and other listeners to sync in real-time
+                window.dispatchEvent(new CustomEvent('domain-selected', { detail: { domain: value } }));
               }}
               onAddDomain={() => setAddDomainDialogOpen(true)}
               isLoading={isLoadingUserDomains}
