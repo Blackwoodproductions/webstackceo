@@ -4,6 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   MessageCircle, Send, X, Minimize2, Maximize2, User, Clock, Bell
 } from 'lucide-react';
@@ -71,13 +78,17 @@ interface OpenChat {
   hasUnread: boolean;
 }
 
+type OperatorStatus = 'online' | 'busy' | 'away' | 'offline';
+
 interface FloatingChatBarProps {
   isOnline: boolean;
   selectedChatId?: string | null;
   onChatClose?: () => void;
+  operatorStatus?: OperatorStatus;
+  onOperatorStatusChange?: (status: OperatorStatus) => void;
 }
 
-const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChatBarProps) => {
+const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose, operatorStatus = 'online', onOperatorStatusChange }: FloatingChatBarProps) => {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [openChats, setOpenChats] = useState<OpenChat[]>([]);
   const [newMessages, setNewMessages] = useState<Record<string, string>>({});
@@ -311,6 +322,43 @@ const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChat
 
   return (
     <div className="fixed bottom-0 right-0 z-50 flex items-end gap-3 p-4">
+      {/* Operator Status Selector - Always visible when online */}
+      {onOperatorStatusChange && (
+        <div className="mb-2 mr-2">
+          <Select value={operatorStatus} onValueChange={(v) => onOperatorStatusChange(v as OperatorStatus)}>
+            <SelectTrigger className="h-8 w-[110px] text-xs bg-card border-border shadow-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-[60]">
+              <SelectItem value="online">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Online
+                </div>
+              </SelectItem>
+              <SelectItem value="busy">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  Busy
+                </div>
+              </SelectItem>
+              <SelectItem value="away">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                  Away
+                </div>
+              </SelectItem>
+              <SelectItem value="offline">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-gray-500" />
+                  Offline
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       {/* Always show status indicator when online */}
       {openChats.length === 0 && pendingCount === 0 && (
         <motion.div
@@ -318,7 +366,7 @@ const FloatingChatBar = ({ isOnline, selectedChatId, onChatClose }: FloatingChat
           animate={{ scale: 1 }}
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border shadow-lg"
         >
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <div className={`w-2 h-2 rounded-full ${operatorStatus === 'online' ? 'bg-green-500' : operatorStatus === 'busy' ? 'bg-amber-500' : operatorStatus === 'away' ? 'bg-yellow-500' : 'bg-gray-500'} animate-pulse`} />
           <span className="text-sm text-muted-foreground">Chat ready</span>
           <MessageCircle className="w-4 h-4 text-muted-foreground" />
         </motion.div>
