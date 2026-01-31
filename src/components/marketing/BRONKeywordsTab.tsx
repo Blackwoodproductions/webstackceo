@@ -48,6 +48,7 @@ import {
   BronClusterCard,
   BronClusterVisualization,
   BronKeywordAnalysisDialog,
+  getKeywordPageUrl,
 } from "./bron";
 
 interface BRONKeywordsTabProps {
@@ -147,7 +148,8 @@ export const BRONKeywordsTab = memo(({
   // State
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [expandedIds, setExpandedIds] = useState<Set<number | string>>(new Set());
+  // Accordion behavior: only one expanded keyword at a time
+  const [expandedId, setExpandedId] = useState<number | string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newKeyword, setNewKeyword] = useState("");
   const [inlineEditForms, setInlineEditForms] = useState<Record<string | number, Record<string, string>>>({});
@@ -265,11 +267,11 @@ export const BRONKeywordsTab = memo(({
 
   // Keep latest Set/object state in refs so callbacks can stay stable (prevents
   // stale-closure bugs that can cause a one-frame "glitch" during expand).
-  const expandedIdsRef = useRef(expandedIds);
+  const expandedIdRef = useRef<number | string | null>(expandedId);
   const inlineEditFormsRef = useRef(inlineEditForms);
   useEffect(() => {
-    expandedIdsRef.current = expandedIds;
-  }, [expandedIds]);
+    expandedIdRef.current = expandedId;
+  }, [expandedId]);
   useEffect(() => {
     inlineEditFormsRef.current = inlineEditForms;
   }, [inlineEditForms]);
@@ -480,6 +482,8 @@ export const BRONKeywordsTab = memo(({
       fetchedUrlsRef.current = new Set();
       // Clear cluster cache on domain change to force fresh computation
       clusterCacheRef.current = null;
+      // Prevent stale expanded state flashes during domain switching
+      setExpandedId(null);
     }
   }, [isDomainChanging]);
 
@@ -695,13 +699,8 @@ export const BRONKeywordsTab = memo(({
     
     // Collect URLs from all keywords including supporting keywords nested in parents
     const collectUrls = (kw: BronKeyword) => {
-      if (kw.status === 'tracking_only' || String(kw.id).startsWith('serp_')) return;
-      
-      let url = kw.linkouturl;
-      if (!url) {
-        const slug = getKeywordDisplayText(kw).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        url = `https://${selectedDomain}/${slug}`;
-      }
+      const url = getKeywordPageUrl(kw, selectedDomain);
+      if (!url) return;
       
       if (!url || fetchedUrlsRef.current.has(url)) return;
       
@@ -815,7 +814,7 @@ export const BRONKeywordsTab = memo(({
   // Callbacks - Accordion behavior: only one keyword expanded at a time
   const handleToggleExpand = useCallback((kw: BronKeyword) => {
     const id = kw.id;
-    const isCurrentlyExpanded = expandedIdsRef.current.has(id);
+    const isCurrentlyExpanded = String(expandedIdRef.current) === String(id);
 
     if (!isCurrentlyExpanded) {
       // Expanding: close all others, set form data, then expand this one
@@ -824,11 +823,11 @@ export const BRONKeywordsTab = memo(({
         const newForm = buildInitialInlineForm(kw);
         setInlineEditForms((p) => ({ ...p, [id]: newForm }));
       }
-      // Accordion: replace expanded set with only this ID
-      setExpandedIds(new Set([id]));
+      // Accordion: expand only this ID
+      setExpandedId(id);
     } else {
-      // Collapsing: remove from expanded set
-      setExpandedIds(new Set());
+      // Collapsing
+      setExpandedId(null);
     }
   }, [buildInitialInlineForm]);
 
@@ -1064,7 +1063,7 @@ export const BRONKeywordsTab = memo(({
                     linksIn={linksIn}
                     linksOut={linksOut}
                     selectedDomain={selectedDomain}
-                    expandedIds={expandedIds}
+                    expandedId={expandedId}
                     initialPositions={initialPositions}
                     metricsLoadingKeys={metricsLoadingKeys}
                     inlineEditForms={inlineEditForms}
