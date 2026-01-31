@@ -51,18 +51,12 @@ InfoCard.displayName = 'InfoCard';
  * Pre-configured info cards for the BRON keywords tab header
  */
 export const BronKeywordsInfoCards = memo(() => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+  <div className="grid grid-cols-2 gap-4 mb-2">
     <InfoCard
       icon={BarChart3}
       title="Keyword Content"
       description="Manage your target keywords and edit content to optimize search visibility."
       color="cyan"
-    />
-    <InfoCard
-      icon={Link2}
-      title="Citation Links"
-      description="Build quality backlinks and manage citations to boost your site's authority."
-      color="violet"
     />
     <InfoCard
       icon={TrendingUp}
