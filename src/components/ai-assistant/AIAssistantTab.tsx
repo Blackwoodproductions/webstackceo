@@ -197,6 +197,14 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     clearCurrentConversation,
   } = useAIAssistant();
 
+  // Dispatch event when panel opens/closes so dashboard can adjust layout
+  useEffect(() => {
+    const width = isOpen ? (isExpanded ? 600 : 380) : 0;
+    window.dispatchEvent(new CustomEvent('ai-assistant-state', { 
+      detail: { isOpen, width } 
+    }));
+  }, [isOpen, isExpanded]);
+
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -439,14 +447,14 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
         )}
       </AnimatePresence>
 
-      {/* Backdrop */}
+      {/* Backdrop - only on mobile since desktop pushes content */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 z-40 md:hidden"
+            className="fixed inset-0 bg-black/20 z-40 lg:hidden"
             onClick={() => setIsOpen(false)}
           />
         )}

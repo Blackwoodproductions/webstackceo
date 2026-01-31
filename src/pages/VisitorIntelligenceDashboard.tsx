@@ -286,6 +286,20 @@ const MarketingDashboard = () => {
   const [formTests, setFormTests] = useState<{ id: string; form_name: string; status: string; tested_at: string; response_time_ms: number | null; error_message: string | null }[]>([]);
   const [testingForm, setTestingForm] = useState<string | null>(null);
   
+  // AI Assistant panel width for layout push effect
+  const [aiAssistantWidth, setAiAssistantWidth] = useState(0);
+  
+  // Listen for AI Assistant panel open/close
+  useEffect(() => {
+    const handleAIAssistantState = (e: CustomEvent<{ isOpen: boolean; width: number }>) => {
+      setAiAssistantWidth(e.detail.width);
+    };
+    
+    window.addEventListener('ai-assistant-state', handleAIAssistantState as EventListener);
+    return () => {
+      window.removeEventListener('ai-assistant-state', handleAIAssistantState as EventListener);
+    };
+  }, []);
   // Dashboard main tabs - use the exported type from VIDashboardTabs
   const validTabs: DashboardTab[] = [
     'visitor-intelligence',
@@ -1826,7 +1840,10 @@ const MarketingDashboard = () => {
   const maxFunnel = Math.max(...funnelSteps.map(s => s.count), 1);
 
   return (
-    <div className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden">
+    <div 
+      className="min-h-screen bg-background relative animate-fade-in pt-16 px-6 md:px-10 lg:px-16 overflow-hidden transition-[margin] duration-300 ease-out"
+      style={{ marginLeft: aiAssistantWidth > 0 ? `${aiAssistantWidth}px` : 0 }}
+    >
       <SEO 
         title="Visitor Intelligence Dashboard | Webstack.ceo"
         description="Real-time visitor intelligence and analytics dashboard"
