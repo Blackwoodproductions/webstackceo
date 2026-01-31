@@ -2012,7 +2012,7 @@ const MarketingDashboard = () => {
         
         {/* Row 2: Domain Selector - Integrated into header */}
         <div
-          className="relative z-[120] px-8 py-2 flex items-center justify-between border-t border-border/30 bg-background/30"
+          className="relative z-[200] px-8 py-2 flex items-center justify-between border-t border-border/50 bg-card/90 backdrop-blur-xl shadow-sm"
         >
           {/* Left: Domain Selector & Time Range */}
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -2080,7 +2080,7 @@ const MarketingDashboard = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => generateAPIDocs()}
-                className="h-7 gap-1.5 text-xs"
+                className="h-7 gap-1.5 text-xs bg-background/70 hover:bg-background"
                 title="Download API Documentation PDF"
               >
                 <Download className="w-3.5 h-3.5" />
