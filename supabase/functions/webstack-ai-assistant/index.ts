@@ -412,7 +412,7 @@ const SEO_TOOLS = [
           },
           report_type: {
             type: "string",
-            enum: ["keyword_research", "competitor_analysis", "backlink_report", "audit", "content_plan", "action_items", "research"],
+            enum: ["keyword_research", "competitor_analysis", "backlink_report", "serp_analysis", "audit", "content_plan", "action_items", "research", "topic_cluster", "monthly_seo_report"],
             description: "Type of report being saved"
           },
           content: {
