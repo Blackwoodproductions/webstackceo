@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive, FileText, Star, RefreshCw, Loader2, Sparkles, 
-  ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2
+  ChevronRight, ExternalLink, Play, Tag, Calendar, Target, Trash2, Wand2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -228,22 +228,51 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
             </p>
           </div>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={fetchVaultItems}
-                disabled={isLoading}
-                className="h-8 w-8"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Refresh vault</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-2">
+          {/* Generate Ideas Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    const aiGenerateCadeIdeas = (window as any).aiGenerateCadeIdeas;
+                    if (aiGenerateCadeIdeas) {
+                      aiGenerateCadeIdeas();
+                      window.dispatchEvent(new CustomEvent('open-ai-assistant'));
+                    } else {
+                      toast.info('Open the AI Assistant to generate content ideas');
+                      window.dispatchEvent(new CustomEvent('open-ai-assistant'));
+                    }
+                  }}
+                  className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10"
+                >
+                  <Wand2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Generate ideas with AI</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {/* Refresh Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={fetchVaultItems}
+                  disabled={isLoading}
+                  className="h-8 w-8"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh vault</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Vault Items List */}
@@ -258,9 +287,29 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
               <Archive className="w-8 h-8 text-amber-400/50" />
             </div>
             <p className="text-sm text-muted-foreground mb-2">No saved plans yet</p>
-            <p className="text-xs text-muted-foreground/70 max-w-[200px]">
+            <p className="text-xs text-muted-foreground/70 max-w-[200px] mb-4">
               Use the AI Assistant to create keyword research and content plans, then save them to the vault
             </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                // Trigger AI to generate content ideas
+                const aiGenerateCadeIdeas = (window as any).aiGenerateCadeIdeas;
+                if (aiGenerateCadeIdeas) {
+                  aiGenerateCadeIdeas();
+                  // Open AI assistant panel
+                  window.dispatchEvent(new CustomEvent('open-ai-assistant'));
+                } else {
+                  toast.info('Open the AI Assistant to generate content ideas');
+                  window.dispatchEvent(new CustomEvent('open-ai-assistant'));
+                }
+              }}
+              className="gap-2 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+            >
+              <Wand2 className="w-4 h-4" />
+              Generate Ideas with AI
+            </Button>
           </div>
         ) : (
           <div className="space-y-2 pr-2">
