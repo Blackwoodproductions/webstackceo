@@ -1209,63 +1209,93 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                         <p className="text-xs text-muted-foreground mb-3 max-w-[240px] relative z-10">
                           Keyword research, competitor analysis, or SEO troubleshooting.
                         </p>
-                        <div className="grid gap-2 w-full max-w-[300px] relative z-10">
+                        {/* Run All Reports Button */}
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 }}
+                          className="w-full max-w-[300px] relative z-10 mb-3"
+                        >
+                          <Button
+                            className="w-full h-10 text-sm font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:via-orange-400 hover:to-rose-400 text-white shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all"
+                            onClick={() => {
+                              sendMessage("Run all 4 SEO reports for my domain: keyword research, competitor analysis, SERP rankings, and backlink opportunities. Save each report to my SEO vault.");
+                            }}
+                            disabled={isLoading || isStreaming}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Run All 4 Reports & Save to Vault
+                          </Button>
+                          <p className="text-[10px] text-muted-foreground text-center mt-1">~8 min • Complete SEO analysis</p>
+                        </motion.div>
+
+                        <div className="grid gap-1.5 w-full max-w-[300px] relative z-10">
                           {[
-                            { text: "🔍 Research keywords", full: "Research keywords for my domain", cost: 2, discount: 0 },
-                            { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy", cost: 3, discount: 25 },
-                            { text: "🚀 Improve rankings", full: "How can I improve my search rankings?", cost: 2, discount: 0 },
-                            { text: "🔗 Find backlinks", full: "Find backlink partner opportunities for my site", cost: 4, discount: 50 },
+                            { text: "🔍 Keyword Research", full: "Research keywords for my domain and save to vault", cost: 2 },
+                            { text: "📊 Competitor Analysis", full: "Analyze my competitor's SEO strategy and save to vault", cost: 3 },
+                            { text: "📈 SERP Rankings", full: "Get my SERP rankings report and save to vault", cost: 2 },
+                            { text: "🔗 Backlink Report", full: "Find backlink partner opportunities and save to vault", cost: 2 },
                           ].map((suggestion, i) => (
                             <motion.div
                               key={i}
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.05 + i * 0.05 }}
+                              transition={{ delay: 0.15 + i * 0.05 }}
                               whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
-                              className="relative"
+                              className="relative group"
                             >
-                              <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-cyan-500/20 hover:border-cyan-400/40 transition-all group">
-                                {/* Main action text */}
+                              <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-cyan-500/20 hover:border-cyan-400/40 transition-all">
                                 <div className="flex-1 min-w-0">
                                   <span className="text-xs text-foreground/90 truncate block">{suggestion.text}</span>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className={cn(
-                                      "text-[10px]",
-                                      suggestion.discount > 0 ? "line-through text-muted-foreground/50" : "text-amber-400"
-                                    )}>
-                                      ~{suggestion.cost} min
-                                    </span>
-                                    {suggestion.discount > 0 && (
-                                      <>
-                                        <span className="text-[10px] text-emerald-400 font-semibold">
-                                          ~{Math.ceil(suggestion.cost * (1 - suggestion.discount / 100))} min
-                                        </span>
-                                        <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
-                                          -{suggestion.discount}%
-                                        </span>
-                                      </>
-                                    )}
-                                  </div>
+                                  <span className="text-[10px] text-amber-400">~{suggestion.cost} min</span>
                                 </div>
-                                {/* Run button */}
                                 <Button
                                   size="sm"
-                                  className="h-7 px-3 text-[10px] font-semibold shrink-0 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all"
-                                  onClick={() => {
-                                    sendMessage(suggestion.full);
-                                  }}
+                                  className="h-6 px-2.5 text-[10px] font-semibold shrink-0 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white shadow-lg shadow-cyan-500/20"
+                                  onClick={() => sendMessage(suggestion.full)}
                                   disabled={isLoading || isStreaming}
                                 >
                                   <Sparkles className="w-3 h-3 mr-1" />
                                   Run
                                 </Button>
                               </div>
-                              {/* Accent bar on hover */}
                               <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
                             </motion.div>
                           ))}
                         </div>
+
+                        {/* More Reports Section */}
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.4 }}
+                          className="w-full max-w-[300px] mt-3 pt-3 border-t border-border/30 relative z-10"
+                        >
+                          <p className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-400" />
+                            More SEO Reports Available:
+                          </p>
+                          <div className="grid grid-cols-2 gap-1">
+                            {[
+                              { text: "🌐 Domain Audit", full: "Run a comprehensive domain audit for my site" },
+                              { text: "👁️ Visitor Intel", full: "Get visitor intelligence report for my domain" },
+                              { text: "📝 Content Ideas", full: "Generate content plan based on my keywords" },
+                              { text: "🏢 Local SEO", full: "Analyze my local SEO and GMB performance" },
+                            ].map((report, i) => (
+                              <Button
+                                key={i}
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-[10px] justify-start px-2 hover:bg-cyan-500/10 hover:text-cyan-400"
+                                onClick={() => sendMessage(report.full)}
+                                disabled={isLoading || isStreaming}
+                              >
+                                {report.text}
+                              </Button>
+                            ))}
+                          </div>
+                        </motion.div>
                         
                         {/* Credit/Usage Info - Compact */}
                         {usage && (
