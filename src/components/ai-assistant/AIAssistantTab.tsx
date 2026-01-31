@@ -1,6 +1,6 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio, Archive, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -617,6 +617,33 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                {/* SEO Vault Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        // TODO: Open SEO Vault panel/modal
+                        console.log('Open SEO Vault');
+                      }}
+                      className="relative hover:bg-amber-500/10 group"
+                    >
+                      <div className="relative">
+                        <Archive className="w-4 h-4 text-amber-500 group-hover:text-amber-400 transition-colors" />
+                        <Lock className="w-2 h-2 absolute -bottom-0.5 -right-0.5 text-amber-600" />
+                      </div>
+                      {/* Glow effect on hover */}
+                      <div className="absolute inset-0 rounded-md bg-amber-500/10 opacity-0 group-hover:opacity-100 blur-sm transition-opacity" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-center">
+                      <p className="font-semibold">SEO Vault</p>
+                      <p className="text-xs text-muted-foreground">Saved reports & plans</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
