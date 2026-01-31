@@ -80,8 +80,10 @@ const getCachedSubscription = (targetDomain: string): BronSubscription | null =>
     const entry = parsed[targetDomain];
     if (!entry) return null;
     
-    // Use different cache durations based on subscription status
-    const maxAge = entry.subscription.has_cade ? CACHE_MAX_AGE_CONFIRMED : CACHE_MAX_AGE_FREE;
+    // Use different cache durations based on subscription level
+    // cade_level > 0 means subscribed, use 24hr cache; level 0 means no subscription, use 2min cache
+    const hasCade = (entry.subscription.cade_level ?? 0) > 0;
+    const maxAge = hasCade ? CACHE_MAX_AGE_CONFIRMED : CACHE_MAX_AGE_FREE;
     if (Date.now() - entry.cachedAt > maxAge) return null;
     
     return entry.subscription;
@@ -200,12 +202,13 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [faqPaused, setFaqPaused] = useState(false);
   
-  // Account info
+  // Account info with CADE level
   const [account, setAccount] = useState({
     serviceType: "SEOM 60",
     userName: "",
     email: "",
     authenticated: true,
+    cadeLevel: 0, // 0=none, 1=Starter, 2=Basic, 3=Standard, 4=Pro, 5=Premium, 6=Enterprise, 7=Agency, 8=White Label
   });
 
   // Domain context hook
@@ -249,16 +252,19 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
       return false;
     }
 
-    // Admin bypass - admins can access CADE for any domain
+    // Admin bypass - admins can access CADE for any domain with full access
     if (isAdmin) {
+      console.log("[CADE] Admin bypass - granting full access for", domain);
       setHasCadeSubscription(true);
       setSubscriptionCheckedOnce(true);
       onSubscriptionChange?.(true);
       setAccount(prev => ({
         ...prev,
-        serviceType: "Admin Access",
+        serviceType: "Admin Access (Level 8)",
+        cadeLevel: 8,
       }));
       setIsCheckingSubscription(false);
+      setIsLoading(false);
       return true;
     }
 
@@ -273,15 +279,20 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
 
     // Check cache first (no API call needed if cached)
     const cachedSub = getCachedSubscription(domain);
-    if (cachedSub?.has_cade === true && !forceRefresh) {
+    const cachedCadeLevel = cachedSub?.cade_level ?? 0;
+    
+    if (cachedCadeLevel > 0 && !forceRefresh) {
+      console.log(`[CADE] Using cached subscription for ${domain}: cade_level=${cachedCadeLevel}`);
       setHasCadeSubscription(true);
       setSubscriptionCheckedOnce(true);
       onSubscriptionChange?.(true);
       setAccount(prev => ({
         ...prev,
-        serviceType: cachedSub.plan || cachedSub.servicetype || "CADE",
+        serviceType: cachedSub?.plan || cachedSub?.servicetype || `CADE Level ${cachedCadeLevel}`,
+        cadeLevel: cachedCadeLevel,
       }));
       setIsCheckingSubscription(false);
+      setIsLoading(false);
       // No background refresh for confirmed subscriptions - reduces API calls
       return true;
     }
@@ -289,32 +300,43 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
     // For non-subscribers or forced refresh, check the API
     try {
       const subData = await fetchSubscription(domain);
-      if (subData?.has_cade === true) {
-        setCachedSubscription(domain, subData);
+      const cadeLevel = subData?.cade_level ?? 0;
+      const hasCade = cadeLevel > 0;
+      
+      console.log(`[CADE] Subscription check for ${domain}: cade_level=${cadeLevel}, has_cade=${hasCade}`);
+      
+      if (hasCade) {
+        setCachedSubscription(domain, subData!);
         setHasCadeSubscription(true);
         setSubscriptionCheckedOnce(true);
         onSubscriptionChange?.(true);
         setAccount(prev => ({
           ...prev,
-          serviceType: subData.plan || subData.servicetype || "CADE",
+          serviceType: subData?.plan || subData?.servicetype || `CADE Level ${cadeLevel}`,
+          cadeLevel,
         }));
         setIsCheckingSubscription(false);
+        setIsLoading(false);
         return true;
       }
 
-      // No CADE subscription - cache it briefly
+      // No CADE subscription (level 0) - cache it briefly
       if (subData) {
         setCachedSubscription(domain, subData);
       }
       setHasCadeSubscription(false);
       setSubscriptionCheckedOnce(true);
       onSubscriptionChange?.(false);
+      setAccount(prev => ({ ...prev, cadeLevel: 0 }));
       setIsCheckingSubscription(false);
+      setIsLoading(false);
       return false;
-    } catch {
+    } catch (err) {
+      console.error("[CADE] Subscription check error:", err);
       setHasCadeSubscription(false);
       onSubscriptionChange?.(false);
       setIsCheckingSubscription(false);
+      setIsLoading(false);
       return false;
     }
   }, [domain, fetchSubscription, onSubscriptionChange, subscriptionCheckedOnce, hasCadeSubscription, isAdmin]);
