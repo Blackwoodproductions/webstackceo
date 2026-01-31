@@ -669,6 +669,7 @@ Remember: Users expect help even when APIs have issues. Be the expert!` },
                 model: selectedModel,
                 messages: messagesWithTools,
                 stream: true,
+                max_tokens: 8192, // Increase output limit to prevent truncation
               }),
             });
             
@@ -722,6 +723,7 @@ Remember: Users expect help even when APIs have issues. Be the expert!` },
           ...messages,
         ],
         stream: true,
+        max_tokens: 8192, // Increase output limit to prevent truncation
       }),
     });
 

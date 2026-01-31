@@ -1404,6 +1404,41 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                   </div>
                 )}
 
+                {/* Prominent SEO Vault Panel - Above Input */}
+                {vaultItems.length > 0 && !showVault && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mx-4 mb-2 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 border border-amber-500/30 shadow-lg shadow-amber-500/5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/20 flex items-center justify-center border border-amber-500/40 shrink-0">
+                        <Archive className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-sm text-foreground">SEO Vault</h4>
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-[10px] px-1.5">
+                            {vaultItems.length} saved
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {vaultItems[0]?.title || 'Your saved research & reports'}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowVault(true)}
+                        className="shrink-0 h-8 px-3 border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        View All
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Enhanced Input with Voice */}
                 <form onSubmit={handleSubmit} className="p-4 border-t border-border/30 bg-gradient-to-r from-transparent via-muted/20 to-transparent">
                   {/* Voice indicator */}
