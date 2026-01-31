@@ -217,7 +217,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   };
 
   const handleDomainSelect = (domain: string) => {
-    setSelectedDomain(domain);
+    setSelectedDomain(domain === '__none__' ? null : domain);
   };
 
   if (!user) return null;
@@ -338,7 +338,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Domain Selector */}
                 <div className="p-3 border-b border-border/50">
-                  <Select value={selectedDomain || ''} onValueChange={handleDomainSelect}>
+                  <Select value={selectedDomain || '__none__'} onValueChange={handleDomainSelect}>
                     <SelectTrigger className="w-full">
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-muted-foreground" />
@@ -346,7 +346,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific domain</SelectItem>
+                      <SelectItem value="__none__">No specific domain</SelectItem>
                       {domains.map(d => (
                         <SelectItem key={d.id} value={d.domain}>
                           {d.domain}
