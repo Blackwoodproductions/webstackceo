@@ -2076,17 +2076,18 @@ const MarketingDashboard = () => {
                   )
                 );
                 
-                return userOwnedDomains
-                  .map(d => {
-                    const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
-                    const isInGsc = gscDomainSet.has(normalized);
-                    return {
-                      ...d,
-                      normalized,
-                      isDemo: !isInGsc && d.source !== 'gsc'
-                    };
-                  })
-                  .filter(d => isSuperAdmin || !d.isDemo);
+                // All user-owned domains should be shown - they belong to this user
+                // Only mark as demo if it's a demo source (not gsc, gmb, or manual)
+                return userOwnedDomains.map(d => {
+                  const normalized = d.domain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+                  const isInGsc = gscDomainSet.has(normalized);
+                  return {
+                    ...d,
+                    normalized,
+                    // Only demo if source is explicitly 'demo', not for manual adds
+                    isDemo: d.source === 'demo'
+                  };
+                });
               })()}
               selectedDomain={selectedTrackedDomain ? selectedTrackedDomain.toLowerCase().trim().replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0] : ''}
               onSelectDomain={(value) => {
