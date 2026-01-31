@@ -206,7 +206,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
     >
       <div
         className={`relative flex items-center ${
-          isCompact ? 'gap-1' : 'gap-2'
+          isCompact ? 'gap-1.5' : 'gap-2'
         } overflow-x-auto`}
         style={{
           WebkitOverflowScrolling: 'touch',
@@ -229,8 +229,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               onMouseLeave={() => setHoveredTab(null)}
               initial={false}
               animate={{
-                scale: isActive ? 1 : isHovered ? 1.02 : 1,
-                y: isActive ? 0 : isHovered ? -2 : 0,
+                scale: isActive ? 1.02 : isHovered ? 1.05 : 1,
+                y: isActive ? -1 : isHovered ? -3 : 0,
               }}
               transition={{
                 type: 'spring',
@@ -243,12 +243,12 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               }}
               className={`group relative flex flex-row items-center justify-center ${
                 isCompact 
-                  ? 'min-w-[70px] py-1.5 px-3 gap-1.5' 
-                  : 'min-w-[90px] py-2 px-4 gap-2'
-              } rounded-lg backdrop-blur-xl transition-all duration-300 ${
+                  ? 'min-w-[85px] py-2 px-4 gap-2' 
+                  : 'min-w-[110px] py-2.5 px-5 gap-2.5'
+              } rounded-xl backdrop-blur-xl transition-all duration-300 ${
                 isActive 
-                  ? `${color.border} ${color.bg} shadow-lg border` 
-                  : `border border-transparent hover:bg-white/[0.05] hover:border-white/10`
+                  ? `${color.border} ${color.bg} shadow-xl border-2` 
+                  : `border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20`
               }`}
               title={isHighlighted ? `${tab.label} (Premium AI)` : tab.isPaid ? `${tab.label} (Premium)` : tab.label}
             >
@@ -260,20 +260,23 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute inset-0 rounded-lg overflow-hidden"
+                    className="absolute inset-0 rounded-xl overflow-hidden"
                     style={{
                       boxShadow: isActive 
-                        ? `0 0 20px -5px rgba(${color.rgb}, 0.4), inset 0 1px 0 rgba(${color.rgb}, 0.2)`
-                        : `0 0 10px -5px rgba(${color.rgb}, 0.2)`,
+                        ? `0 0 30px -5px rgba(${color.rgb}, 0.6), 0 0 60px -10px rgba(${color.rgb}, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)`
+                        : `0 0 20px -8px rgba(${color.rgb}, 0.4)`,
                     }}
                   >
                     {/* Gradient overlay */}
                     <div className={`absolute inset-0 bg-gradient-to-b ${color.gradient}`} />
                     
+                    {/* Brilliant shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
                     {/* Scanning line effect for active tab */}
                     {isActive && (
                       <motion.div
-                        className="absolute inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent"
                         initial={{ top: '100%' }}
                         animate={{ top: ['100%', '0%'] }}
                         transition={{
@@ -290,23 +293,23 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               {/* Icon container with glow */}
               <motion.div
                 animate={{
-                  scale: isActive ? 1.1 : 1,
+                  scale: isActive ? 1.15 : 1,
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 className={`relative z-10 flex items-center justify-center ${
-                  isCompact ? 'w-5 h-5' : 'w-6 h-6'
-                } rounded transition-all duration-300 ${
+                  isCompact ? 'w-6 h-6' : 'w-7 h-7'
+                } rounded-lg transition-all duration-300 ${
                   isActive 
                     ? color.iconBg 
-                    : 'bg-white/5 group-hover:bg-white/10'
+                    : 'bg-white/5 group-hover:bg-white/15'
                 }`}
                 style={{
                   boxShadow: isActive 
-                    ? `0 0 20px rgba(${color.rgb}, 0.3)` 
-                    : 'none',
+                    ? `0 0 25px rgba(${color.rgb}, 0.5), 0 0 10px rgba(${color.rgb}, 0.3)` 
+                    : isHovered ? `0 0 15px rgba(${color.rgb}, 0.2)` : 'none',
                 }}
               >
-                <Icon className={`${isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} transition-colors duration-300 ${
+                <Icon className={`${isCompact ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-colors duration-300 ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`} />
               </motion.div>
@@ -314,8 +317,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               {/* Label with elegant typography */}
               <motion.span 
                 className={`relative z-10 ${
-                  isCompact ? 'text-[10px]' : 'text-xs'
-                } font-medium tracking-wide transition-colors duration-300 whitespace-nowrap ${
+                  isCompact ? 'text-[11px]' : 'text-sm'
+                } font-semibold tracking-wide transition-colors duration-300 whitespace-nowrap ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`}
               >
@@ -326,21 +329,27 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               {isActive && (
                 <motion.span
                   layoutId="activeTabIndicator"
-                  className="absolute inset-0 rounded-lg border border-current opacity-20"
-                  style={{ borderColor: `rgba(${color.rgb}, 0.5)` }}
+                  className="absolute inset-0 rounded-xl border-2 border-current opacity-30"
+                  style={{ borderColor: `rgba(${color.rgb}, 0.6)` }}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
 
-              {/* Subtle border glow on hover */}
+              {/* Brilliant shine overlay on hover */}
               <div 
-                className={`absolute inset-0 rounded-lg transition-opacity duration-300 pointer-events-none ${
+                className={`absolute inset-0 rounded-xl transition-all duration-500 pointer-events-none overflow-hidden ${
                   isHovered && !isActive ? 'opacity-100' : 'opacity-0'
                 }`}
-                style={{
-                  boxShadow: `inset 0 0 0 1px rgba(${color.rgb}, 0.2)`,
-                }}
-              />
+              >
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, transparent 40%, rgba(${color.rgb}, 0.15) 50%, transparent 60%)`,
+                    backgroundSize: '200% 200%',
+                    animation: isHovered ? 'shimmer 1.5s ease-in-out infinite' : 'none',
+                  }}
+                />
+              </div>
             </motion.button>
           );
         })}
