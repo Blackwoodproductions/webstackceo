@@ -62,17 +62,75 @@ const VoiceWaveform = memo(function VoiceWaveform({ isActive }: { isActive: bool
   );
 });
 
+// AI Thinking Animation
+const AIThinkingIndicator = memo(function AIThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5">
+      {/* AI Avatar with pulse */}
+      <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg bg-gradient-to-br from-violet-500 via-cyan-500 to-violet-600 shadow-cyan-500/20">
+        <Brain className="w-4 h-4 text-white animate-pulse" />
+        {/* Thinking rings */}
+        <div className="absolute inset-0 rounded-xl border border-cyan-400/50 animate-ping" style={{ animationDuration: '1.5s' }} />
+        <div className="absolute -inset-1 rounded-xl border border-violet-400/30 animate-pulse" />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-semibold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">
+          Webstack AI
+        </span>
+        
+        {/* Thinking animation */}
+        <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-1">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-muted-foreground animate-pulse">Analyzing...</span>
+        </div>
+        
+        {/* Scanning line effect */}
+        <div className="relative mt-2 h-1 w-32 bg-muted/30 rounded-full overflow-hidden">
+          <motion.div
+            className="absolute h-full w-8 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+            animate={{ x: [-32, 160] }}
+            transition={{
+              duration: 1.2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+
 // Message component
 const ChatMessage = memo(function ChatMessage({ 
   message, 
   isStreaming,
   onSpeak,
-  isSpeaking 
+  isSpeaking,
+  userAvatar,
 }: { 
   message: AIMessage; 
   isStreaming?: boolean;
   onSpeak?: (text: string) => void;
   isSpeaking?: boolean;
+  userAvatar?: string | null;
 }) {
   const isUser = message.role === 'user';
   
@@ -125,13 +183,25 @@ const ChatMessage = memo(function ChatMessage({
       isUser ? "bg-gradient-to-r from-primary/5 to-transparent" : "bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5"
     )}>
       <div className={cn(
-        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105",
+        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105 overflow-hidden",
         isUser 
           ? "bg-gradient-to-br from-primary to-primary/80 shadow-primary/20" 
           : "bg-gradient-to-br from-violet-500 via-cyan-500 to-violet-600 shadow-cyan-500/20"
       )}>
         {isUser ? (
-          <span className="text-sm font-bold text-primary-foreground">U</span>
+          userAvatar ? (
+            <img 
+              src={userAvatar} 
+              alt="User" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.innerHTML = '<span class="text-sm font-bold text-primary-foreground">U</span>';
+              }}
+            />
+          ) : (
+            <span className="text-sm font-bold text-primary-foreground">U</span>
+          )
         ) : (
           <Brain className="w-4 h-4 text-white" />
         )}
@@ -247,7 +317,7 @@ const ConversationItem = memo(function ConversationItem({
 });
 
 export const AIAssistantTab = memo(function AIAssistantTab() {
-  const { user } = useAuth();
+  const { user, googleProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -691,8 +761,15 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                           isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
                           onSpeak={(text) => handleSpeak(text, msg.id)}
                           isSpeaking={isSpeaking && speakingMessageId === msg.id}
+                          userAvatar={googleProfile?.picture}
                         />
                       ))}
+                      {/* Show thinking indicator when loading but no streaming content yet */}
+                      {isLoading && !isStreaming && <AIThinkingIndicator />}
+                      {/* Show thinking indicator if streaming started but no content yet */}
+                      {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !messages[messages.length - 1].content && (
+                        <AIThinkingIndicator />
+                      )}
                       <div ref={messagesEndRef} />
                     </div>
                   )}
