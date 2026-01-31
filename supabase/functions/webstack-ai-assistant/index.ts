@@ -25,7 +25,7 @@ const SEO_TOOLS = [
     type: "function",
     function: {
       name: "get_keyword_metrics",
-      description: "Get search volume, CPC, and competition data for keywords. Use this when the user asks about keyword research, search volume, or keyword opportunities.",
+      description: "Get search volume, CPC, and competition data for specific keywords. Use this when the user provides specific keywords they want to analyze.",
       parameters: {
         type: "object",
         properties: {
@@ -36,6 +36,32 @@ const SEO_TOOLS = [
           }
         },
         required: ["keywords"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_keyword_suggestions",
+      description: "Get related keyword suggestions and ideas for a seed keyword. Use this for keyword research when the user wants to find new keyword opportunities, long-tail keywords, or expand their keyword list. Returns related keywords with search volume, CPC, competition, and keyword difficulty.",
+      parameters: {
+        type: "object",
+        properties: {
+          keyword: {
+            type: "string",
+            description: "The seed keyword to get suggestions for (e.g., 'plumber near me', 'best running shoes')"
+          },
+          depth: {
+            type: "integer",
+            description: "Search depth (1-4). Higher = more results. 1=8 keywords, 2=72 keywords, 3=584 keywords. Default is 2.",
+            enum: [1, 2, 3, 4]
+          },
+          limit: {
+            type: "integer",
+            description: "Maximum number of keywords to return (default 20, max 100)"
+          }
+        },
+        required: ["keyword"]
       }
     }
   },
@@ -329,6 +355,9 @@ async function executeToolCalls(toolCalls: any[]): Promise<any[]> {
         case "get_keyword_metrics":
           results.push(await getKeywordMetrics(parsedArgs.keywords));
           break;
+        case "get_keyword_suggestions":
+          results.push(await getKeywordSuggestions(parsedArgs.keyword, parsedArgs.depth || 2, parsedArgs.limit || 20));
+          break;
         case "get_domain_keywords":
           results.push(await getDomainKeywords(parsedArgs.domain));
           break;
@@ -408,6 +437,107 @@ async function getKeywordMetrics(keywords: string[]): Promise<any> {
   } catch (error) {
     console.error("Keyword metrics error:", error);
     return { error: "Failed to fetch keyword metrics" };
+  }
+}
+
+// Get keyword suggestions from DataForSEO Labs Related Keywords API
+async function getKeywordSuggestions(seedKeyword: string, depth: number = 2, limit: number = 20): Promise<any> {
+  const login = Deno.env.get('DATAFORSEO_LOGIN');
+  const password = Deno.env.get('DATAFORSEO_PASSWORD');
+  
+  if (!login || !password) {
+    console.log("DataForSEO not configured");
+    return {
+      error: "Keyword research service not configured",
+      message: "Please configure DataForSEO API credentials to enable keyword suggestions."
+    };
+  }
+  
+  try {
+    const auth = btoa(`${login}:${password}`);
+    console.log(`Fetching keyword suggestions for: "${seedKeyword}" with depth ${depth}`);
+    
+    const response = await fetch('https://api.dataforseo.com/v3/dataforseo_labs/google/related_keywords/live', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([{
+        keyword: seedKeyword,
+        location_code: 2840, // USA
+        language_code: "en",
+        depth: Math.min(depth, 3), // Cap at 3 to avoid too many results
+        include_seed_keyword: true,
+        limit: Math.min(limit, 100),
+        order_by: ["keyword_data.keyword_info.search_volume,desc"]
+      }]),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("DataForSEO Labs API error:", response.status, errorText);
+      throw new Error(`DataForSEO API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("DataForSEO Labs response received");
+    
+    const result = data.tasks?.[0]?.result?.[0];
+    if (!result) {
+      return { 
+        seed_keyword: seedKeyword,
+        keywords: [],
+        message: "No keyword suggestions found for this query." 
+      };
+    }
+
+    // Extract keyword suggestions with all relevant data
+    const keywords = (result.items || []).slice(0, limit).map((item: any) => {
+      const keywordData = item.keyword_data || {};
+      const keywordInfo = keywordData.keyword_info || {};
+      const keywordProps = keywordData.keyword_properties || {};
+      
+      return {
+        keyword: keywordData.keyword || '',
+        search_volume: keywordInfo.search_volume || 0,
+        cpc: keywordInfo.cpc || 0,
+        competition: keywordInfo.competition || 0,
+        competition_level: keywordInfo.competition_level || 'UNKNOWN',
+        keyword_difficulty: keywordProps.keyword_difficulty || null,
+        monthly_searches: keywordInfo.monthly_searches?.slice(0, 6) || [], // Last 6 months
+        trend: keywordInfo.search_volume_trend || null
+      };
+    });
+
+    // Get seed keyword data if available
+    let seedData = null;
+    if (result.seed_keyword_data) {
+      const seedInfo = result.seed_keyword_data.keyword_info || {};
+      const seedProps = result.seed_keyword_data.keyword_properties || {};
+      seedData = {
+        keyword: result.seed_keyword,
+        search_volume: seedInfo.search_volume || 0,
+        cpc: seedInfo.cpc || 0,
+        competition: seedInfo.competition || 0,
+        competition_level: seedInfo.competition_level || 'UNKNOWN',
+        keyword_difficulty: seedProps.keyword_difficulty || null
+      };
+    }
+
+    return {
+      seed_keyword: seedKeyword,
+      seed_keyword_data: seedData,
+      total_found: result.total_count || keywords.length,
+      keywords: keywords,
+      message: `Found ${keywords.length} related keywords for "${seedKeyword}"`
+    };
+  } catch (error) {
+    console.error("Keyword suggestions error:", error);
+    return { 
+      error: "Failed to fetch keyword suggestions",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    };
   }
 }
 
@@ -650,21 +780,37 @@ async function getUserDomainContext(supabase: any, userId: string, selectedDomai
 }
 
 function buildSystemPrompt(domainContext: any, userEmail?: string): string {
-  let prompt = `You are Webstack.ceo AI Assistant - an expert SEO consultant, keyword researcher, and website troubleshooter. You have access to real SEO data tools and can perform actual keyword research.
+  let prompt = `You are Webstack.ceo AI Assistant - an expert SEO consultant, keyword researcher, and website troubleshooter. You have access to REAL SEO data tools powered by DataForSEO and can perform actual keyword research with live data.
 
 ## Your Capabilities:
-1. **Keyword Research**: You can look up real search volume, CPC, and competition data for any keywords using the get_keyword_metrics tool
-2. **Domain Analysis**: You can check tracked keywords and SERP rankings for domains connected to the platform
-3. **Backlink Analysis**: You can retrieve backlink data for domains
-4. **Domain Onboarding**: Guide users through setting up domains, connecting Google services, and configuring SEO tools
-5. **Troubleshooting**: Diagnose website issues, SEO problems, indexation issues, and technical concerns
+
+### 1. **Keyword Research & Suggestions** (POWERED BY DATAFORSEO LABS)
+- Use **get_keyword_suggestions** to find related keywords, long-tail variations, and new opportunities from a seed keyword
+- Each suggestion includes: search volume, CPC, competition level, and keyword difficulty
+- Great for: content planning, finding low-competition opportunities, expanding keyword lists
+- Use **get_keyword_metrics** to get detailed data for specific keywords the user provides
+
+### 2. **Domain Analysis** (POWERED BY BRON SEO)
+- Check tracked keywords and SERP rankings for connected domains
+- Get backlink information (inbound and outbound links)
+- Review domain authority and traffic metrics
+
+### 3. **Domain Onboarding**
+- Guide users through setting up domains, connecting Google services
+- Help configure SEO tools and tracking
+
+### 4. **Troubleshooting**
+- Diagnose website issues, SEO problems, indexation issues
+- Provide technical recommendations
 
 ## Guidelines:
-- When users ask about keyword research, use the get_keyword_metrics tool to get real data
-- When discussing specific domains, use the appropriate tools to get actual data
-- Always be helpful, specific, and actionable
-- Format keyword data in clear tables when presenting results
-- Provide context about competition levels and opportunity
+- **ALWAYS USE TOOLS** for keyword research - never make up data
+- Use get_keyword_suggestions when users want to discover new keywords around a topic
+- Use get_keyword_metrics when users provide specific keywords they want analyzed
+- Format keyword data in clear markdown tables when presenting results
+- Include keyword difficulty, search volume, and CPC in your analysis
+- Provide actionable recommendations based on the data
+- Highlight low-competition, high-volume opportunities
 
 Current user: ${userEmail || 'Anonymous'}
 `;
