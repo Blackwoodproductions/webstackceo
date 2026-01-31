@@ -6,7 +6,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Usage limits in minutes
+// Rate limiting for security - per user per minute
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 30; // 30 requests per minute per user
+
+function checkRateLimit(userId: string): { allowed: boolean; retryAfterMs?: number } {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  
+  if (!userLimit || now > userLimit.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+  
+  if (userLimit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, retryAfterMs: userLimit.resetAt - now };
+  }
+  
+  userLimit.count++;
+  return { allowed: true };
+}
+
+// Security: Input sanitization to prevent injection attacks
+function sanitizeInput(input: string): string {
+  if (!input || typeof input !== 'string') return '';
+  // Remove potential command injection patterns
+  return input
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .slice(0, 10000); // Limit message length
+}
+
+// Usage limits in minutes - TIERED ACCESS
 const USAGE_LIMITS = {
   free: 30, // 30 minutes total free
   basic: 300, // 5 hours per week
@@ -15,6 +46,14 @@ const USAGE_LIMITS = {
   super_reseller: 2400, // 40 hours per week (unlimited practically)
   admin: -1, // Unlimited for admins (tracks but no limit)
 };
+
+// PAID-ONLY tools - these tools require at least 'basic' subscription
+const PAID_TOOL_NAMES = [
+  'get_keyword_suggestions',
+  'get_competitor_keywords',
+  'get_backlinks',
+  'get_serp_report',
+];
 
 // BRON API base URL for keyword research
 const BRON_API_BASE = "https://public4.imagehosting.space/api/rsapi";
@@ -200,7 +239,27 @@ serve(async (req) => {
       });
     }
 
-    const { messages, conversationId, domain, checkUsage, model } = await req.json();
+    // Security: Rate limiting per user
+    const rateCheck = checkRateLimit(user.id);
+    if (!rateCheck.allowed) {
+      console.warn(`[SECURITY] Rate limit exceeded for user: ${user.id}`);
+      return new Response(JSON.stringify({ 
+        error: "Too many requests. Please slow down.",
+        retryAfterMs: rateCheck.retryAfterMs,
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(Math.ceil((rateCheck.retryAfterMs || 60000) / 1000)) },
+      });
+    }
+
+    const body = await req.json();
+    const { messages: rawMessages, conversationId, domain, checkUsage, model } = body;
+    
+    // Security: Sanitize all input messages
+    const messages = Array.isArray(rawMessages) ? rawMessages.map((m: any) => ({
+      ...m,
+      content: sanitizeInput(m.content || ''),
+    })).slice(-50) : []; // Limit conversation history to prevent memory attacks
     
     // Validate and sanitize model selection - only allow approved free models
     const allowedModels = [
@@ -287,7 +346,7 @@ serve(async (req) => {
         console.log("Tool calls detected:", assistantMessage.tool_calls.length);
         
         // Execute tool calls
-        const toolResults = await executeToolCalls(assistantMessage.tool_calls, supabase, user.id);
+        const toolResults = await executeToolCalls(assistantMessage.tool_calls, supabase, user.id, tier);
         
         // Build messages with tool results
         const messagesWithTools = [
@@ -388,9 +447,10 @@ serve(async (req) => {
   }
 });
 
-// Execute SEO tool calls
-async function executeToolCalls(toolCalls: any[], supabase: any, userId: string): Promise<any[]> {
+// Execute SEO tool calls with tier-based access control
+async function executeToolCalls(toolCalls: any[], supabase: any, userId: string, userTier: string): Promise<any[]> {
   const results = [];
+  const isPaidUser = userTier !== 'free';
   
   for (const toolCall of toolCalls) {
     const { name, arguments: args } = toolCall.function;
@@ -400,6 +460,17 @@ async function executeToolCalls(toolCalls: any[], supabase: any, userId: string)
       parsedArgs = JSON.parse(args);
     } catch {
       parsedArgs = args;
+    }
+    
+    // Security: Check if tool requires paid subscription
+    if (PAID_TOOL_NAMES.includes(name) && !isPaidUser) {
+      console.log(`[SECURITY] Blocking paid tool "${name}" for free tier user: ${userId}`);
+      results.push({ 
+        error: "Upgrade required",
+        message: `The ${name.replace(/_/g, ' ')} feature requires a paid subscription. Upgrade to unlock advanced SEO tools like keyword suggestions, competitor analysis, backlinks, and SERP reports.`,
+        upgrade_url: "/pricing"
+      });
+      continue;
     }
     
     console.log(`Executing tool: ${name}`, parsedArgs);
@@ -1003,15 +1074,22 @@ function buildSystemPrompt(domainContext: any, userEmail?: string): string {
 
 ## CONVERSATION CONTROL PROTOCOL:
 
+### When User Asks for Keyword Research:
+1. **ALWAYS check the domain selector first** - if a domain is selected (shown in context below), confirm it:
+   - "I see you have **[domain]** selected. Should I research keywords for this domain, or would you like to analyze a different one?"
+2. Wait for confirmation before running any keyword tools
+3. If they confirm, proceed with analysis; if they want another domain, ask for it
+
 ### First Message from User:
 1. Greet them warmly by name if available
-2. Ask ONE focused question to understand their primary goal:
+2. If a domain is already selected, acknowledge it: "I'm focused on **[domain]** - let me know if you'd like to switch."
+3. Ask ONE focused question to understand their primary goal:
    - "What's the #1 thing you want to achieve with your website right now?"
    - Options: More traffic, better rankings, beat competitors, generate leads, increase sales
 
 ### Discovery Flow (ask one at a time):
 1. **Goal**: What's your primary objective?
-2. **Domain**: What's your website URL?
+2. **Domain**: If not selected, ask: "What's your website URL?"
 3. **Competitors**: Who are your top 2-3 competitors?
 4. **Timeline**: What's your urgency level?
 
