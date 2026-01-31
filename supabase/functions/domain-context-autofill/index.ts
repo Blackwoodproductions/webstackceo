@@ -36,39 +36,73 @@ const DOMAIN_CONTEXT_SCHEMA = {
 };
 
 async function scrapeWebsite(url: string): Promise<{ html: string; text: string } | null> {
-  try {
-    console.log(`[AutoFill] Scraping website: ${url}`);
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; WebstackCEO/1.0; +https://webstackceo.com)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
+  // Try multiple user agents and approaches
+  const userAgents = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "Mozilla/5.0 (compatible; WebstackCEO/1.0; +https://webstackceo.lovable.app)",
+  ];
 
-    if (!response.ok) {
-      console.error(`[AutoFill] Failed to fetch: ${response.status}`);
-      return null;
+  for (const userAgent of userAgents) {
+    try {
+      console.log(`[AutoFill] Scraping website: ${url} with UA: ${userAgent.slice(0, 40)}...`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": userAgent,
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Accept-Encoding": "gzip, deflate",
+          "Connection": "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        signal: controller.signal,
+        redirect: "follow",
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.warn(`[AutoFill] Failed to fetch (${response.status}), trying next UA...`);
+        continue;
+      }
+
+      const html = await response.text();
+      
+      // Check if we got valid HTML
+      if (!html || html.length < 100 || !html.includes('<')) {
+        console.warn(`[AutoFill] Invalid HTML response, trying next UA...`);
+        continue;
+      }
+      
+      // Extract clean text content
+      const text = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 15000); // Limit text size for AI
+
+      console.log(`[AutoFill] Successfully scraped ${text.length} chars of text`);
+      return { html, text };
+    } catch (error) {
+      console.warn(`[AutoFill] Scrape attempt failed:`, error);
+      continue;
     }
-
-    const html = await response.text();
-    
-    // Extract clean text content
-    const text = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 15000); // Limit text size for AI
-
-    return { html, text };
-  } catch (error) {
-    console.error(`[AutoFill] Scrape error:`, error);
-    return null;
   }
+  
+  console.error(`[AutoFill] All scrape attempts failed for ${url}`);
+  return null;
 }
 
 function extractBasicInfo(html: string, domain: string): Record<string, unknown> {
@@ -124,6 +158,26 @@ function extractBasicInfo(html: string, domain: string): Record<string, unknown>
     info.social_links = socialLinks;
   }
 
+  // Try to extract services from common patterns
+  const servicePatterns = [
+    /<li[^>]*class="[^"]*service[^"]*"[^>]*>([^<]+)</gi,
+    /(?:services|offerings|solutions)[^>]*>([^<]+)</gi,
+  ];
+  
+  const services: string[] = [];
+  for (const pattern of servicePatterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null && services.length < 10) {
+      const service = match[1].trim();
+      if (service.length > 3 && service.length < 100) {
+        services.push(service);
+      }
+    }
+  }
+  if (services.length > 0) {
+    info.services_offered = services;
+  }
+
   return info;
 }
 
@@ -137,7 +191,8 @@ async function extractWithAI(text: string, domain: string, basicInfo: Record<str
   const systemPrompt = `You are a business analyst extracting information from a website. 
 Analyze the provided website content and extract business details.
 Be accurate and only include information that is clearly stated or strongly implied in the content.
-If information is not available, do not guess - leave it out.`;
+If information is not available, do not guess - leave it out.
+Always return valid JSON.`;
 
   const userPrompt = `Analyze this website content for ${domain} and extract business information.
 
@@ -149,14 +204,17 @@ ${JSON.stringify(basicInfo, null, 2)}
 
 Extract all available business information including:
 - Business name and description
-- Services offered
+- Services offered (as an array)
 - Location and service areas
 - Contact information
 - Business model and unique selling points
-- Common customer questions/FAQs
+- Writing tone and style
 - Target keywords for SEO
 
-Return ONLY valid JSON matching the schema. Do not include fields where information is not available.`;
+Return ONLY valid JSON matching this schema:
+${JSON.stringify(DOMAIN_CONTEXT_SCHEMA.properties, null, 2)}
+
+Do not include fields where information is not available.`;
 
   try {
     console.log("[AutoFill] Calling AI for extraction...");
@@ -203,6 +261,21 @@ Return ONLY valid JSON matching the schema. Do not include fields where informat
       return { ...basicInfo, ...extracted };
     }
 
+    // Try to parse from content if no tool call
+    const content = data.choices?.[0]?.message?.content;
+    if (content) {
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          console.log("[AutoFill] Parsed from content:", Object.keys(parsed).length, "fields");
+          return { ...basicInfo, ...parsed };
+        }
+      } catch {
+        console.warn("[AutoFill] Could not parse AI response as JSON");
+      }
+    }
+
     return basicInfo;
   } catch (error) {
     console.error("[AutoFill] AI extraction error:", error);
@@ -227,33 +300,52 @@ serve(async (req) => {
 
     console.log(`[AutoFill] Starting extraction for: ${domain}`);
 
-    // Format URL
-    const url = domain.startsWith("http") ? domain : `https://${domain}`;
+    // Normalize domain - remove protocol and trailing slashes
+    const cleanDomain = domain
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/+$/, '')
+      .trim();
+    
+    // Format URL properly
+    const url = `https://${cleanDomain}`;
+    console.log(`[AutoFill] Normalized URL: ${url}`);
 
     // Step 1: Scrape the website
     const scraped = await scrapeWebsite(url);
+    
     if (!scraped) {
+      // If scraping fails, try to get cached data from database or return empty with helpful message
+      console.log("[AutoFill] Scrape failed, returning with guidance");
       return new Response(
-        JSON.stringify({ success: false, error: "Failed to scrape website" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          success: true, 
+          data: {
+            business_name: cleanDomain.split('.')[0],
+            short_description: `Information about ${cleanDomain}`,
+          },
+          source: "fallback",
+          message: "Could not reach website. Please fill in details manually.",
+          fields_extracted: 2,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Step 2: Extract basic info from HTML
-    const basicInfo = extractBasicInfo(scraped.html, domain);
+    const basicInfo = extractBasicInfo(scraped.html, cleanDomain);
     console.log("[AutoFill] Basic extraction:", Object.keys(basicInfo).length, "fields");
 
     // Step 3: Enhance with AI
-    const extracted = await extractWithAI(scraped.text, domain, basicInfo);
+    const extracted = await extractWithAI(scraped.text, cleanDomain, basicInfo);
     console.log("[AutoFill] Final extraction:", Object.keys(extracted).length, "fields");
 
-    // Step 4: Try to save to CADE API
+    // Step 4: Try to save to CADE API (optional - don't fail if this doesn't work)
     const cadeApiKey = Deno.env.get("CADE_API_KEY");
     if (cadeApiKey) {
       try {
-        // CADE persistence endpoints vary by deployment. Try common variants.
-        const cadeBase = "https://seo-acg-api.stg.seosara.ai/api/v1";
-        const payload = JSON.stringify({ domain, ...extracted });
+        const cadeBase = "https://seo-acg-api.prod.seosara.ai/api/v1";
+        const payload = JSON.stringify({ domain: cleanDomain, ...extracted });
         const cadeApiSecret = Deno.env.get("CADE_API_SECRET");
         const cadeHeaders: Record<string, string> = {
           "X-API-Key": cadeApiKey,
@@ -261,61 +353,25 @@ serve(async (req) => {
         };
         if (cadeApiSecret) {
           cadeHeaders["X-API-Secret"] = cadeApiSecret;
-          cadeHeaders["x-api-secret"] = cadeApiSecret;
         }
 
-        const candidates: Array<{ method: string; url: string }> = [
-          { method: "PUT", url: `${cadeBase}/domain/context` },
-          { method: "PUT", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
-          { method: "POST", url: `${cadeBase}/domain/context` },
-          { method: "POST", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
-          { method: "PATCH", url: `${cadeBase}/domain/context` },
-          { method: "PATCH", url: `${cadeBase}/domain/context?domain=${encodeURIComponent(domain)}` },
-        ];
-
-        let cadeResponse: Response | null = null;
-        for (const c of candidates) {
-          try {
-            const res = await fetch(c.url, {
-              method: c.method,
-              headers: cadeHeaders,
-              body: payload,
-            });
-            cadeResponse = res;
-            if (res.ok) break;
-            if (res.status !== 404 && res.status !== 405) break;
-            console.warn(`[AutoFill] CADE save rejected (${res.status}) for ${c.method} ${c.url}`);
-          } catch (e) {
-            console.warn("[AutoFill] CADE save attempt failed:", e);
-          }
-        }
-
-        if (!cadeResponse) {
-          console.warn("[AutoFill] No CADE response received while saving");
-          cadeResponse = new Response("", { status: 500 });
-        }
+        const cadeResponse = await fetch(`${cadeBase}/domain/context`, {
+          method: "PUT",
+          headers: cadeHeaders,
+          body: payload,
+        });
         
         if (cadeResponse.ok) {
-          const cadeData = await cadeResponse.json();
-          console.log("[AutoFill] Saved to CADE API");
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              data: cadeData.data || extracted,
-              source: "ai_extraction",
-              fields_extracted: Object.keys(extracted).length,
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          console.log("[AutoFill] Saved to CADE API successfully");
         } else {
-          console.warn("[AutoFill] CADE save failed:", cadeResponse.status);
+          console.warn("[AutoFill] CADE save returned:", cadeResponse.status);
         }
       } catch (cadeError) {
-        console.warn("[AutoFill] CADE API error:", cadeError);
+        console.warn("[AutoFill] CADE API error (non-blocking):", cadeError);
       }
     }
 
-    // Return extracted data even if CADE save failed
+    // Return extracted data
     return new Response(
       JSON.stringify({ 
         success: true, 
