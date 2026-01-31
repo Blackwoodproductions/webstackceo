@@ -37,6 +37,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useBronApi, BronSubscription } from "@/hooks/use-bron-api";
 import { useCadeEventTasks } from "@/hooks/use-cade-event-tasks";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { toast } from "sonner";
 
@@ -175,12 +176,14 @@ StatBox.displayName = 'StatBox';
 // ─── Main Component ──────────────────────────────────────────────────────────
 export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true }: CADEDashboardNewProps) => {
   const { fetchSubscription } = useBronApi();
+  const { isAdmin } = useAuth();
   const { tasks, stats, byType, latestCategorization, activeTasksByType, refresh: refreshTasks } = useCadeEventTasks(domain);
   
   // States
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Admins bypass subscription check
   const [hasCadeSubscription, setHasCadeSubscription] = useState(false);
   const [subscriptionCheckedOnce, setSubscriptionCheckedOnce] = useState(false);
   const prevIsActiveRef = useRef(false);
@@ -237,12 +240,26 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
   }, [domain]);
 
   // Check subscription - only force refresh when tab becomes active or domain changes
+  // Admins always get access (bypass subscription check)
   const checkSubscription = useCallback(async (forceRefresh = false): Promise<boolean> => {
     if (!domain) {
       setIsCheckingSubscription(false);
       setIsLoading(false);
       onSubscriptionChange?.(false);
       return false;
+    }
+
+    // Admin bypass - admins can access CADE for any domain
+    if (isAdmin) {
+      setHasCadeSubscription(true);
+      setSubscriptionCheckedOnce(true);
+      onSubscriptionChange?.(true);
+      setAccount(prev => ({
+        ...prev,
+        serviceType: "Admin Access",
+      }));
+      setIsCheckingSubscription(false);
+      return true;
     }
 
     // If we already confirmed subscription for this domain, skip API check
@@ -300,7 +317,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
       setIsCheckingSubscription(false);
       return false;
     }
-  }, [domain, fetchSubscription, onSubscriptionChange, subscriptionCheckedOnce, hasCadeSubscription]);
+  }, [domain, fetchSubscription, onSubscriptionChange, subscriptionCheckedOnce, hasCadeSubscription, isAdmin]);
 
   // Fetch domain data
   const fetchData = useCallback(async () => {
@@ -358,8 +375,10 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
     // Reset state when domain changes
     const domainChanged = prevDomainRef.current !== domain;
     if (domainChanged && prevDomainRef.current !== null) {
-      // Clear previous domain's state
-      setHasCadeSubscription(false);
+      // Clear previous domain's state, but admins keep subscription status
+      if (!isAdmin) {
+        setHasCadeSubscription(false);
+      }
       setSubscriptionCheckedOnce(false);
       setDomainProfile(null);
       setArticles([]);
@@ -382,7 +401,7 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
     };
     init();
     return () => { cancelled = true; };
-  }, [domain, checkSubscription, fetchData, fetchDomainContext]);
+  }, [domain, checkSubscription, fetchData, fetchDomainContext, isAdmin]);
 
   // Re-check subscription when tab becomes active (user clicks CADE tab)
   useEffect(() => {
