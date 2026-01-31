@@ -62,14 +62,58 @@ const VoiceWaveform = memo(function VoiceWaveform({ isActive }: { isActive: bool
     </div>
   );
 });
+// Status types for AI activity
+type AIActivityStatus = 'thinking' | 'accessing-api' | 'processing' | 'analyzing';
 
-// AI Thinking Animation
-const AIThinkingIndicator = memo(function AIThinkingIndicator() {
+const AI_STATUS_CONFIG: Record<AIActivityStatus, { label: string; icon: 'brain' | 'globe' | 'cpu' | 'sparkles'; color: string }> = {
+  thinking: { label: 'Thinking...', icon: 'brain', color: 'from-violet-400 to-cyan-400' },
+  'accessing-api': { label: 'Accessing APIs...', icon: 'globe', color: 'from-cyan-400 to-emerald-400' },
+  processing: { label: 'Processing task...', icon: 'cpu', color: 'from-amber-400 to-orange-400' },
+  analyzing: { label: 'Analyzing data...', icon: 'sparkles', color: 'from-violet-400 to-pink-400' },
+};
+
+// AI Thinking Animation with dynamic status
+const AIThinkingIndicator = memo(function AIThinkingIndicator({ status = 'thinking' }: { status?: AIActivityStatus }) {
+  const [currentStatus, setCurrentStatus] = useState<AIActivityStatus>(status);
+  
+  // Cycle through statuses to show activity progression
+  useEffect(() => {
+    const statuses: AIActivityStatus[] = ['thinking', 'accessing-api', 'processing', 'analyzing'];
+    let index = statuses.indexOf(status);
+    
+    const interval = setInterval(() => {
+      index = (index + 1) % statuses.length;
+      setCurrentStatus(statuses[index]);
+    }, 2500);
+    
+    return () => clearInterval(interval);
+  }, [status]);
+  
+  const config = AI_STATUS_CONFIG[currentStatus];
+  
   return (
-    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5">
+    <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5 border-l-2 border-cyan-500/50">
       {/* AI Avatar with pulse */}
-      <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg bg-gradient-to-br from-violet-500 via-cyan-500 to-violet-600 shadow-cyan-500/20">
-        <Brain className="w-4 h-4 text-white animate-pulse" />
+      <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg bg-gradient-to-br from-violet-500 via-cyan-500 to-violet-600 shadow-cyan-500/20">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStatus}
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0, rotate: 180 }}
+            transition={{ duration: 0.3 }}
+          >
+            {currentStatus === 'accessing-api' ? (
+              <Globe className="w-5 h-5 text-white" />
+            ) : currentStatus === 'processing' ? (
+              <Cpu className="w-5 h-5 text-white" />
+            ) : currentStatus === 'analyzing' ? (
+              <Sparkles className="w-5 h-5 text-white" />
+            ) : (
+              <Brain className="w-5 h-5 text-white" />
+            )}
+          </motion.div>
+        </AnimatePresence>
         {/* Thinking rings */}
         <div className="absolute inset-0 rounded-xl border border-cyan-400/50 animate-ping" style={{ animationDuration: '1.5s' }} />
         <div className="absolute -inset-1 rounded-xl border border-violet-400/30 animate-pulse" />
@@ -80,13 +124,13 @@ const AIThinkingIndicator = memo(function AIThinkingIndicator() {
           Webstack AI
         </span>
         
-        {/* Thinking animation */}
+        {/* Dynamic status label */}
         <div className="flex items-center gap-2 mt-1">
           <div className="flex items-center gap-1">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                className="w-2 h-2 rounded-full bg-gradient-to-r from-cyan-400 to-violet-400"
+                className={`w-2 h-2 rounded-full bg-gradient-to-r ${config.color}`}
                 animate={{
                   scale: [1, 1.3, 1],
                   opacity: [0.5, 1, 0.5],
@@ -99,20 +143,55 @@ const AIThinkingIndicator = memo(function AIThinkingIndicator() {
               />
             ))}
           </div>
-          <span className="text-xs text-muted-foreground animate-pulse">Analyzing...</span>
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={currentStatus}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              className={`text-xs font-medium bg-gradient-to-r ${config.color} bg-clip-text text-transparent`}
+            >
+              {config.label}
+            </motion.span>
+          </AnimatePresence>
         </div>
         
-        {/* Scanning line effect */}
-        <div className="relative mt-2 h-1 w-32 bg-muted/30 rounded-full overflow-hidden">
+        {/* Progress bar with activity */}
+        <div className="relative mt-2 h-1.5 w-full max-w-[200px] bg-muted/30 rounded-full overflow-hidden">
           <motion.div
-            className="absolute h-full w-8 bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
-            animate={{ x: [-32, 160] }}
+            className={`absolute h-full w-12 bg-gradient-to-r ${config.color} rounded-full`}
+            animate={{ x: [-48, 220] }}
             transition={{
-              duration: 1.2,
+              duration: 1.5,
               repeat: Infinity,
-              ease: "linear",
+              ease: "easeInOut",
             }}
           />
+          {/* Secondary glow */}
+          <motion.div
+            className="absolute h-full w-6 bg-white/30 rounded-full blur-sm"
+            animate={{ x: [-24, 240] }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.3,
+            }}
+          />
+        </div>
+        
+        {/* Activity badge */}
+        <div className="flex items-center gap-2 mt-2">
+          <Badge 
+            variant="outline" 
+            className={`text-[9px] px-1.5 py-0 h-4 bg-gradient-to-r ${config.color} bg-opacity-10 border-current animate-pulse`}
+          >
+            <Radio className="w-2.5 h-2.5 mr-1" />
+            Active
+          </Badge>
+          <span className="text-[10px] text-muted-foreground">
+            Processing your request...
+          </span>
         </div>
       </div>
     </div>
