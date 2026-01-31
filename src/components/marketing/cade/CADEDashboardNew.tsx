@@ -611,8 +611,8 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
 
 
 
-      {/* Row 1: Website Crawl + SEO Vault + Live Activity */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      {/* Row 1: Website Crawl + SEO Vault (larger) + Live Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         
         {/* Website Crawl Card - 2 columns */}
         <div className="md:col-span-2">
@@ -710,11 +710,12 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
           </SectionCard>
         </div>
 
-        {/* SEO Vault Card - 2 columns */}
-        <div className="md:col-span-2">
+        {/* SEO Vault Card - 3 columns (larger) */}
+        <div className="md:col-span-3">
           <SectionCard title="SEO Vault" accentColor="emerald" className="h-full">
             <CADEVaultIntegration 
               domain={domain}
+              height="h-[500px]"
               onGenerateFromPlan={async (item) => {
                 // Refresh content after generation starts
                 setTimeout(() => fetchData(), 2000);
