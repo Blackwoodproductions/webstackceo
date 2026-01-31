@@ -12,6 +12,7 @@ const ShopSideTabInner = memo(function ShopSideTabInner() {
   const [isHovered, setIsHovered] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -20,15 +21,21 @@ const ShopSideTabInner = memo(function ShopSideTabInner() {
   const [tabOpacity, setTabOpacity] = useState(1);
   const throttleRef = useRef(false);
 
-  // Listen for chat widget open/close events
+  // Listen for chat widget and AI assistant open/close events
   useEffect(() => {
     const handleChatState = (e: CustomEvent<{ isOpen: boolean }>) => {
       setIsChatOpen(e.detail.isOpen);
     };
     
+    const handleAiAssistantState = (e: CustomEvent<{ isOpen: boolean }>) => {
+      setIsAiAssistantOpen(e.detail.isOpen);
+    };
+    
     window.addEventListener('chat-widget-state', handleChatState as EventListener);
+    window.addEventListener('ai-assistant-state', handleAiAssistantState as EventListener);
     return () => {
       window.removeEventListener('chat-widget-state', handleChatState as EventListener);
+      window.removeEventListener('ai-assistant-state', handleAiAssistantState as EventListener);
     };
   }, []);
 
@@ -89,6 +96,8 @@ const ShopSideTabInner = memo(function ShopSideTabInner() {
     }
   };
 
+  // Hide shop tab completely when AI assistant is open
+  if (isAiAssistantOpen) return null;
   if (tabOpacity === 0 && !isChatOpen) return null;
 
   // Compact badge for chat header

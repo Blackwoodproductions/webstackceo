@@ -51,7 +51,22 @@ export function useAIAssistant() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModelId>('google/gemini-3-flash-preview');
+  const [pendingDomainConfirmation, setPendingDomainConfirmation] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Listen for global domain changes from dashboard/domain selector bar
+  useEffect(() => {
+    const handleDomainChange = (e: CustomEvent<{ domain: string | null }>) => {
+      if (e.detail.domain && e.detail.domain !== selectedDomain) {
+        setSelectedDomain(e.detail.domain);
+      }
+    };
+    
+    window.addEventListener('domain-selected', handleDomainChange as EventListener);
+    return () => {
+      window.removeEventListener('domain-selected', handleDomainChange as EventListener);
+    };
+  }, [selectedDomain]);
 
   // Load conversations
   useEffect(() => {
@@ -358,6 +373,15 @@ export function useAIAssistant() {
     setMessages([]);
   };
 
+  // Helper to request domain confirmation for keyword research
+  const requestDomainConfirmation = useCallback(() => {
+    setPendingDomainConfirmation(true);
+  }, []);
+  
+  const confirmDomain = useCallback(() => {
+    setPendingDomainConfirmation(false);
+  }, []);
+
   return {
     conversations,
     currentConversation,
@@ -369,6 +393,9 @@ export function useAIAssistant() {
     setSelectedDomain,
     selectedModel,
     setSelectedModel,
+    pendingDomainConfirmation,
+    requestDomainConfirmation,
+    confirmDomain,
     loadConversations,
     createConversation,
     selectConversation,
