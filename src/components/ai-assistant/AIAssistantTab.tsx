@@ -406,13 +406,31 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   useEffect(() => {
     const handleOpenAI = () => {
       setIsOpen(true);
+      // Re-sync domain from localStorage when panel opens
+      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+                          sessionStorage.getItem('webstack_current_domain');
+      if (storedDomain && storedDomain !== selectedDomain) {
+        setSelectedDomain(storedDomain);
+      }
     };
     
     window.addEventListener('open-ai-assistant', handleOpenAI);
     return () => {
       window.removeEventListener('open-ai-assistant', handleOpenAI);
     };
-  }, []);
+  }, [selectedDomain, setSelectedDomain]);
+  
+  // Sync domain when panel becomes visible
+  useEffect(() => {
+    if (isOpen) {
+      const storedDomain = localStorage.getItem('webstack_selected_domain') || 
+                          sessionStorage.getItem('webstack_current_domain');
+      if (storedDomain && storedDomain !== selectedDomain) {
+        setSelectedDomain(storedDomain);
+        console.log('[AI Tab] Synced domain on open:', storedDomain);
+      }
+    }
+  }, [isOpen, selectedDomain, setSelectedDomain]);
 
   // Listen for AI bubble prompts from domain selector bar
   useEffect(() => {
