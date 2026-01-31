@@ -502,84 +502,82 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
   return (
     <TooltipProvider>
-      {/* Floating AI Button - Left side below the shield */}
+      {/* Sleek AI Trigger - Minimal pill docked left, positioned below SHOP tab */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed left-6 z-50 hidden lg:block"
-            style={{ top: '85%' }}
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed left-0 z-[100] hidden lg:block"
+            style={{ top: 'calc(55% + 100px)' }}
           >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsOpen(true)}
-              className="group relative flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl overflow-hidden"
-            >
-              {/* Animated background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 via-cyan-500/20 to-violet-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Scanning line effect */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute h-px w-full bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-scan-line" />
-              </div>
-              
-              {/* AI Core orb */}
-              <div className="relative">
-                <div className={cn(
-                  "absolute inset-0 rounded-full blur-md transition-all duration-500",
-                  isListening 
-                    ? "bg-gradient-to-r from-cyan-400 to-violet-400 scale-150 animate-pulse" 
-                    : "bg-gradient-to-r from-cyan-500/50 to-violet-500/50 scale-100"
-                )} />
-                <div className="relative w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-600 via-cyan-500 to-violet-600 shadow-inner shadow-white/10">
-                  <Brain className="w-5 h-5 text-white drop-shadow-lg" />
-                  <div className="absolute inset-0 rounded-full border border-cyan-400/50 animate-ping" style={{ animationDuration: '2s' }} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <motion.button
+                  whileHover={{ x: 4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsOpen(true)}
+                  className="group relative flex items-center"
+                >
+                  {/* Outer glow */}
+                  <div className="absolute -inset-1.5 rounded-r-2xl blur-lg opacity-50 group-hover:opacity-100 bg-gradient-to-r from-cyan-500 via-violet-500 to-cyan-600 transition-all duration-500" />
+                  
+                  {/* Main container - vertical pill matching SHOP style */}
+                  <div className="relative flex flex-col items-center gap-1.5 py-4 px-3 rounded-r-2xl border border-l-0 backdrop-blur-xl transition-all duration-500 overflow-hidden bg-gradient-to-br from-slate-950/95 via-cyan-950/90 to-slate-950/95 border-cyan-500/30 group-hover:border-cyan-400/50 shadow-[0_0_25px_rgba(6,182,212,0.25)] group-hover:shadow-[0_0_50px_rgba(6,182,212,0.5)]">
+                    
+                    {/* Scanning line */}
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none opacity-50 group-hover:opacity-100"
+                    >
+                      <motion.div
+                        className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                        animate={{ top: ['0%', '100%', '0%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </motion.div>
+                    
+                    {/* AI text */}
+                    <span className="relative text-sm font-black uppercase tracking-widest transition-all duration-300 group-hover:text-white group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.8)] bg-gradient-to-r from-cyan-200 via-violet-200 to-cyan-200 bg-clip-text text-transparent">
+                      AI
+                    </span>
+                    
+                    {/* Brain orb */}
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full blur-md bg-gradient-to-r from-cyan-500/50 to-violet-500/50 group-hover:scale-125 transition-all duration-500" />
+                      <div className="relative w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-violet-600 via-cyan-500 to-violet-600 shadow-inner shadow-white/10">
+                        <Brain className="w-4 h-4 text-white drop-shadow-lg" />
+                      </div>
+                      {/* Status dot */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
+                    </div>
+                    
+                    {/* Sparkle */}
+                    <motion.div
+                      animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-400/80 group-hover:text-amber-300 transition-colors" />
+                    </motion.div>
+                    
+                    {/* Shimmer on hover */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent"
+                      initial={{ y: '-100%' }}
+                      animate={{ y: '100%' }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                    />
+                  </div>
+                </motion.button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-slate-900/95 border-cyan-500/30 backdrop-blur-xl">
+                <div className="flex flex-col">
+                  <span className="font-semibold text-white">Webstack AI Assistant</span>
+                  <span className="text-xs text-cyan-400">SEO Research & Strategy</span>
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-slate-900 bg-emerald-400" />
-              </div>
-              
-              {/* Text content */}
-              <div className="flex flex-col items-start relative z-10">
-                <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-medium">Webstack</span>
-                <span className="text-sm font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">AI Assistant</span>
-              </div>
-              
-              {/* Sparkle icon */}
-              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse relative z-10" />
-              
-              {/* Corner accents */}
-              <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500/50 rounded-tl-lg" />
-              <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan-500/50 rounded-tr-lg" />
-              <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan-500/50 rounded-bl-lg" />
-              <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500/50 rounded-br-lg" />
-            </motion.button>
-            
-            {/* Floating particles */}
-            <div className="absolute -inset-4 pointer-events-none">
-              {[...Array(3)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 rounded-full bg-cyan-400/60"
-                  animate={{
-                    y: [0, -15, 0],
-                    opacity: [0.6, 1, 0.6],
-                  }}
-                  transition={{
-                    duration: 2 + i * 0.5,
-                    repeat: Infinity,
-                    delay: i * 0.3,
-                  }}
-                  style={{
-                    left: `${25 + i * 25}%`,
-                    top: '0%',
-                  }}
-                />
-              ))}
-            </div>
+              </TooltipContent>
+            </Tooltip>
           </motion.div>
         )}
       </AnimatePresence>
