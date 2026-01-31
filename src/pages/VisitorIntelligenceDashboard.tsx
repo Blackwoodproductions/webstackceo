@@ -1892,7 +1892,7 @@ const MarketingDashboard = () => {
           className="absolute -inset-[2px] rounded-t-[14px] opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-md bg-gradient-to-r from-cyan-500/40 via-violet-500/40 to-amber-500/30"
         />
         
-        <header className="relative border border-border bg-card/95 backdrop-blur-xl rounded-t-xl overflow-hidden">
+        <header className="relative border border-border bg-card/95 backdrop-blur-xl rounded-t-xl overflow-visible">
           {/* Grid pattern overlay on header */}
           <div 
             className="absolute inset-0 opacity-[0.02] pointer-events-none"
