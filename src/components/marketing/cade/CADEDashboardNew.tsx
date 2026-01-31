@@ -4,13 +4,14 @@ import {
   Settings, Globe, Target, FileText, HelpCircle, Calendar, Zap,
   AlertTriangle, Sparkles, Search, Save, X, Plus, ChevronDown,
   Activity, ExternalLink, User, TrendingUp, Link2, BarChart3, Database,
-  Wand2
+  Wand2, Archive
 } from "lucide-react";
 import { DomainContextDialog } from "./DomainContextDialog";
 import { CADEActivationPitch } from "./CADEActivationPitch";
 import { CADEPlatformCards } from "./CADEPlatformCards";
 import { CADEInlineContentEditor, ContentItem } from "./CADEInlineContentEditor";
 import { CADEInlineFAQEditor, FAQItem } from "./CADEInlineFAQEditor";
+import { CADEVaultIntegration } from "./CADEVaultIntegration";
 import { useDomainContext } from "@/hooks/use-domain-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -984,6 +985,13 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
               >
                 Domain Info
               </TabsTrigger>
+              <TabsTrigger 
+                value="vault" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-amber-500 data-[state=active]:text-amber-400 data-[state=active]:bg-transparent pb-3 px-5 font-medium"
+              >
+                <Archive className="w-4 h-4 mr-1.5" />
+                SEO Vault
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="articles" className="mt-5 space-y-5">
@@ -1203,6 +1211,17 @@ export const CADEDashboardNew = ({ domain, onSubscriptionChange, isActive = true
                 <Settings className="w-4 h-4 mr-2" />
                 Edit Domain Context
               </Button>
+            </TabsContent>
+            
+            {/* SEO Vault Tab */}
+            <TabsContent value="vault" className="mt-6">
+              <CADEVaultIntegration 
+                domain={domain}
+                onGenerateFromPlan={async () => {
+                  // Refresh articles list after generation starts
+                  setTimeout(() => fetchData(), 3000);
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
