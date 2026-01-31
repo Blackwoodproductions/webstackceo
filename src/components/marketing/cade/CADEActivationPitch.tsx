@@ -73,19 +73,16 @@ export const CADEActivationPitch = ({ domain }: CADEActivationPitchProps) => {
 
   return (
     <div className="relative overflow-hidden" style={{ contain: 'layout style' }}>
-      {/* Background effects */}
+      {/* Background effects - static, no animations */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div 
-          className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-gradient-radial from-violet-500/15 via-violet-500/5 to-transparent rounded-full blur-3xl"
-          style={{ animation: 'pulse 6s ease-in-out infinite' }}
+          className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-gradient-radial from-violet-500/15 via-violet-500/5 to-transparent rounded-full blur-3xl opacity-70"
         />
         <div 
-          className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-gradient-radial from-cyan-500/10 via-cyan-500/5 to-transparent rounded-full blur-3xl"
-          style={{ animation: 'pulse 8s ease-in-out infinite 2s' }}
+          className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-gradient-radial from-cyan-500/10 via-cyan-500/5 to-transparent rounded-full blur-3xl opacity-70"
         />
         <div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-fuchsia-500/8 via-transparent to-transparent rounded-full blur-3xl"
-          style={{ animation: 'pulse 10s ease-in-out infinite 4s' }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-fuchsia-500/8 via-transparent to-transparent rounded-full blur-3xl opacity-60"
         />
       </div>
 
