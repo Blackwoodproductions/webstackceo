@@ -1,6 +1,8 @@
 // Dashboard navigation tabs with color-coded service categories
-import { memo } from 'react';
+// High-end futuristic design with glassmorphism and elegant transitions
+import { memo, useState } from 'react';
 import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target, BrainCircuit, Globe } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type DashboardTab = 
   | 'visitor-intelligence' 
@@ -19,7 +21,7 @@ interface VIDashboardTabsProps {
   variant?: 'default' | 'compact';
 }
 
-// Tab order: Visitor → Maps → PPC → Bron → AEO/GEO → Cade → Social → SEO
+// Tab order: Visitor → Maps → PPC → Bron → AEO/GEO → Cade → Social → SEO → WEB
 const tabs = [
   { 
     id: 'visitor-intelligence' as DashboardTab, 
@@ -34,7 +36,7 @@ const tabs = [
     label: 'Maps', 
     description: 'Local SEO',
     icon: MapPin, 
-    isPaid: false, // Included with $15/domain
+    isPaid: false,
     colorClass: 'sky' as const
   },
   { 
@@ -97,24 +99,118 @@ const tabs = [
   },
 ];
 
+// Color configuration with HSL values for glow effects
+const colorConfig = {
+  cyan: {
+    glow: '199 89% 48%',
+    rgb: '6, 182, 212',
+    border: 'border-cyan-500/40',
+    text: 'text-cyan-400',
+    textHover: 'group-hover:text-cyan-300',
+    bg: 'bg-cyan-500/10',
+    bgHover: 'group-hover:bg-cyan-500/20',
+    iconBg: 'bg-cyan-500/20',
+    gradient: 'from-cyan-500/30 via-cyan-400/10 to-transparent',
+  },
+  sky: {
+    glow: '199 89% 60%',
+    rgb: '56, 189, 248',
+    border: 'border-sky-400/40',
+    text: 'text-sky-400',
+    textHover: 'group-hover:text-sky-300',
+    bg: 'bg-sky-500/10',
+    bgHover: 'group-hover:bg-sky-500/20',
+    iconBg: 'bg-sky-500/20',
+    gradient: 'from-sky-400/30 via-sky-400/10 to-transparent',
+  },
+  rose: {
+    glow: '350 89% 60%',
+    rgb: '244, 63, 94',
+    border: 'border-rose-500/40',
+    text: 'text-rose-400',
+    textHover: 'group-hover:text-rose-300',
+    bg: 'bg-rose-500/10',
+    bgHover: 'group-hover:bg-rose-500/20',
+    iconBg: 'bg-rose-500/20',
+    gradient: 'from-rose-500/30 via-rose-400/10 to-transparent',
+  },
+  emerald: {
+    glow: '160 84% 39%',
+    rgb: '16, 185, 129',
+    border: 'border-emerald-500/40',
+    text: 'text-emerald-400',
+    textHover: 'group-hover:text-emerald-300',
+    bg: 'bg-emerald-500/10',
+    bgHover: 'group-hover:bg-emerald-500/20',
+    iconBg: 'bg-emerald-500/20',
+    gradient: 'from-emerald-500/30 via-emerald-400/10 to-transparent',
+  },
+  violet: {
+    glow: '262 83% 58%',
+    rgb: '139, 92, 246',
+    border: 'border-violet-500/50',
+    text: 'text-violet-400',
+    textHover: 'group-hover:text-violet-300',
+    bg: 'bg-violet-500/15',
+    bgHover: 'group-hover:bg-violet-500/25',
+    iconBg: 'bg-violet-500/25',
+    gradient: 'from-violet-500/40 via-violet-400/15 to-transparent',
+  },
+  amber: {
+    glow: '38 92% 50%',
+    rgb: '245, 158, 11',
+    border: 'border-amber-500/40',
+    text: 'text-amber-400',
+    textHover: 'group-hover:text-amber-300',
+    bg: 'bg-amber-500/10',
+    bgHover: 'group-hover:bg-amber-500/20',
+    iconBg: 'bg-amber-500/20',
+    gradient: 'from-amber-500/30 via-amber-400/10 to-transparent',
+  },
+  blue: {
+    glow: '217 91% 60%',
+    rgb: '59, 130, 246',
+    border: 'border-blue-500/40',
+    text: 'text-blue-400',
+    textHover: 'group-hover:text-blue-300',
+    bg: 'bg-blue-500/10',
+    bgHover: 'group-hover:bg-blue-500/20',
+    iconBg: 'bg-blue-500/20',
+    gradient: 'from-blue-500/30 via-blue-400/10 to-transparent',
+  },
+  fuchsia: {
+    glow: '292 84% 61%',
+    rgb: '217, 70, 239',
+    border: 'border-fuchsia-500/50',
+    text: 'text-fuchsia-400',
+    textHover: 'group-hover:text-fuchsia-300',
+    bg: 'bg-fuchsia-500/15',
+    bgHover: 'group-hover:bg-fuchsia-500/25',
+    iconBg: 'bg-fuchsia-500/25',
+    gradient: 'from-fuchsia-500/40 via-fuchsia-400/15 to-transparent',
+  },
+};
+
 export const VIDashboardTabs = memo(function VIDashboardTabs({
   activeTab,
   setActiveTab,
   variant = 'default',
 }: VIDashboardTabsProps) {
   const isCompact = variant === 'compact';
+  const [hoveredTab, setHoveredTab] = useState<DashboardTab | null>(null);
 
   return (
     <div 
       className="absolute inset-x-0 -bottom-px z-[150] flex justify-center pointer-events-none"
       style={{ contain: 'layout style' }}
     >
+      {/* Background glow effect for the entire tab bar */}
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+      
       <div
-        className={`${
-          isCompact
-            ? 'flex items-end gap-0 px-2 overflow-x-auto'
-            : 'flex items-end gap-1.5 px-2 overflow-x-auto'
-        } pointer-events-auto`}
+        className={`relative flex items-end ${
+          isCompact ? 'gap-1 px-2' : 'gap-3 px-4'
+        } overflow-x-auto pointer-events-auto`}
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
@@ -122,115 +218,146 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
         }}
       >
         {tabs.map((tab, index) => {
-        const isActive = activeTab === tab.id;
-        const isHighlighted = 'isHighlighted' in tab && tab.isHighlighted;
-        const color = tab.colorClass;
-        
-        // Color-specific classes for each tab theme
-        const colorStyles = {
-          cyan: {
-            active: 'bg-gradient-to-b from-cyan-500/20 to-background text-cyan-400 border-cyan-500/50',
-            inactive: 'bg-muted/20 text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10 border-transparent',
-            iconActive: 'bg-cyan-500/20 text-cyan-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          amber: {
-            active: 'bg-gradient-to-b from-amber-500/15 to-background text-amber-400 border-amber-500/40',
-            inactive: 'bg-gradient-to-b from-amber-500/5 to-muted/20 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10 border-transparent',
-            iconActive: 'bg-amber-500/20 text-amber-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          violet: {
-            active: 'bg-gradient-to-b from-violet-500/20 to-background text-violet-400 border-violet-500/50',
-            inactive: 'bg-gradient-to-b from-violet-500/10 to-muted/30 text-violet-400 hover:text-violet-300 hover:bg-violet-500/15 border-violet-500/30',
-            iconActive: 'bg-violet-500/30 text-violet-300',
-            iconInactive: 'bg-violet-500/20 text-violet-400',
-          },
-          blue: {
-            active: 'bg-gradient-to-b from-blue-500/20 to-background text-blue-400 border-blue-500/50',
-            inactive: 'bg-gradient-to-b from-blue-500/5 to-muted/20 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 border-transparent',
-            iconActive: 'bg-blue-500/20 text-blue-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          emerald: {
-            active: 'bg-gradient-to-b from-emerald-500/20 to-background text-emerald-400 border-emerald-500/50',
-            inactive: 'bg-gradient-to-b from-emerald-500/5 to-muted/20 text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 border-transparent',
-            iconActive: 'bg-emerald-500/20 text-emerald-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          rose: {
-            active: 'bg-gradient-to-b from-rose-500/20 to-background text-rose-400 border-rose-500/50',
-            inactive: 'bg-gradient-to-b from-rose-500/5 to-muted/20 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 border-transparent',
-            iconActive: 'bg-rose-500/20 text-rose-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          sky: {
-            active: 'bg-gradient-to-b from-sky-400/20 to-background text-sky-400 border-sky-400/50',
-            inactive: 'bg-gradient-to-b from-sky-400/5 to-muted/20 text-muted-foreground hover:text-sky-400 hover:bg-sky-400/10 border-transparent',
-            iconActive: 'bg-sky-400/20 text-sky-400',
-            iconInactive: 'bg-secondary/50',
-          },
-          fuchsia: {
-            active: 'bg-gradient-to-b from-fuchsia-500/20 to-background text-fuchsia-400 border-fuchsia-500/50',
-            inactive: 'bg-gradient-to-b from-fuchsia-500/10 to-muted/30 text-fuchsia-400 hover:text-fuchsia-300 hover:bg-fuchsia-500/15 border-fuchsia-500/30',
-            iconActive: 'bg-fuchsia-500/30 text-fuchsia-300',
-            iconInactive: 'bg-fuchsia-500/20 text-fuchsia-400',
-          },
-        };
-        
-        const styles = colorStyles[color];
-        
-        return (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{ zIndex: isActive ? 10 : 8 - index, contain: 'layout style' }}
-            className={
-              isCompact
-                ? `relative flex flex-col items-center justify-center w-16 h-11 transition-all rounded-t-lg border-t border-x gap-0.5 ${
-                    isActive ? styles.active : `${styles.inactive} -ml-1 first:ml-0`
-                  }`
-                : `relative flex items-center gap-3 px-5 py-3.5 transition-all rounded-t-xl border-t border-x ${
-                    isActive ? styles.active : styles.inactive
-                  }`
-            }
-            title={isHighlighted ? `${tab.label} (LLM Training)` : tab.isPaid ? `${tab.label} (Premium Add-on)` : tab.label}
-          >
-            {isCompact ? (
-              <>
-                <tab.icon className={`w-4 h-4 ${isActive ? styles.iconActive.split(' ')[1] : ''}`} />
-                <span className="text-[9px] font-medium leading-none whitespace-nowrap">{tab.label}</span>
-              </>
-            ) : (
-              <>
-                {/* Icon container - larger */}
-                <div className={`flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-                  isActive ? styles.iconActive : styles.iconInactive
-                }`}>
-                  <tab.icon className="w-5 h-5" />
-                </div>
-                
-                {/* Label - horizontal layout, larger text */}
-                <span className={`text-sm font-semibold whitespace-nowrap ${
-                  isActive ? styles.active.split(' ').find(c => c.startsWith('text-')) : ''
-                }`}>
-                  {tab.label}
-                </span>
-              </>
-            )}
-            
-            {/* Active tab bottom cover */}
-            {isActive && (
-              <span
-                className={
-                  isCompact
-                    ? 'absolute -bottom-px left-0 right-0 h-px bg-background'
-                    : 'absolute -bottom-px left-1 right-1 h-px bg-background'
-                }
+          const isActive = activeTab === tab.id;
+          const isHovered = hoveredTab === tab.id;
+          const isHighlighted = 'isHighlighted' in tab && tab.isHighlighted;
+          const color = colorConfig[tab.colorClass];
+          const Icon = tab.icon;
+          
+          return (
+            <motion.button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              onMouseEnter={() => setHoveredTab(tab.id)}
+              onMouseLeave={() => setHoveredTab(null)}
+              initial={false}
+              animate={{
+                scale: isActive ? 1 : isHovered ? 1.02 : 1,
+                y: isActive ? 0 : isHovered ? -2 : 0,
+              }}
+              transition={{
+                type: 'spring',
+                stiffness: 400,
+                damping: 25,
+              }}
+              style={{ 
+                zIndex: isActive ? 20 : isHovered ? 15 : 10 - index,
+                contain: 'layout style',
+              }}
+              className={`group relative flex flex-col items-center ${
+                isCompact 
+                  ? 'w-[70px] min-w-[70px] py-2 px-2' 
+                  : 'w-[90px] min-w-[90px] py-3 px-3'
+              } rounded-t-2xl border border-b-0 backdrop-blur-xl transition-all duration-300 ${
+                isActive 
+                  ? `${color.border} ${color.bg} shadow-lg` 
+                  : `border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10`
+              }`}
+              title={isHighlighted ? `${tab.label} (Premium AI)` : tab.isPaid ? `${tab.label} (Premium)` : tab.label}
+            >
+              {/* Animated glow effect for active/hovered tabs */}
+              <AnimatePresence>
+                {(isActive || isHovered) && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 rounded-t-2xl overflow-hidden"
+                    style={{
+                      boxShadow: isActive 
+                        ? `0 -10px 40px -10px rgba(${color.rgb}, 0.4), inset 0 1px 0 rgba(${color.rgb}, 0.2)`
+                        : `0 -5px 20px -10px rgba(${color.rgb}, 0.2)`,
+                    }}
+                  >
+                    {/* Gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-b ${color.gradient}`} />
+                    
+                    {/* Scanning line effect for active tab */}
+                    {isActive && (
+                      <motion.div
+                        className="absolute inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                        initial={{ top: '100%' }}
+                        animate={{ top: ['100%', '0%'] }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                      />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Icon container with glow */}
+              <motion.div
+                animate={{
+                  scale: isActive ? 1.1 : 1,
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                className={`relative z-10 flex items-center justify-center ${
+                  isCompact ? 'w-8 h-8' : 'w-10 h-10'
+                } rounded-xl transition-all duration-300 ${
+                  isActive 
+                    ? color.iconBg 
+                    : 'bg-white/5 group-hover:bg-white/10'
+                }`}
+                style={{
+                  boxShadow: isActive 
+                    ? `0 0 20px rgba(${color.rgb}, 0.3)` 
+                    : 'none',
+                }}
+              >
+                <Icon className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} transition-colors duration-300 ${
+                  isActive ? color.text : `text-muted-foreground ${color.textHover}`
+                }`} />
+              </motion.div>
+              
+              {/* Label with elegant typography */}
+              <motion.span 
+                className={`relative z-10 ${
+                  isCompact ? 'text-[10px] mt-1' : 'text-xs mt-1.5'
+                } font-semibold tracking-wide transition-colors duration-300 ${
+                  isActive ? color.text : `text-muted-foreground ${color.textHover}`
+                }`}
+              >
+                {tab.label}
+              </motion.span>
+
+              {/* Premium indicator dot for highlighted tabs */}
+              {isHighlighted && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                  style={{
+                    background: `linear-gradient(135deg, rgba(${color.rgb}, 0.8), rgba(${color.rgb}, 0.4))`,
+                    boxShadow: `0 0 8px rgba(${color.rgb}, 0.6)`,
+                  }}
+                />
+              )}
+
+              {/* Active tab bottom cover */}
+              {isActive && (
+                <motion.span
+                  layoutId="activeTabCover"
+                  className="absolute -bottom-px left-1 right-1 h-[2px] bg-background"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+
+              {/* Subtle border glow on hover */}
+              <div 
+                className={`absolute inset-0 rounded-t-2xl transition-opacity duration-300 pointer-events-none ${
+                  isHovered && !isActive ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{
+                  boxShadow: `inset 0 0 0 1px rgba(${color.rgb}, 0.2)`,
+                }}
               />
-            )}
-          </button>
-        );
+            </motion.button>
+          );
         })}
       </div>
     </div>
