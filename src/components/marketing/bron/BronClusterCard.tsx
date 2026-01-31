@@ -413,7 +413,9 @@ export const BronClusterCard = memo(({
         <div className="relative ml-[20px] pl-[24px] border-l-2 border-amber-500/30">
           {cluster.children.map((child, idx) => (
             <ClusterKeywordRow
-              key={child.id}
+              // Key must be domain-scoped to avoid React reusing rows across domain switches
+              // (can cause flicker/glitch + stale expanded state rendering).
+              key={`${selectedDomain ?? 'no-domain'}:${child.id}`}
               kw={child}
               isNested={true}
               isLastChild={idx === cluster.children.length - 1}

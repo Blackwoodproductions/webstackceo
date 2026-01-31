@@ -598,6 +598,39 @@ export const BronKeywordCard = memo(({
   const gaugeSize = isCompact ? 'w-9 h-9' : 'w-10 h-10';
   const textSize = isCompact ? 'text-sm' : 'text-sm';
   const badgeSize = isCompact ? 'text-[8px] h-4 px-1.5' : 'text-[9px] h-4 px-1.5';
+
+  // NOTE: This list is high-density; avoid expensive box-shadow/blur animations and `transition-all`
+  // which can cause scroll/hover jank that looks like "glitching".
+  const cardVariant: 'nested' | 'tracking' | 'main' | 'standard' = isNested
+    ? 'nested'
+    : isTrackingOnly
+      ? 'tracking'
+      : isMainKeyword
+        ? 'main'
+        : 'standard';
+
+  const cardClassName = (() => {
+    const base =
+      'rounded-xl border overflow-hidden no-theme-transition backdrop-blur-sm ' +
+      'transition-[background-color,border-color,box-shadow] duration-200 ease-out';
+
+    if (cardVariant === 'nested') {
+      return `${base} bg-card/40 border-primary/20 hover:border-primary/30`;
+    }
+    if (cardVariant === 'tracking') {
+      return `${base} bg-muted/20 border-border/30 hover:bg-muted/30`;
+    }
+    if (cardVariant === 'main') {
+      return `${base} bg-card/50 border-primary/25 hover:border-primary/35`;
+    }
+    return `${base} bg-card/30 border-border/30 hover:border-primary/25`;
+  })();
+
+  const cardShadow = cardVariant === 'main'
+    ? '0 0 22px hsl(var(--primary) / 0.10), inset 0 1px 0 hsl(var(--foreground) / 0.04)'
+    : cardVariant === 'nested'
+      ? '0 0 14px hsl(var(--primary) / 0.06)'
+      : undefined;
   
   return (
     <div
@@ -606,20 +639,8 @@ export const BronKeywordCard = memo(({
       data-no-theme-transition
     >
       <div 
-        className={`
-          rounded-xl border overflow-hidden no-theme-transition
-          backdrop-blur-sm
-          ${isNested 
-            ? 'bg-gradient-to-r from-cyan-500/[0.08] via-cyan-500/[0.04] to-cyan-500/[0.08] border-cyan-500/25 hover:border-cyan-400/40 hover:shadow-[0_0_20px_rgba(6,182,212,0.12)]'
-            : isTrackingOnly 
-              ? 'bg-muted/20 border-muted-foreground/15 hover:bg-muted/30'
-              : isMainKeyword
-                ? 'bg-gradient-to-r from-cyan-500/[0.12] via-violet-500/[0.08] to-primary/[0.12] border-cyan-500/35 hover:border-cyan-400/50 shadow-[0_0_25px_rgba(6,182,212,0.15),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_0_35px_rgba(6,182,212,0.25)]'
-                : 'bg-gradient-to-r from-background/80 via-card/60 to-background/80 border-border/30 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.08)]'
-          }
-          transition-all duration-300 ease-out
-        `}
-        style={{ contain: 'layout style' }}
+        className={cardClassName}
+        style={{ contain: 'layout style', boxShadow: cardShadow }}
       >
         {/* Header - Clickable */}
         <div className={`${rowPadding} cursor-pointer overflow-x-auto`} onClick={onToggleExpand}>
@@ -642,7 +663,7 @@ export const BronKeywordCard = memo(({
                       e.stopPropagation();
                       onOpenAnalysis(kw);
                     }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-violet-500/30 via-primary/20 to-cyan-500/30 text-violet-400 hover:from-violet-500/45 hover:via-primary/30 hover:to-cyan-500/45 border border-violet-500/40 hover:border-violet-400/60 transition-all duration-300 shadow-[0_0_15px_rgba(139,92,246,0.25)] hover:shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:scale-105"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 hover:border-primary/30 transition-[background-color,border-color,transform] duration-200 hover:scale-105"
                     title="View Keyword Analysis"
                   >
                     <BarChart3 className="w-5 h-5" />
