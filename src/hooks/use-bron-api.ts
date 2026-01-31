@@ -722,6 +722,8 @@ export interface BronSubscription {
   plan: string;
   status: string;
   has_cade: boolean;
+  /** CADE subscription level: 0=none, 1=Starter, 2=Basic, 3=Standard, 4=Pro, 5=Premium, 6=Enterprise, 7=Agency, 8=White Label */
+  cade_level: number;
   userid?: number;
 }
 
