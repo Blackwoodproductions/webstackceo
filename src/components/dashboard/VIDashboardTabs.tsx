@@ -2,7 +2,7 @@
 // High-end futuristic design with glassmorphism and elegant transitions
 import { memo, useState } from 'react';
 import { Eye, TrendingUp, FileText, MapPin, Activity, FileSearch, Target, BrainCircuit, Globe } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export type DashboardTab = 
   | 'visitor-intelligence' 
@@ -252,43 +252,18 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               }`}
               title={isHighlighted ? `${tab.label} (Premium AI)` : tab.isPaid ? `${tab.label} (Premium)` : tab.label}
             >
-              {/* Animated glow effect for active/hovered tabs */}
-              <AnimatePresence>
-                {(isActive || isHovered) && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute inset-0 rounded-xl overflow-hidden"
-                    style={{
-                      boxShadow: isActive 
-                        ? `0 0 30px -5px rgba(${color.rgb}, 0.6), 0 0 60px -10px rgba(${color.rgb}, 0.3), inset 0 1px 0 rgba(255,255,255,0.15)`
-                        : `0 0 20px -8px rgba(${color.rgb}, 0.4)`,
-                    }}
-                  >
-                    {/* Gradient overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-b ${color.gradient}`} />
-                    
-                    {/* Brilliant shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
-                    {/* Scanning line effect for active tab */}
-                    {isActive && (
-                      <motion.div
-                        className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-white/60 to-transparent"
-                        initial={{ top: '100%' }}
-                        animate={{ top: ['100%', '0%'] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
-                      />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Static glow effect for active tabs - no animations to prevent glitching */}
+              {isActive && (
+                <div
+                  className="absolute inset-0 rounded-xl overflow-hidden"
+                  style={{
+                    boxShadow: `0 0 25px -5px rgba(${color.rgb}, 0.5), 0 0 50px -10px rgba(${color.rgb}, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)`,
+                  }}
+                >
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-b ${color.gradient}`} />
+                </div>
+              )}
 
               {/* Icon container with glow */}
               <motion.div
@@ -335,21 +310,15 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 />
               )}
 
-              {/* Brilliant shine overlay on hover */}
-              <div 
-                className={`absolute inset-0 rounded-xl transition-all duration-500 pointer-events-none overflow-hidden ${
-                  isHovered && !isActive ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
+              {/* Static highlight on hover - no infinite animations */}
+              {isHovered && !isActive && (
                 <div 
-                  className="absolute inset-0"
+                  className="absolute inset-0 rounded-xl pointer-events-none overflow-hidden"
                   style={{
-                    background: `linear-gradient(135deg, transparent 40%, rgba(${color.rgb}, 0.15) 50%, transparent 60%)`,
-                    backgroundSize: '200% 200%',
-                    animation: isHovered ? 'shimmer 1.5s ease-in-out infinite' : 'none',
+                    background: `linear-gradient(135deg, transparent 30%, rgba(${color.rgb}, 0.12) 50%, transparent 70%)`,
                   }}
                 />
-              </div>
+              )}
             </motion.button>
           );
         })}
