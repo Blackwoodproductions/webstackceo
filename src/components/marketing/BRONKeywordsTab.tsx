@@ -1054,7 +1054,9 @@ export const BRONKeywordsTab = memo(({
               <div className="divide-y divide-border/20" style={{ contain: 'layout style' }}>
                 {displayClusters.map((cluster) => (
                   <BronClusterCard
-                    key={cluster.parentId}
+                    // Key must be domain-scoped to avoid React reusing rows across domain switches
+                    // (can cause flicker/glitch + stale expanded state rendering).
+                    key={`${selectedDomain ?? 'no-domain'}:${cluster.parentId}`}
                     cluster={cluster}
                     serpReports={activeSerpReports}
                     keywordMetrics={keywordMetrics}
