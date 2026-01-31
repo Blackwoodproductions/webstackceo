@@ -372,7 +372,7 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
 
   return (
     <div 
-      className={`space-y-6 no-theme-transition ${showStatsFooter ? 'pb-20' : ''}`}
+      className={`space-y-4 no-theme-transition ${showStatsFooter ? 'pb-20' : ''}`}
       style={{ contain: "layout style paint" }}
       data-no-theme-transition
     >
@@ -386,7 +386,7 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
       
       {/* Domain Profile Section */}
       {selectedDomain && (
-        <div className="mb-6">
+        <div className="mb-2">
           <BronDomainProfile
             selectedDomain={selectedDomain}
             domainInfo={domainInfo}
@@ -403,7 +403,7 @@ export const BRONDashboard = memo(({ selectedDomain, isNewlyAddedDomain, onAutoF
 
 
       {/* Tab Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2">
         {/* Only show info cards when keywords tab is active AND keywords have loaded */}
         {activeTab === "keywords" && stableKeywords.length > 0 && <BronKeywordsInfoCards />}
 
