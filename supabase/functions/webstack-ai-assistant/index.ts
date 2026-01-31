@@ -402,7 +402,7 @@ const SEO_TOOLS = [
     type: "function",
     function: {
       name: "save_to_seo_vault",
-      description: "Save research findings, reports, or recommendations to the user's private SEO vault for later viewing or implementation. Use this after completing any research to help users organize their insights.",
+      description: "Save research findings, reports, or recommendations to the user's private SEO vault for later viewing or implementation. ALWAYS include the domain parameter with the currently selected domain.",
       parameters: {
         type: "object",
         properties: {
@@ -427,9 +427,13 @@ const SEO_TOOLS = [
             type: "array",
             items: { type: "string" },
             description: "Tags for organizing (e.g., ['keywords', 'plumber', 'local-seo'])"
+          },
+          domain: {
+            type: "string",
+            description: "The domain this research is for - ALWAYS use the currently selected domain from the system context"
           }
         },
-        required: ["title", "report_type", "content"]
+        required: ["title", "report_type", "content", "domain"]
       }
     }
   },
@@ -1898,14 +1902,18 @@ function buildSystemPrompt(domainContext: any, userEmail?: string, selectedDomai
 ### 💾 Save & Organize Tools:
 - **save_competitors**: Save competitor domains discovered
 - **save_research_to_context**: Save keywords, topics, insights to their profile
-- **save_to_seo_vault**: ALWAYS offer to save research to user's private vault
+- **save_to_seo_vault**: ALWAYS include the domain parameter with the ACTIVE DOMAIN shown above
 - **get_seo_vault**: Retrieve user's saved reports and research
+
+## CRITICAL - SAVING TO VAULT:
+When saving to SEO vault, you MUST ALWAYS include domain="${selectedDomain || '[THE_ACTIVE_DOMAIN]'}" in save_to_seo_vault calls.
+NEVER save without the domain field. Each report should be tagged to the specific domain being researched.
 
 ## RESEARCH WORKFLOW:
 When doing research, ALWAYS:
 1. Use tools to gather real data first
 2. Present findings in organized tables/lists
-3. **Offer to save to SEO Vault** ("Want me to save this to your vault?")
+3. **Save to SEO Vault with the domain field** using the active domain
 4. Suggest next steps
 
 ## PLATFORM KNOWLEDGE:
