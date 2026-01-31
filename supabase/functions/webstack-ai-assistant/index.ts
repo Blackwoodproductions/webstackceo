@@ -1004,11 +1004,14 @@ async function getSerpReport(domain: string): Promise<any> {
   const apiKey = Deno.env.get("BRON_API_KEY");
   
   if (!apiId || !apiKey) {
-    return { error: "BRON API not configured" };
+    return { error: "BRON API not configured", message: "SERP report requires BRON API credentials." };
   }
   
   try {
     const credentials = btoa(`${apiId}:${apiKey}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    
     const response = await fetch(`${BRON_API_BASE}/serp-report`, {
       method: "POST",
       headers: {
@@ -1016,17 +1019,32 @@ async function getSerpReport(domain: string): Promise<any> {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({ domain }).toString(),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`BRON API error: ${response.status}`);
+      console.error(`SERP report API returned ${response.status}`);
+      return { error: `SERP API error: ${response.status}`, message: "The SERP report service is temporarily unavailable. Please try again later." };
+    }
+
+    // Check content type to avoid parsing HTML as JSON
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("SERP report returned non-JSON:", text.slice(0, 200));
+      return { error: "SERP API returned invalid response", message: "The SERP report service returned an unexpected response. Please try again later." };
     }
 
     const data = await response.json();
     return { domain, report: data };
   } catch (error) {
     console.error("SERP report error:", error);
-    return { error: "Failed to fetch SERP report" };
+    const message = error instanceof Error && error.name === 'AbortError' 
+      ? "SERP report request timed out. Please try again."
+      : "Failed to fetch SERP report. The service may be temporarily unavailable.";
+    return { error: "Failed to fetch SERP report", message };
   }
 }
 
@@ -1036,12 +1054,15 @@ async function getBacklinks(domain: string, type: string): Promise<any> {
   const apiKey = Deno.env.get("BRON_API_KEY");
   
   if (!apiId || !apiKey) {
-    return { error: "BRON API not configured" };
+    return { error: "BRON API not configured", message: "Backlink analysis requires BRON API credentials." };
   }
   
   try {
     const credentials = btoa(`${apiId}:${apiKey}`);
     const endpoint = type === "outbound" ? "/links-out" : "/links-in";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    
     const response = await fetch(`${BRON_API_BASE}${endpoint}`, {
       method: "POST",
       headers: {
@@ -1049,10 +1070,22 @@ async function getBacklinks(domain: string, type: string): Promise<any> {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({ domain }).toString(),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
-      throw new Error(`BRON API error: ${response.status}`);
+      console.error(`Backlinks API returned ${response.status}`);
+      return { error: `Backlinks API error: ${response.status}`, message: "The backlinks service is temporarily unavailable." };
+    }
+
+    // Check content type before parsing
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("Backlinks returned non-JSON:", text.slice(0, 200));
+      return { error: "Backlinks API returned invalid response", message: "The backlinks service returned an unexpected response." };
     }
 
     const data = await response.json();
@@ -1064,7 +1097,10 @@ async function getBacklinks(domain: string, type: string): Promise<any> {
     };
   } catch (error) {
     console.error("Backlinks error:", error);
-    return { error: "Failed to fetch backlinks" };
+    const message = error instanceof Error && error.name === 'AbortError' 
+      ? "Backlinks request timed out. Please try again."
+      : "Failed to fetch backlinks. The service may be temporarily unavailable.";
+    return { error: "Failed to fetch backlinks", message };
   }
 }
 
