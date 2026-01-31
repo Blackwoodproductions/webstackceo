@@ -622,6 +622,92 @@ serve(async (req) => {
         break;
       }
 
+      // === SEO VAULT INTEGRATION - Fetch content ideas from vault ===
+      case "get-vault-ideas": {
+        if (!domain) {
+          return new Response(
+            JSON.stringify({ error: "Domain is required for get-vault-ideas" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        // Get content ideas from the SEO vault for this domain
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Actionable report types that can feed CADE content generation
+        const actionableTypes = ['keyword_research', 'content_plan', 'topic_cluster', 'monthly_seo_report', 'competitor_analysis'];
+        
+        const { data: vaultItems, error: vaultError } = await supabase
+          .from('seo_vault')
+          .select('id, title, report_type, content, summary, tags, created_at')
+          .eq('domain', domain)
+          .in('report_type', actionableTypes)
+          .order('created_at', { ascending: false })
+          .limit(params?.limit || 10);
+        
+        if (vaultError) {
+          console.error("[CADE API] Vault fetch error:", vaultError);
+          return new Response(
+            JSON.stringify({ error: "Failed to fetch vault ideas", details: vaultError.message }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        // Helper to extract keywords from vault content
+        const getKeywords = (c: any): string[] => {
+          const keywords: string[] = [];
+          if (Array.isArray(c.keywords)) keywords.push(...c.keywords);
+          if (Array.isArray(c.target_keywords)) keywords.push(...c.target_keywords);
+          if (typeof c.primary_keyword === 'string') keywords.unshift(c.primary_keyword);
+          if (typeof c.keyword === 'string') keywords.unshift(c.keyword);
+          if (c.plan?.keyword) keywords.push(c.plan.keyword);
+          if (Array.isArray(c.ranking_opportunities)) {
+            keywords.push(...c.ranking_opportunities.map((k: any) => typeof k === 'string' ? k : k.keyword).filter(Boolean));
+          }
+          return [...new Set(keywords.filter(k => typeof k === 'string'))].slice(0, 10);
+        };
+        
+        // Helper to extract topics from vault content
+        const getTopics = (c: any): string[] => {
+          const topics: string[] = [];
+          if (Array.isArray(c.topics)) topics.push(...c.topics);
+          if (Array.isArray(c.content_ideas)) {
+            topics.push(...c.content_ideas.map((t: any) => typeof t === 'string' ? t : t.title || t.topic).filter(Boolean));
+          }
+          if (Array.isArray(c.action_items)) {
+            topics.push(...c.action_items.filter((a: any) => typeof a === 'string'));
+          }
+          return [...new Set(topics.filter(t => typeof t === 'string'))].slice(0, 10);
+        };
+        
+        // Extract content ideas from vault items
+        const ideas = (vaultItems || []).map((item: any) => {
+          const content = item.content || {};
+          return {
+            id: item.id,
+            title: item.title,
+            type: item.report_type,
+            summary: item.summary,
+            keywords: getKeywords(content),
+            topics: getTopics(content),
+            created_at: item.created_at,
+          };
+        });
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            domain,
+            total: ideas.length,
+            ideas,
+            message: `Found ${ideas.length} content idea(s) in the SEO vault for ${domain}`
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),

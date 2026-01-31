@@ -51,9 +51,9 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      // If domain is specified, filter by domain or global items
+      // Filter by domain - show domain-specific items only (not global)
       if (domain) {
-        query = query.or(`domain.eq.${domain},domain.is.null`);
+        query = query.eq('domain', domain);
       }
 
       const { data, error } = await query.limit(20);
@@ -178,7 +178,7 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
     return keywords.length > 0 ? [...new Set(keywords)] : [fallbackTitle];
   };
 
-  // Get report type color
+  // Get report type color - expanded to include more types
   const getReportTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       keyword_research: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30 text-cyan-400',
@@ -186,13 +186,17 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
       seo_audit: 'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400',
       competitor_analysis: 'from-orange-500/20 to-orange-600/10 border-orange-500/30 text-orange-400',
       backlink_report: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400',
+      serp_analysis: 'from-pink-500/20 to-pink-600/10 border-pink-500/30 text-pink-400',
+      monthly_seo_report: 'from-blue-500/20 to-blue-600/10 border-blue-500/30 text-blue-400',
+      traffic_report: 'from-green-500/20 to-green-600/10 border-green-500/30 text-green-400',
+      topic_cluster: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30 text-indigo-400',
     };
     return colors[type] || 'from-primary/20 to-primary/10 border-primary/30 text-primary';
   };
 
-  // Content plans that can be used for article generation
+  // Content plans that can be used for article generation - expanded list
   const actionablePlans = vaultItems.filter(item => 
-    ['keyword_research', 'content_plan', 'topic_cluster'].includes(item.report_type)
+    ['keyword_research', 'content_plan', 'topic_cluster', 'monthly_seo_report', 'competitor_analysis'].includes(item.report_type)
   );
 
   return (
@@ -212,7 +216,7 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
           <div>
             <h3 className="font-semibold text-foreground">SEO Vault</h3>
             <p className="text-xs text-muted-foreground">
-              {actionablePlans.length} content plans available
+              {vaultItems.length} report{vaultItems.length !== 1 ? 's' : ''} saved{actionablePlans.length > 0 ? ` • ${actionablePlans.length} actionable` : ''}
             </p>
           </div>
         </div>
@@ -253,7 +257,8 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
         ) : (
           <div className="space-y-2 pr-2">
             {vaultItems.map((item) => {
-              const isActionable = ['keyword_research', 'content_plan', 'topic_cluster'].includes(item.report_type);
+              // Expanded list of actionable report types for CADE content generation
+              const isActionable = ['keyword_research', 'content_plan', 'topic_cluster', 'monthly_seo_report', 'competitor_analysis'].includes(item.report_type);
               const isExpanded = expandedId === item.id;
               const isGenerating = generatingId === item.id;
               const colorClasses = getReportTypeColor(item.report_type);
