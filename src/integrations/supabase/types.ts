@@ -1620,6 +1620,48 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_vault: {
+        Row: {
+          content: Json
+          created_at: string
+          domain: string | null
+          id: string
+          is_favorite: boolean | null
+          report_type: string
+          summary: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          report_type?: string
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          domain?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          report_type?: string
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_alerts: {
         Row: {
           auto_remediation_attempted: boolean | null

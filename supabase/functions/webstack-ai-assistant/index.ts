@@ -337,6 +337,126 @@ const SEO_TOOLS = [
         required: ["domain", "field", "value"]
       }
     }
+  },
+  // NEW: Website Knowledge - Glossary Terms
+  {
+    type: "function",
+    function: {
+      name: "get_glossary_terms",
+      description: "Search the SEO glossary for definitions and best practices on any SEO topic. Use this when users ask about SEO terminology, concepts, or need explanations. Returns detailed definitions with why it matters, best practices, and related terms.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: {
+            type: "string",
+            description: "Search term to find glossary entries (e.g., 'title tag', 'backlinks', 'schema markup')"
+          },
+          category: {
+            type: "string",
+            enum: ["On-Page SEO", "Technical SEO", "Off-Page SEO", "Local SEO", "Analytics", "all"],
+            description: "Filter by category (default: all)"
+          }
+        },
+        required: ["search"]
+      }
+    }
+  },
+  // NEW: Website Knowledge - Learning Guides
+  {
+    type: "function",
+    function: {
+      name: "get_learning_guides",
+      description: "Get information about available SEO learning guides and their content. Use when users want to learn about specific SEO topics in depth. Returns guide summaries and links.",
+      parameters: {
+        type: "object",
+        properties: {
+          topic: {
+            type: "string",
+            description: "Topic to find guides for (e.g., 'on-page SEO', 'local SEO', 'link building')"
+          }
+        },
+        required: ["topic"]
+      }
+    }
+  },
+  // NEW: Website Knowledge - Platform Features
+  {
+    type: "function",
+    function: {
+      name: "get_platform_features",
+      description: "Get information about Webstack.ceo platform features and capabilities. Use when users ask what the platform can do or how to use specific features.",
+      parameters: {
+        type: "object",
+        properties: {
+          feature: {
+            type: "string",
+            description: "Feature to get info about (e.g., 'BRON', 'CADE', 'visitor intelligence', 'on-page SEO')"
+          }
+        },
+        required: ["feature"]
+      }
+    }
+  },
+  // NEW: SEO Vault - Save Reports
+  {
+    type: "function",
+    function: {
+      name: "save_to_seo_vault",
+      description: "Save research findings, reports, or recommendations to the user's private SEO vault for later viewing or implementation. Use this after completing any research to help users organize their insights.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Title for the saved report (e.g., 'Keyword Research for plumber keywords')"
+          },
+          report_type: {
+            type: "string",
+            enum: ["keyword_research", "competitor_analysis", "backlink_report", "audit", "content_plan", "action_items", "research"],
+            description: "Type of report being saved"
+          },
+          content: {
+            type: "object",
+            description: "The research data or findings to save (JSON object)"
+          },
+          summary: {
+            type: "string",
+            description: "Brief summary of the findings (1-2 sentences)"
+          },
+          tags: {
+            type: "array",
+            items: { type: "string" },
+            description: "Tags for organizing (e.g., ['keywords', 'plumber', 'local-seo'])"
+          }
+        },
+        required: ["title", "report_type", "content"]
+      }
+    }
+  },
+  // NEW: SEO Vault - Get Reports
+  {
+    type: "function",
+    function: {
+      name: "get_seo_vault",
+      description: "Retrieve saved reports from the user's SEO vault. Use when users want to review their past research or continue from where they left off.",
+      parameters: {
+        type: "object",
+        properties: {
+          domain: {
+            type: "string",
+            description: "Filter by domain (optional)"
+          },
+          report_type: {
+            type: "string",
+            description: "Filter by report type (optional)"
+          },
+          limit: {
+            type: "integer",
+            description: "Number of reports to retrieve (default: 10)"
+          }
+        }
+      }
+    }
   }
 ];
 
@@ -650,6 +770,23 @@ async function executeToolCalls(toolCalls: any[], supabase: any, userId: string,
           break;
         case "save_research_to_context":
           results.push(await saveResearchToContext(supabase, userId, parsedArgs.domain, parsedArgs.field, parsedArgs.value));
+          break;
+        // NEW: Website knowledge tools
+        case "get_glossary_terms":
+          results.push(await getGlossaryTerms(parsedArgs.search, parsedArgs.category || "all"));
+          break;
+        case "get_learning_guides":
+          results.push(await getLearningGuides(parsedArgs.topic));
+          break;
+        case "get_platform_features":
+          results.push(await getPlatformFeatures(parsedArgs.feature));
+          break;
+        // NEW: SEO Vault tools
+        case "save_to_seo_vault":
+          results.push(await saveToSeoVault(supabase, userId, parsedArgs.title, parsedArgs.report_type, parsedArgs.content, parsedArgs.summary, parsedArgs.tags, parsedArgs.domain));
+          break;
+        case "get_seo_vault":
+          results.push(await getSeoVault(supabase, userId, parsedArgs.domain, parsedArgs.report_type, parsedArgs.limit || 10));
           break;
         default:
           results.push({ error: `Unknown tool: ${name}` });
@@ -1661,6 +1798,7 @@ function buildSystemPrompt(domainContext: any, userEmail?: string, selectedDomai
 - For complex tasks: Brief plan (3 bullets max), then execute
 
 ## YOUR TOOLS (use proactively):
+
 ### Research Tools:
 - **get_keyword_suggestions**: Related keywords for any seed term
 - **get_keyword_metrics**: Volume/CPC for specific keywords  
@@ -1674,23 +1812,29 @@ function buildSystemPrompt(domainContext: any, userEmail?: string, selectedDomai
 - **get_cade_content**: Their automated content & FAQs
 - **get_domain_context**: Business profile, services, competitors
 
-### Save & Organize Tools:
+### 📚 Knowledge Tools (USE for SEO education):
+- **get_glossary_terms**: Search SEO definitions, best practices, explanations
+- **get_learning_guides**: Find detailed guides on any SEO topic
+- **get_platform_features**: Explain what Webstack.ceo features do
+
+### 💾 Save & Organize Tools:
 - **save_competitors**: Save competitor domains discovered
 - **save_research_to_context**: Save keywords, topics, insights to their profile
+- **save_to_seo_vault**: ALWAYS offer to save research to user's private vault
+- **get_seo_vault**: Retrieve user's saved reports and research
 
 ## RESEARCH WORKFLOW:
 When doing research, ALWAYS:
 1. Use tools to gather real data first
 2. Present findings in organized tables/lists
-3. Offer to save insights to their domain context
+3. **Offer to save to SEO Vault** ("Want me to save this to your vault?")
 4. Suggest next steps
 
-## BACKLINK PARTNER DISCOVERY:
-When asked about backlink opportunities:
-1. Use get_backlinks to analyze current link profile
-2. Use get_competitor_keywords to find competitor's linking sites
-3. Suggest high-authority sites in the same niche
-4. Recommend outreach strategies
+## PLATFORM KNOWLEDGE:
+You represent webstack.ceo - an all-in-one SEO command center. When users ask about features:
+- Use get_platform_features to explain capabilities
+- Use get_learning_guides to point them to educational content
+- Use get_glossary_terms to explain SEO concepts
 
 ## FORMAT:
 - Tables for metrics/comparisons
@@ -1699,6 +1843,7 @@ When asked about backlink opportunities:
 
 User: ${userEmail || 'Anonymous'}
 `;
+
 
   // Add selected domain prominently
   if (selectedDomain) {
@@ -1721,4 +1866,434 @@ User: ${userEmail || 'Anonymous'}
   }
 
   return prompt;
+}
+
+// ===== NEW: Website Knowledge Tools =====
+
+// Glossary terms database - comprehensive SEO definitions
+const GLOSSARY_TERMS: Record<string, any> = {
+  "title tag": {
+    term: "Title Tag",
+    category: "On-Page SEO",
+    definition: "The HTML element (<title>) that defines the page title shown in browser tabs and search results. Critical for both rankings and click-through rates.",
+    best_practices: [
+      "Keep under 60 characters",
+      "Place primary keyword near the beginning",
+      "Make each page's title unique",
+      "Include brand name at the end"
+    ],
+    why_it_matters: "Primary factor for search engines to understand page content and first impression users see in SERPs.",
+    related: ["meta-description", "header-tags", "on-page-seo"]
+  },
+  "meta description": {
+    term: "Meta Description",
+    category: "On-Page SEO",
+    definition: "HTML attribute providing a brief summary of page content, displayed below the title in search results. Acts as your 'ad copy' for organic listings.",
+    best_practices: [
+      "Keep under 160 characters",
+      "Include target keyword naturally",
+      "Add clear value proposition",
+      "Use call-to-action when appropriate"
+    ],
+    why_it_matters: "Significantly influences click-through rates by convincing users to click your result over competitors.",
+    related: ["title-tag", "serp", "ctr"]
+  },
+  "backlinks": {
+    term: "Backlinks",
+    category: "Off-Page SEO",
+    definition: "Links from other websites pointing to your site. One of the most important ranking factors, acting as 'votes of confidence' from other sites.",
+    best_practices: [
+      "Focus on quality over quantity",
+      "Build from relevant, authoritative sites",
+      "Diversify anchor text naturally",
+      "Avoid paid or spammy links"
+    ],
+    why_it_matters: "Strong correlation with rankings. High-quality backlinks signal authority and trustworthiness to search engines.",
+    related: ["domain-authority", "link-building", "referring-domains"]
+  },
+  "domain authority": {
+    term: "Domain Authority (DA)",
+    category: "Off-Page SEO",
+    definition: "A metric (0-100) developed by Moz predicting how well a site will rank. Higher scores indicate greater ranking potential.",
+    best_practices: [
+      "Build high-quality backlinks consistently",
+      "Create link-worthy content",
+      "Remove toxic backlinks",
+      "Focus on topical authority"
+    ],
+    why_it_matters: "Helps predict ranking potential and benchmark against competitors. Influenced by link profile quality.",
+    related: ["backlinks", "domain-rating", "page-authority"]
+  },
+  "schema markup": {
+    term: "Schema Markup",
+    category: "Technical SEO",
+    definition: "Structured data code (typically JSON-LD) that helps search engines understand content context, enabling rich snippets in search results.",
+    best_practices: [
+      "Use JSON-LD format (Google's preferred method)",
+      "Implement relevant schema types for your content",
+      "Test with Google's Rich Results Test",
+      "Keep data consistent with visible page content"
+    ],
+    why_it_matters: "Enables rich snippets (stars, prices, FAQs) that increase visibility and CTR. Required for certain SERP features.",
+    related: ["rich-snippets", "structured-data", "technical-seo"]
+  },
+  "core web vitals": {
+    term: "Core Web Vitals",
+    category: "Technical SEO",
+    definition: "Google's metrics measuring user experience: LCP (loading), INP (interactivity), and CLS (visual stability). Direct ranking factors.",
+    best_practices: [
+      "Target LCP under 2.5 seconds",
+      "Keep INP under 200ms",
+      "Maintain CLS under 0.1",
+      "Optimize images and use CDN"
+    ],
+    why_it_matters: "Confirmed Google ranking factor. Poor scores hurt rankings and user experience, affecting conversions.",
+    related: ["lcp", "inp", "cls", "page-speed"]
+  },
+  "local seo": {
+    term: "Local SEO",
+    category: "Local SEO",
+    definition: "Optimizing online presence to attract business from local searches, especially important for businesses with physical locations or service areas.",
+    best_practices: [
+      "Optimize Google Business Profile completely",
+      "Build consistent NAP citations",
+      "Get reviews on Google and industry sites",
+      "Create location-specific content"
+    ],
+    why_it_matters: "46% of Google searches have local intent. Essential for businesses serving specific geographic areas.",
+    related: ["google-business-profile", "citations", "local-pack"]
+  },
+  "keyword research": {
+    term: "Keyword Research",
+    category: "On-Page SEO",
+    definition: "The process of discovering and analyzing search terms people use, forming the foundation of any SEO strategy.",
+    best_practices: [
+      "Start with seed keywords from your niche",
+      "Analyze search volume and competition",
+      "Consider search intent (informational, commercial, transactional)",
+      "Look for long-tail opportunities"
+    ],
+    why_it_matters: "Guides all content and optimization decisions. Targeting wrong keywords wastes resources and yields poor results.",
+    related: ["search-volume", "keyword-difficulty", "long-tail-keywords"]
+  }
+};
+
+// Learning guides database
+const LEARNING_GUIDES: Record<string, any> = {
+  "on-page seo": {
+    title: "On-Page SEO Guide",
+    href: "/learn/on-page-seo-guide",
+    description: "Complete guide to optimizing individual pages for search engines. Covers title tags, meta descriptions, headers, content optimization, internal linking, and more.",
+    topics: ["Title tags", "Meta descriptions", "Header structure", "Image optimization", "Internal linking", "Content quality"]
+  },
+  "off-page seo": {
+    title: "Off-Page SEO Guide",
+    href: "/learn/off-page-seo-guide",
+    description: "Master external ranking factors including link building, brand mentions, social signals, and building domain authority.",
+    topics: ["Link building strategies", "Guest posting", "Digital PR", "Brand mentions", "Social signals"]
+  },
+  "local seo": {
+    title: "Local SEO Guide",
+    href: "/learn/local-seo-guide",
+    description: "Dominate local search results with Google Business Profile optimization, citation building, review management, and local content strategies.",
+    topics: ["Google Business Profile", "Citations", "Reviews", "Local keywords", "Service area optimization"]
+  },
+  "technical seo": {
+    title: "Technical SEO Guide",
+    href: "/learn/technical-seo-guide",
+    description: "Technical foundations for SEO success including site architecture, Core Web Vitals, crawlability, indexation, and schema markup.",
+    topics: ["Site structure", "Page speed", "Core Web Vitals", "Schema markup", "XML sitemaps", "Robots.txt"]
+  },
+  "link building": {
+    title: "Link Building Guide",
+    href: "/learn/link-building-guide",
+    description: "Proven strategies for acquiring high-quality backlinks ethically. Covers outreach, content marketing, broken link building, and more.",
+    topics: ["Outreach strategies", "Content marketing", "Guest posting", "Broken link building", "Resource pages"]
+  },
+  "keyword research": {
+    title: "Keyword Research Guide",
+    href: "/learn/keyword-research-guide",
+    description: "Find and prioritize the right keywords for your business. Learn to analyze search intent, competition, and build a winning keyword strategy.",
+    topics: ["Seed keywords", "Search intent", "Keyword difficulty", "Long-tail keywords", "Competitor analysis"]
+  },
+  "content marketing": {
+    title: "Content Marketing Guide",
+    href: "/learn/content-marketing-guide",
+    description: "Create content that ranks and converts. Covers content strategy, creation, optimization, and distribution.",
+    topics: ["Content strategy", "Topic clusters", "Content optimization", "Distribution", "Repurposing"]
+  }
+};
+
+// Platform features database
+const PLATFORM_FEATURES: Record<string, any> = {
+  "bron": {
+    name: "BRON (Backlink & Ranking Optimization Network)",
+    description: "Automated backlink monitoring and keyword rank tracking system. Monitors your rankings across search engines, tracks backlink health, and provides actionable SEO insights.",
+    capabilities: [
+      "Real-time keyword rank tracking",
+      "Backlink profile monitoring",
+      "Competitor rank comparison",
+      "Citation/link partner management",
+      "Historical trend analysis"
+    ],
+    how_to_access: "Access from the dashboard under the BRON tab. Add keywords to track and monitor your rankings daily."
+  },
+  "cade": {
+    name: "CADE (Content Automation & Distribution Engine)",
+    description: "AI-powered content generation system that creates SEO-optimized blog posts, FAQs, and service pages automatically based on your business context.",
+    capabilities: [
+      "Automated blog post generation",
+      "FAQ content creation",
+      "Service page optimization",
+      "Content distribution to your CMS",
+      "Topic cluster building"
+    ],
+    how_to_access: "Set up your Domain Context first, then access CADE from the dashboard to start generating content."
+  },
+  "visitor intelligence": {
+    name: "Visitor Intelligence",
+    description: "De-anonymize website visitors to identify companies visiting your site. Turn anonymous traffic into actionable leads with company identification and contact enrichment.",
+    capabilities: [
+      "Company identification from IP",
+      "Contact information enrichment",
+      "Real-time visitor tracking",
+      "Lead scoring and qualification",
+      "CRM integration"
+    ],
+    how_to_access: "Add the tracking snippet to your site, then view visitor data in the Visitor Intelligence dashboard."
+  },
+  "on-page seo": {
+    name: "On-Page SEO Automation",
+    description: "Automated on-page SEO monitoring and optimization. Scans your pages for SEO issues and can automatically fix meta tags, schema, and content issues.",
+    capabilities: [
+      "Automated SEO audits",
+      "Meta tag optimization",
+      "Schema markup injection",
+      "Content issue detection",
+      "Autopilot mode for auto-fixes"
+    ],
+    how_to_access: "Enable from the On-Page SEO tab in the dashboard. Connect your site and enable Autopilot for automatic fixes."
+  },
+  "aeo geo": {
+    name: "AEO/GEO (AI Engine Optimization)",
+    description: "Optimize your content for AI search engines and voice assistants. Monitor how AI systems like ChatGPT and Google AI mention your brand.",
+    capabilities: [
+      "AI visibility monitoring",
+      "LLM citation tracking",
+      "Content optimization for AI",
+      "Brand mention alerts",
+      "Competitor AI visibility comparison"
+    ],
+    how_to_access: "Access from the AEO/GEO tab to see how AI engines reference your brand and keywords."
+  },
+  "seo vault": {
+    name: "SEO Vault",
+    description: "Your private repository for saving research findings, keyword lists, competitor analyses, and action items. Organize and revisit your SEO work.",
+    capabilities: [
+      "Save research reports",
+      "Organize by domain and type",
+      "Tag and categorize findings",
+      "Quick access to past research",
+      "Export capabilities"
+    ],
+    how_to_access: "Ask the AI assistant to 'save to vault' after any research. View saved items by asking to 'show my vault'."
+  }
+};
+
+// Get glossary terms matching search
+async function getGlossaryTerms(search: string, category: string = "all"): Promise<any> {
+  const searchLower = search.toLowerCase();
+  const matches: any[] = [];
+  
+  for (const [key, term] of Object.entries(GLOSSARY_TERMS)) {
+    const matchesSearch = key.includes(searchLower) || 
+                         term.term.toLowerCase().includes(searchLower) ||
+                         term.definition.toLowerCase().includes(searchLower);
+    const matchesCategory = category === "all" || term.category.toLowerCase() === category.toLowerCase();
+    
+    if (matchesSearch && matchesCategory) {
+      matches.push(term);
+    }
+  }
+  
+  if (matches.length === 0) {
+    return {
+      search,
+      found: false,
+      message: `No glossary terms found for "${search}". Try searching for common SEO terms like "backlinks", "title tag", "schema markup", etc.`,
+      suggestions: Object.keys(GLOSSARY_TERMS).slice(0, 5)
+    };
+  }
+  
+  return {
+    search,
+    found: true,
+    count: matches.length,
+    terms: matches,
+    message: `Found ${matches.length} glossary term(s) for "${search}"`
+  };
+}
+
+// Get learning guides matching topic
+async function getLearningGuides(topic: string): Promise<any> {
+  const topicLower = topic.toLowerCase();
+  const matches: any[] = [];
+  
+  for (const [key, guide] of Object.entries(LEARNING_GUIDES)) {
+    if (key.includes(topicLower) || 
+        guide.title.toLowerCase().includes(topicLower) ||
+        guide.description.toLowerCase().includes(topicLower) ||
+        guide.topics.some((t: string) => t.toLowerCase().includes(topicLower))) {
+      matches.push(guide);
+    }
+  }
+  
+  if (matches.length === 0) {
+    return {
+      topic,
+      found: false,
+      message: `No guides found for "${topic}". Available guides cover: on-page SEO, off-page SEO, local SEO, technical SEO, link building, keyword research, and content marketing.`,
+      available_guides: Object.values(LEARNING_GUIDES).map(g => ({ title: g.title, href: g.href }))
+    };
+  }
+  
+  return {
+    topic,
+    found: true,
+    count: matches.length,
+    guides: matches,
+    message: `Found ${matches.length} learning guide(s) for "${topic}". Visit webstack.ceo${matches[0].href} to learn more.`
+  };
+}
+
+// Get platform feature info
+async function getPlatformFeatures(feature: string): Promise<any> {
+  const featureLower = feature.toLowerCase();
+  
+  for (const [key, feat] of Object.entries(PLATFORM_FEATURES)) {
+    if (key.includes(featureLower) || 
+        feat.name.toLowerCase().includes(featureLower) ||
+        feat.description.toLowerCase().includes(featureLower)) {
+      return {
+        feature: feat.name,
+        description: feat.description,
+        capabilities: feat.capabilities,
+        how_to_access: feat.how_to_access,
+        found: true
+      };
+    }
+  }
+  
+  return {
+    feature,
+    found: false,
+    message: `Feature "${feature}" not found. Available features: BRON (rankings), CADE (content), Visitor Intelligence, On-Page SEO, AEO/GEO, SEO Vault.`,
+    available_features: Object.values(PLATFORM_FEATURES).map(f => f.name)
+  };
+}
+
+// ===== NEW: SEO Vault Tools =====
+
+// Save to SEO vault
+async function saveToSeoVault(
+  supabase: any, 
+  userId: string, 
+  title: string, 
+  reportType: string, 
+  content: any, 
+  summary?: string, 
+  tags?: string[],
+  domain?: string
+): Promise<any> {
+  try {
+    const { data, error } = await supabase
+      .from('seo_vault')
+      .insert({
+        user_id: userId,
+        domain: domain || null,
+        title,
+        report_type: reportType,
+        content,
+        summary: summary || null,
+        tags: tags || []
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    return {
+      success: true,
+      id: data.id,
+      title,
+      report_type: reportType,
+      message: `✅ Saved to your SEO Vault: "${title}". View it anytime by asking "show my vault" or "show my saved reports".`
+    };
+  } catch (error) {
+    console.error("Save to vault error:", error);
+    return { 
+      error: "Failed to save to SEO vault",
+      message: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
+}
+
+// Get from SEO vault
+async function getSeoVault(
+  supabase: any, 
+  userId: string, 
+  domain?: string, 
+  reportType?: string, 
+  limit: number = 10
+): Promise<any> {
+  try {
+    let query = supabase
+      .from('seo_vault')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (domain) {
+      query = query.eq('domain', domain);
+    }
+    if (reportType) {
+      query = query.eq('report_type', reportType);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      return {
+        count: 0,
+        reports: [],
+        message: "Your SEO Vault is empty. Complete some research and I'll offer to save it for you!"
+      };
+    }
+    
+    return {
+      count: data.length,
+      reports: data.map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        report_type: r.report_type,
+        domain: r.domain,
+        summary: r.summary,
+        tags: r.tags,
+        is_favorite: r.is_favorite,
+        created_at: r.created_at,
+        // Include content preview (first 500 chars of stringified content)
+        content_preview: JSON.stringify(r.content).slice(0, 500)
+      })),
+      message: `Found ${data.length} saved report(s) in your SEO Vault.`
+    };
+  } catch (error) {
+    console.error("Get vault error:", error);
+    return { 
+      error: "Failed to retrieve SEO vault",
+      message: error instanceof Error ? error.message : "Unknown error"
+    };
+  }
 }
