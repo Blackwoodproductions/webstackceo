@@ -1271,7 +1271,8 @@ export const GADashboardPanel = ({
     );
   }
 
-  // Connected but no properties found in account
+  // Connected but no properties found in account - show full onboarding wizard (same as domain not in GA)
+  // This ensures new users with new domains see the complete 4-step setup flow
   if (isAuthenticated && propertiesLoaded && properties.length === 0) {
     return (
       <Card className="relative overflow-hidden border-border bg-card group">
@@ -1280,8 +1281,8 @@ export const GADashboardPanel = ({
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/3 to-transparent pointer-events-none animate-pulse" style={{ animationDuration: '5s' }} />
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent rounded-bl-[60px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-500/10 to-transparent rounded-tr-[60px] pointer-events-none" />
-        <div className="absolute top-[25%] left-[6%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
-        <div className="absolute bottom-[20%] right-[8%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-[15%] left-[5%] w-1 h-1 rounded-full bg-orange-400/50 animate-pulse" />
+        <div className="absolute bottom-[25%] right-[7%] w-1.5 h-1.5 rounded-full bg-amber-400/40 animate-pulse" style={{ animationDelay: '1s' }} />
         <CardHeader className="relative z-10 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1290,44 +1291,24 @@ export const GADashboardPanel = ({
               </div>
               <div>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics</span>
-                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Connected</Badge>
+                  <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Google Analytics Setup</span>
+                  <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-500">Account Connected</Badge>
                 </CardTitle>
-                <CardDescription className="text-xs">No properties found in your account</CardDescription>
+                <CardDescription className="text-xs">
+                  Complete setup to track <span className="font-medium text-foreground">{externalSelectedSite ? normalizeDomain(externalSelectedSite) : 'your domain'}</span>
+                </CardDescription>
               </div>
             </div>
           </div>
         </CardHeader>
+        
         <CardContent className="relative z-10">
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-6 text-center">
-            <Activity className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h4 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-2">
-              Create Your First GA4 Property
-            </h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Your Google Analytics account doesn't have any properties yet. Create a property to start tracking website analytics.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button 
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                onClick={() => window.open('https://analytics.google.com/analytics/web/#/admin/create-property', '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Create Property
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setPropertiesLoaded(false);
-                  fetchProperties();
-                  toast({ title: "Refreshing...", description: "Checking for new properties." });
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
+          <GAOnboardingWizard
+            domain={externalSelectedSite || 'your-domain.com'}
+            properties={properties}
+            onRefresh={handleWizardRefresh}
+            isRefreshing={isWizardRefreshing}
+          />
         </CardContent>
       </Card>
     );
