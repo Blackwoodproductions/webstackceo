@@ -466,11 +466,15 @@ export const BRONKeywordsTab = memo(({
     return clusters;
   }, [filteredKeywords, selectedDomain]);
 
-  // Remove “grey” tracking-only rows from the UI (still counted in stats)
-  const displayClusters = useMemo(
-    () => groupedKeywords.filter((c) => !(c.parent.status === 'tracking_only' || String(c.parent.id).startsWith('serp_'))),
-    [groupedKeywords]
-  );
+  // Show tracking-only keywords if there are NO content keywords (otherwise users see "no keywords found")
+  // When content keywords exist, hide tracking-only from the main list (still counted in stats)
+  const displayClusters = useMemo(() => {
+    const contentClusters = groupedKeywords.filter(
+      (c) => !(c.parent.status === 'tracking_only' || String(c.parent.id).startsWith('serp_'))
+    );
+    // If we have content keywords, show only those; otherwise show all (including tracking-only)
+    return contentClusters.length > 0 ? contentClusters : groupedKeywords;
+  }, [groupedKeywords]);
 
   // Stats
   const contentKeywords = mergedKeywords.filter(k => k.status !== 'tracking_only' && !String(k.id).startsWith('serp_'));
