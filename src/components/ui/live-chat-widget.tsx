@@ -268,10 +268,14 @@ const LiveChatWidget = () => {
   const handleOpen = useCallback(() => {
     setIsOpen(true);
     setHasNewMessage(false);
+    // Dispatch event for other components (e.g., ShopSideTab)
+    window.dispatchEvent(new CustomEvent('chat-widget-state', { detail: { isOpen: true } }));
   }, []);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('chat-widget-state', { detail: { isOpen: false } }));
   }, []);
 
   const handleSendMessage = useCallback(async (message: string) => {
