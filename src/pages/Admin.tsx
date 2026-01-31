@@ -24,6 +24,7 @@ import AdminDirectoryTab from "@/components/admin/AdminDirectoryTab";
 import { SystemHealthPanel } from "@/components/admin/SystemHealthPanel";
 import AdminFeedbackTab from "@/components/admin/AdminFeedbackTab";
 import AdminAIUsageTab from "@/components/admin/AdminAIUsageTab";
+import AdminCROTab from "@/components/admin/AdminCROTab";
 import InteractiveGrid from "@/components/ui/interactive-grid";
 import { VIDashboardEffects } from "@/components/ui/vi-dashboard-effects";
 import {
@@ -703,10 +704,14 @@ const Admin = () => {
 
       <main className="container mx-auto px-6 py-8 max-w-7xl relative z-10">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50">
+          <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid bg-background/50 backdrop-blur-sm border border-border/50">
             <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-violet-500/20">
               <Gauge className="w-4 h-4" />
               <span className="hidden sm:inline">Command</span>
+            </TabsTrigger>
+            <TabsTrigger value="cro" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500/20 data-[state=active]:to-pink-500/20">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">CRO</span>
             </TabsTrigger>
             <TabsTrigger value="ai-usage" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/20 data-[state=active]:to-purple-500/20">
               <Bot className="w-4 h-4" />
@@ -1071,6 +1076,11 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </motion.div>
+          </TabsContent>
+
+          {/* CRO Campaign Controls */}
+          <TabsContent value="cro">
+            <AdminCROTab />
           </TabsContent>
 
           {/* AI Usage Analytics */}

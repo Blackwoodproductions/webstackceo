@@ -4,6 +4,7 @@ import { X, Gift, Zap, ArrowRight, Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCROSettings, trackCROInteraction } from '@/hooks/use-cro-settings';
 
 interface ExitIntentPopupProps {
   /** Delay before exit intent is active (ms) */
@@ -25,6 +26,12 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
   const { user } = useAuth();
+  const { isEnabled: isCROEnabled, getConfig, loading: settingsLoading } = useCROSettings();
+
+  // Get config from admin settings
+  const discount = getConfig('exit_intent_popup', 'discount', 25);
+  const configDelay = getConfig('exit_intent_popup', 'delay_ms', delayMs);
+  const configDismissDays = getConfig('exit_intent_popup', 'dismiss_days', dismissDays);
 
   // Check if popup was recently dismissed
   const wasRecentlyDismissed = useCallback(() => {
@@ -32,20 +39,21 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
     if (!dismissed) return false;
     const dismissedTime = parseInt(dismissed, 10);
     const daysSince = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
-    return daysSince < dismissDays;
-  }, [dismissDays]);
+    return daysSince < configDismissDays;
+  }, [configDismissDays]);
 
-  // Enable exit intent after delay
+  // Enable exit intent after delay (only if CRO is enabled)
   useEffect(() => {
-    // Don't show to logged-in users or recently dismissed
-    if (user || wasRecentlyDismissed()) return;
+    // Don't show to logged-in users, recently dismissed, or if disabled in admin
+    if (user || wasRecentlyDismissed() || settingsLoading) return;
+    if (!isCROEnabled('exit_intent_popup')) return;
 
     const timer = setTimeout(() => {
       setIsEnabled(true);
-    }, delayMs);
+    }, configDelay);
 
     return () => clearTimeout(timer);
-  }, [user, delayMs, wasRecentlyDismissed]);
+  }, [user, configDelay, wasRecentlyDismissed, isCROEnabled, settingsLoading]);
 
   // Detect exit intent (mouse moving to top of viewport)
   useEffect(() => {
@@ -55,6 +63,7 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
       // Only trigger when mouse leaves through the top
       if (e.clientY <= 5 && !isVisible) {
         setIsVisible(true);
+        trackCROInteraction('exit_intent_popup', 'view');
       }
     };
 
@@ -65,13 +74,15 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
   const handleDismiss = () => {
     setIsVisible(false);
     localStorage.setItem('exit_intent_dismissed', Date.now().toString());
+    trackCROInteraction('exit_intent_popup', 'dismiss');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     
-    // Here you would typically send to your email service
+    // Track conversion
+    trackCROInteraction('exit_intent_popup', 'convert', { email });
     console.log('[ExitIntent] Lead captured:', email);
     setIsSubmitted(true);
     
@@ -129,7 +140,7 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
                           Wait! Before you go...
                         </p>
                         <h3 className="text-2xl font-bold text-foreground">
-                          Get 25% Off Your First Month
+                          Get {discount}% Off Your First Month
                         </h3>
                       </div>
                     </div>
@@ -164,8 +175,9 @@ export const ExitIntentPopup = memo(function ExitIntentPopup({
                       <Button
                         type="submit"
                         className="w-full h-12 bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90 text-white font-semibold group"
+                        onClick={() => trackCROInteraction('exit_intent_popup', 'click')}
                       >
-                        Claim My 25% Discount
+                        Claim My {discount}% Discount
                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </form>
