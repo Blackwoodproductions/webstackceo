@@ -1,7 +1,7 @@
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Search, Zap } from "lucide-react";
+import { ArrowRight, Search, Zap, Shield, Clock, Star, Users, TrendingUp } from "lucide-react";
 import { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSoundContext } from "@/contexts/SoundContext";
@@ -152,6 +152,29 @@ const HeroSection = () => {
             </div>
           </motion.form>
 
+          {/* Trust Signals Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-6"
+          >
+            {[
+              { icon: Users, text: '2,500+ Active Users', color: 'text-cyan-400' },
+              { icon: Star, text: '4.9/5 Rating', color: 'text-amber-400' },
+              { icon: Shield, text: 'SOC 2 Compliant', color: 'text-emerald-400' },
+              { icon: TrendingUp, text: '99.9% Uptime', color: 'text-violet-400' },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground"
+              >
+                <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
+                <span>{item.text}</span>
+              </div>
+            ))}
+          </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,7 +183,7 @@ const HeroSection = () => {
           >
             <span className="block">Get a free instant SEO audit. One dashboard for everything—</span>
             <span className="block">uptime monitoring to traffic intelligence.</span>
-            <span className="block">Fully automated.</span>
+            <span className="block font-medium text-foreground">Fully automated. No credit card required.</span>
           </motion.p>
 
           <motion.div
