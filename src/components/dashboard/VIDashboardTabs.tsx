@@ -248,7 +248,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               } rounded-xl backdrop-blur-xl transition-all duration-300 ${
                 isActive 
                   ? `${color.border} ${color.bg} shadow-xl border-2` 
-                  : `border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20`
+                  : `border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] hover:border-black/15 dark:hover:border-white/20`
               }`}
               title={isHighlighted ? `${tab.label} (Premium AI)` : tab.isPaid ? `${tab.label} (Premium)` : tab.label}
             >
@@ -276,16 +276,16 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 } rounded-lg transition-all duration-300 ${
                   isActive 
                     ? color.iconBg 
-                    : 'bg-white/5 group-hover:bg-white/15'
+                    : 'bg-black/5 dark:bg-white/5 group-hover:bg-black/10 dark:group-hover:bg-white/15'
                 }`}
                 style={{
                   boxShadow: isActive 
                     ? `0 0 25px rgba(${color.rgb}, 0.5), 0 0 10px rgba(${color.rgb}, 0.3)` 
-                    : isHovered ? `0 0 15px rgba(${color.rgb}, 0.2)` : 'none',
+                    : isHovered ? `0 0 18px rgba(${color.rgb}, 0.35)` : 'none',
                 }}
               >
                 <Icon className={`${isCompact ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-colors duration-300 ${
-                  isActive ? color.text : `text-muted-foreground ${color.textHover}`
+                  isActive ? color.text : `text-foreground/60 dark:text-muted-foreground ${color.textHover}`
                 }`} />
               </motion.div>
               
@@ -294,7 +294,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 className={`relative z-10 ${
                   isCompact ? 'text-[11px]' : 'text-sm'
                 } font-semibold tracking-wide transition-colors duration-300 whitespace-nowrap ${
-                  isActive ? color.text : `text-muted-foreground ${color.textHover}`
+                  isActive ? color.text : `text-foreground/70 dark:text-muted-foreground ${color.textHover}`
                 }`}
               >
                 {tab.label}
@@ -315,7 +315,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 <div 
                   className="absolute inset-0 rounded-xl pointer-events-none overflow-hidden"
                   style={{
-                    background: `linear-gradient(135deg, transparent 30%, rgba(${color.rgb}, 0.12) 50%, transparent 70%)`,
+                    background: `linear-gradient(135deg, transparent 20%, rgba(${color.rgb}, 0.25) 50%, transparent 80%)`,
+                    boxShadow: `inset 0 0 20px rgba(${color.rgb}, 0.15)`,
                   }}
                 />
               )}
