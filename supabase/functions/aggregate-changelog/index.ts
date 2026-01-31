@@ -26,10 +26,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // This function can be called in two ways:
-    // 1. Scheduled cron job - aggregates recent changes automatically
-    // 2. Manual trigger with body - creates a specific changelog entry
-
     const contentType = req.headers.get("content-type") || "";
     let body: ChangelogInput | null = null;
     
@@ -41,11 +37,10 @@ serve(async (req) => {
       }
     }
 
+    // Manual changelog entry creation
     if (body && body.title && body.changes) {
-      // Manual changelog entry
       const now = new Date();
       
-      // Get the latest version number
       const { data: latestEntry } = await supabase
         .from("changelog_entries")
         .select("version")
@@ -53,11 +48,10 @@ serve(async (req) => {
         .limit(1)
         .single();
 
-      // Parse and increment version
       let newVersion = "2.6.0";
       if (latestEntry?.version) {
         const parts = latestEntry.version.split(".").map(Number);
-        parts[2] = (parts[2] || 0) + 1; // Increment patch version
+        parts[2] = (parts[2] || 0) + 1;
         newVersion = parts.join(".");
       }
 
@@ -73,7 +67,7 @@ serve(async (req) => {
           highlight: body.highlight || false,
           is_published: true,
           published_at: now.toISOString(),
-          aggregation_start: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+          aggregation_start: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
           aggregation_end: now.toISOString(),
         })
         .select()
@@ -87,38 +81,116 @@ serve(async (req) => {
       );
     }
 
-    // Scheduled aggregation mode
-    // Check last aggregation time
+    // Automated 24-hour aggregation check
     const { data: lastEntry } = await supabase
       .from("changelog_entries")
-      .select("aggregation_end")
-      .order("aggregation_end", { ascending: false })
+      .select("aggregation_end, created_at")
+      .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const lastAggregation = lastEntry?.aggregation_end 
       ? new Date(lastEntry.aggregation_end) 
-      : sixHoursAgo;
+      : twentyFourHoursAgo;
 
-    // If less than 6 hours since last aggregation, skip
-    if (Date.now() - lastAggregation.getTime() < 6 * 60 * 60 * 1000) {
+    const timeSinceLast = Date.now() - lastAggregation.getTime();
+    const hoursRemaining = Math.max(0, 24 - (timeSinceLast / (60 * 60 * 1000)));
+
+    // Check if 24 hours have passed
+    if (timeSinceLast < 24 * 60 * 60 * 1000) {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Less than 6 hours since last aggregation", 
-          nextRun: new Date(lastAggregation.getTime() + 6 * 60 * 60 * 1000).toISOString() 
+          message: `Aggregation runs every 24 hours. Next run in ~${hoursRemaining.toFixed(1)} hours.`,
+          lastAggregation: lastAggregation.toISOString(),
+          nextRun: new Date(lastAggregation.getTime() + 24 * 60 * 60 * 1000).toISOString()
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // For now, return a message that manual aggregation is needed
-    // In production, this would integrate with GitHub API to fetch commits
+    // Check for recent beta feedback to aggregate
+    const { data: recentFeedback } = await supabase
+      .from("beta_feedback")
+      .select("feedback_type, title, message, status")
+      .gte("created_at", lastAggregation.toISOString())
+      .order("created_at", { ascending: false });
+
+    const resolvedBugs = recentFeedback?.filter(f => 
+      (f.feedback_type === "bug_report" || f.feedback_type === "error_report") && 
+      f.status === "resolved"
+    ) || [];
+
+    const implementedFeatures = recentFeedback?.filter(f => 
+      f.feedback_type === "feature_request" && f.status === "resolved"
+    ) || [];
+
+    // If we have resolved items, auto-create a changelog entry
+    if (resolvedBugs.length > 0 || implementedFeatures.length > 0) {
+      const changes: string[] = [];
+      
+      implementedFeatures.forEach(f => {
+        changes.push(`New: ${f.title || f.message.substring(0, 50)}`);
+      });
+      
+      resolvedBugs.forEach(f => {
+        changes.push(`Fixed: ${f.title || f.message.substring(0, 50)}`);
+      });
+
+      const { data: latestVersion } = await supabase
+        .from("changelog_entries")
+        .select("version")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      let newVersion = "2.6.0";
+      if (latestVersion?.version) {
+        const parts = latestVersion.version.split(".").map(Number);
+        parts[2] = (parts[2] || 0) + 1;
+        newVersion = parts.join(".");
+      }
+
+      const now = new Date();
+      const title = implementedFeatures.length > 0 
+        ? "New Features & Bug Fixes" 
+        : "Bug Fixes & Improvements";
+
+      const { data: newEntry, error: insertError } = await supabase
+        .from("changelog_entries")
+        .insert({
+          version: newVersion,
+          title,
+          description: `Auto-aggregated changelog covering ${changes.length} updates from the last 24 hours.`,
+          type: implementedFeatures.length > 0 ? "feature" : "fix",
+          changes,
+          icon: implementedFeatures.length > 0 ? "Sparkles" : "CheckCircle2",
+          highlight: implementedFeatures.length > 2,
+          is_published: true,
+          published_at: now.toISOString(),
+          aggregation_start: lastAggregation.toISOString(),
+          aggregation_end: now.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Auto-aggregated ${changes.length} changes into changelog v${newVersion}`,
+          entry: newEntry
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Ready for aggregation. Use POST with changelog data to create entry.",
+        message: "No resolved feedback to aggregate. Manual entry available via POST.",
         lastAggregation: lastAggregation.toISOString()
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
