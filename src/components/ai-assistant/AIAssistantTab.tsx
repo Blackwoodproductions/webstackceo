@@ -333,6 +333,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   const { user, googleProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [showVault, setShowVault] = useState(false);
@@ -441,11 +442,11 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
   // Dispatch event when panel opens/closes so dashboard can adjust layout
   useEffect(() => {
-    const width = isOpen ? (isExpanded ? 600 : 420) : 0;
+    const width = isOpen ? (isFullscreen ? window.innerWidth : (isExpanded ? 600 : 420)) : 0;
     window.dispatchEvent(new CustomEvent('ai-assistant-state', { 
-      detail: { isOpen, width } 
+      detail: { isOpen, width, isFullscreen } 
     }));
-  }, [isOpen, isExpanded]);
+  }, [isOpen, isExpanded, isFullscreen]);
 
   // Listen for open-ai-assistant event from side tab button
   useEffect(() => {
@@ -640,8 +641,10 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
             exit={{ x: -450, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={cn(
-              "fixed left-0 top-0 z-50 h-screen bg-gradient-to-b from-background via-background to-background/95 backdrop-blur-xl border-r border-cyan-500/20 shadow-2xl shadow-cyan-500/10 flex flex-col overflow-hidden",
-              isExpanded ? "w-[600px]" : "w-[420px]"
+              "fixed left-0 top-0 z-[200] h-screen bg-gradient-to-b from-background via-background to-background/95 backdrop-blur-xl shadow-2xl shadow-cyan-500/10 flex flex-col overflow-hidden",
+              isFullscreen 
+                ? "w-screen border-none" 
+                : cn("border-r border-cyan-500/20", isExpanded ? "w-[600px]" : "w-[420px]")
             )}
           >
             {/* Decorative glow effect */}
@@ -717,14 +720,42 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setIsExpanded(!isExpanded)}
+                      onClick={() => {
+                        if (isFullscreen) {
+                          setIsFullscreen(false);
+                        } else {
+                          setIsExpanded(!isExpanded);
+                        }
+                      }}
                       className="hover:bg-cyan-500/10"
                     >
-                      {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>{isExpanded ? 'Minimize' : 'Expand'}</TooltipContent>
+                  <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : isExpanded ? 'Minimize' : 'Expand'}</TooltipContent>
                 </Tooltip>
+                {/* Fullscreen button - only show when expanded */}
+                {(isExpanded || isFullscreen) && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className={cn("hover:bg-violet-500/10", isFullscreen && "bg-violet-500/20 text-violet-400")}
+                      >
+                        {isFullscreen ? (
+                          <Minimize2 className="w-4 h-4" />
+                        ) : (
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                          </svg>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</TooltipContent>
+                  </Tooltip>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
