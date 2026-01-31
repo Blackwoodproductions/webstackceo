@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Crown, Lock, Zap, TrendingUp, FileText, BrainCircuit, MapPin, Activity, FileSearch, Target, Globe
+  Crown, Lock, Zap, TrendingUp, FileText, BrainCircuit, MapPin, Activity, FileSearch, Target, Globe, Bot
 } from 'lucide-react';
 
-export type FeatureType = 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain' | 'web-builder';
+export type FeatureType = 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain' | 'web-builder' | 'ai-assistant';
 
 interface FeatureUpgradePromptProps {
   feature: FeatureType;
@@ -174,6 +174,24 @@ const featureConfig: Record<FeatureType, {
     ],
     cta: 'Activate WEB Builder',
     tier: 'Premium Add-on'
+  },
+  'ai-assistant': {
+    name: 'AI Assistant',
+    description: 'Get expert SEO help with keyword research, domain onboarding, and troubleshooting',
+    icon: Bot,
+    price: 'Usage-based',
+    priceSubtext: '',
+    color: 'violet',
+    benefits: [
+      '30 min free for all users',
+      '5 hours/week on paid plans',
+      'Keyword research & analysis',
+      'Domain onboarding help',
+      'SEO troubleshooting',
+      'Access to your Google data'
+    ],
+    cta: 'Upgrade for More Time',
+    tier: 'All Plans'
   }
 };
 

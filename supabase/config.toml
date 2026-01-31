@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.aeo-scheduled-check]
 verify_jwt = false
+
+[functions.webstack-ai-assistant]
+verify_jwt = false

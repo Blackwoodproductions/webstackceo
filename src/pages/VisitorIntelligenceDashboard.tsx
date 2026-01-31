@@ -90,6 +90,7 @@ import { useVIAuth } from '@/hooks/use-vi-auth';
 import { useVIChat } from '@/hooks/use-vi-chat';
 import { useDomainCache } from '@/hooks/use-domain-cache';
 import { useUserDomains } from '@/hooks/use-user-domains';
+import { AIAssistantTab } from '@/components/ai-assistant';
 
 interface Lead {
   id: string;
@@ -3920,6 +3921,9 @@ f.parentNode.insertBefore(j,f);
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Assistant Tab */}
+      <AIAssistantTab />
 
       {/* Spacer for bottom padding */}
       <div className="h-6" />

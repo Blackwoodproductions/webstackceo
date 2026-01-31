@@ -206,7 +206,7 @@ export function useSubscriptionStatus() {
 /**
  * Check if a specific feature is available
  */
-export function useFeatureAccess(feature: 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain' | 'web-builder') {
+export function useFeatureAccess(feature: 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 'social-signals' | 'on-page-seo' | 'landing-pages' | 'vi-domain' | 'web-builder' | 'ai-assistant') {
   const status = useSubscriptionStatus();
 
   const hasAccess = (() => {
@@ -229,6 +229,8 @@ export function useFeatureAccess(feature: 'bron' | 'cade' | 'aeo-geo' | 'gmb' | 
         return status.domainCount > 1 || status.tier !== 'free';
       case 'web-builder':
         return false; // Requires subscription check via Stripe
+      case 'ai-assistant':
+        return true; // Everyone gets some free usage, gating happens in the hook
       default:
         return false;
     }

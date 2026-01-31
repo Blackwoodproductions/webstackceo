@@ -1,0 +1,364 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+
+export interface AIMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: Date;
+}
+
+export interface AIConversation {
+  id: string;
+  title: string;
+  domain?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UsageInfo {
+  minutesUsed: number;
+  minutesLimit: number;
+  tier: string;
+  canUse: boolean;
+  isUnlimited: boolean;
+}
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webstack-ai-assistant`;
+
+export function useAIAssistant() {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<AIConversation[]>([]);
+  const [currentConversation, setCurrentConversation] = useState<AIConversation | null>(null);
+  const [messages, setMessages] = useState<AIMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Load conversations
+  useEffect(() => {
+    if (!user) return;
+    loadConversations();
+    checkUsage();
+  }, [user]);
+
+  const loadConversations = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('ai_assistant_conversations')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (!error && data) {
+      setConversations(data.map(c => ({
+        id: c.id,
+        title: c.title || 'New Conversation',
+        domain: c.domain || undefined,
+        createdAt: new Date(c.created_at),
+        updatedAt: new Date(c.updated_at),
+      })));
+    }
+  };
+
+  const loadMessages = async (conversationId: string) => {
+    const { data, error } = await supabase
+      .from('ai_assistant_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (!error && data) {
+      setMessages(data.map(m => ({
+        id: m.id,
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+        createdAt: new Date(m.created_at),
+      })));
+    }
+  };
+
+  const checkUsage = async () => {
+    if (!user) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ checkUsage: true }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsage(data);
+      }
+    } catch (error) {
+      console.error('Error checking usage:', error);
+    }
+  };
+
+  const createConversation = async (domain?: string): Promise<string | null> => {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('ai_assistant_conversations')
+      .insert({
+        user_id: user.id,
+        domain: domain || null,
+        title: 'New Conversation',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error('Failed to create conversation');
+      return null;
+    }
+
+    const newConv: AIConversation = {
+      id: data.id,
+      title: data.title || 'New Conversation',
+      domain: data.domain || undefined,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+    };
+
+    setConversations(prev => [newConv, ...prev]);
+    setCurrentConversation(newConv);
+    setMessages([]);
+    return data.id;
+  };
+
+  const selectConversation = async (conversation: AIConversation) => {
+    setCurrentConversation(conversation);
+    setSelectedDomain(conversation.domain || null);
+    await loadMessages(conversation.id);
+  };
+
+  const sendMessage = async (content: string) => {
+    if (!user || !content.trim()) return;
+
+    // Check usage first
+    if (usage && !usage.canUse && !usage.isUnlimited) {
+      toast.error(`Usage limit reached (${usage.minutesUsed}/${usage.minutesLimit} minutes). Please upgrade your plan.`);
+      return;
+    }
+
+    let conversationId = currentConversation?.id;
+    
+    // Create new conversation if needed
+    if (!conversationId) {
+      conversationId = await createConversation(selectedDomain || undefined);
+      if (!conversationId) return;
+    }
+
+    // Add user message to UI immediately
+    const userMessage: AIMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Save user message to database
+    await supabase.from('ai_assistant_messages').insert({
+      conversation_id: conversationId,
+      role: 'user',
+      content,
+    });
+
+    // Prepare messages for API
+    const apiMessages = [...messages, userMessage].map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    setIsLoading(true);
+    setIsStreaming(true);
+
+    // Create assistant message placeholder
+    const assistantId = crypto.randomUUID();
+    let assistantContent = '';
+
+    setMessages(prev => [...prev, {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      createdAt: new Date(),
+    }]);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      abortControllerRef.current = new AbortController();
+
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          messages: apiMessages,
+          conversationId,
+          domain: selectedDomain,
+        }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.upgradeRequired) {
+          toast.error(`Usage limit reached. Please upgrade to continue.`);
+          setUsage(prev => prev ? { ...prev, canUse: false } : null);
+        } else {
+          toast.error(errorData.error || 'Failed to get response');
+        }
+        // Remove empty assistant message
+        setMessages(prev => prev.filter(m => m.id !== assistantId));
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              assistantContent += delta;
+              setMessages(prev => prev.map(m => 
+                m.id === assistantId 
+                  ? { ...m, content: assistantContent }
+                  : m
+              ));
+            }
+          } catch {
+            // Incomplete JSON, wait for more data
+            buffer = line + '\n' + buffer;
+            break;
+          }
+        }
+      }
+
+      // Save assistant message to database
+      if (assistantContent) {
+        await supabase.from('ai_assistant_messages').insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: assistantContent,
+        });
+
+        // Update conversation title if it's the first message
+        if (messages.length === 0) {
+          const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
+          await supabase
+            .from('ai_assistant_conversations')
+            .update({ title, updated_at: new Date().toISOString() })
+            .eq('id', conversationId);
+          
+          setConversations(prev => prev.map(c => 
+            c.id === conversationId ? { ...c, title } : c
+          ));
+          setCurrentConversation(prev => prev ? { ...prev, title } : null);
+        }
+      }
+
+      // Refresh usage
+      await checkUsage();
+
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        console.log('Request aborted');
+      } else {
+        console.error('AI Assistant error:', error);
+        toast.error('Failed to get response');
+      }
+      // Remove empty assistant message on error
+      if (!assistantContent) {
+        setMessages(prev => prev.filter(m => m.id !== assistantId));
+      }
+    } finally {
+      setIsLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const stopStreaming = useCallback(() => {
+    abortControllerRef.current?.abort();
+  }, []);
+
+  const deleteConversation = async (conversationId: string) => {
+    const { error } = await supabase
+      .from('ai_assistant_conversations')
+      .delete()
+      .eq('id', conversationId);
+
+    if (!error) {
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+      if (currentConversation?.id === conversationId) {
+        setCurrentConversation(null);
+        setMessages([]);
+      }
+    }
+  };
+
+  const clearCurrentConversation = () => {
+    setCurrentConversation(null);
+    setMessages([]);
+  };
+
+  return {
+    conversations,
+    currentConversation,
+    messages,
+    isLoading,
+    isStreaming,
+    usage,
+    selectedDomain,
+    setSelectedDomain,
+    loadConversations,
+    createConversation,
+    selectConversation,
+    sendMessage,
+    stopStreaming,
+    deleteConversation,
+    clearCurrentConversation,
+    checkUsage,
+  };
+}
