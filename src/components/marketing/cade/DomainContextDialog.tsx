@@ -263,8 +263,12 @@ export function DomainContextDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 gap-0 bg-background border-border overflow-hidden">
+    <Dialog open={open} onOpenChange={autoFilling ? undefined : onOpenChange}>
+      <DialogContent 
+        className="max-w-4xl h-[85vh] flex flex-col p-0 gap-0 bg-background border-border overflow-hidden"
+        onInteractOutside={autoFilling ? (e) => e.preventDefault() : undefined}
+        onEscapeKeyDown={autoFilling ? (e) => e.preventDefault() : undefined}
+      >
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -314,14 +318,15 @@ export function DomainContextDialog({
         </DialogHeader>
 
 
-        {/* Auto-filling Overlay */}
+        {/* Auto-filling Overlay - Fully covers dialog content with solid background */}
         <AnimatePresence>
           {autoFilling && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center"
+              className="absolute inset-0 z-[100] bg-background flex items-center justify-center rounded-lg"
+              style={{ isolation: 'isolate' }}
             >
               <motion.div className="text-center">
                 <div className="relative w-24 h-24 mx-auto mb-6">
@@ -332,8 +337,11 @@ export function DomainContextDialog({
                   </div>
                 </div>
                 <h3 className="text-xl font-bold mb-2">Analyzing Website...</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground max-w-xs mx-auto">
                   Crawling {domain} and extracting business information
+                </p>
+                <p className="text-xs text-muted-foreground/60 mt-4">
+                  This may take up to 30 seconds...
                 </p>
               </motion.div>
             </motion.div>
