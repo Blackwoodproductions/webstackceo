@@ -219,39 +219,84 @@ const Navbar = () => {
       return;
     }
 
+    const isAllowedMessageOrigin = (origin: string) => {
+      try {
+        const { hostname } = new URL(origin);
+        return (
+          origin === window.location.origin ||
+          hostname === window.location.hostname ||
+          hostname.endsWith("lovable.app") ||
+          hostname.endsWith("lovableproject.com")
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    const finishLogin = async () => {
+      // Wait a moment for session to propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      setUser(session.user);
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (profileData) setUserProfile(profileData);
+
+      window.location.href = '/visitor-intelligence-dashboard';
+    };
+
+    let pollInterval: number | null = null;
+
+    const cleanup = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      window.removeEventListener('message', onMessage);
+    };
+
+    const onMessage = (event: MessageEvent) => {
+      if (!isAllowedMessageOrigin(event.origin)) return;
+      if (!event.data || event.data.type !== 'supabase_auth_callback') return;
+
+      cleanup();
+      try {
+        popup.close();
+      } catch {}
+      void finishLogin();
+    };
+
+    window.addEventListener('message', onMessage);
+
     // Poll for popup closure and check for session
-    const pollInterval = setInterval(async () => {
+    pollInterval = window.setInterval(() => {
       try {
         if (popup.closed) {
-          clearInterval(pollInterval);
-          
-          // Wait a moment for session to propagate
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Check if we got a session
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setUser(session.user);
-            
-            // Fetch profile
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('avatar_url, full_name')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            if (profileData) {
-              setUserProfile(profileData);
-            }
-            
-            // Navigate to dashboard
-            window.location.href = '/visitor-intelligence-dashboard';
-          }
+          cleanup();
+          void finishLogin();
         }
       } catch {
         // Ignore cross-origin errors while popup is on Google's domain
       }
     }, 500);
+
+    // Hard timeout to avoid an orphaned popup if something blocks window.close
+    window.setTimeout(() => {
+      if (popup.closed) return;
+      cleanup();
+      try {
+        popup.close();
+      } catch {}
+      void finishLogin();
+    }, 20000);
   };
 
   // next-themes can be undefined on first client render; avoid flicker.

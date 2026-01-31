@@ -26,34 +26,50 @@ const AuthCallback = () => {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
 
   useEffect(() => {
-    const handleCallback = async () => {
-      console.log("[AuthCallback] Processing OAuth callback...");
-      
-      // Check if we're in a popup first
-      const isPopup = window.opener && window.opener !== window;
-      
-      // The hash contains the tokens - we need to let Supabase process it
-      // by calling getSession which will parse the URL hash
-      const { data: { session }, error } = await supabase.auth.getSession();
+    let cancelled = false;
+    const isPopup = window.opener && window.opener !== window;
 
-      if (error) {
-        console.error("[AuthCallback] Error getting session:", error);
-        setStatus('error');
-        if (isPopup) {
-          try {
-            window.opener.postMessage({ type: 'supabase_auth_callback', success: false }, window.location.origin);
-          } catch (e) {}
-          setTimeout(() => window.close(), 500);
-        } else {
-          setTimeout(() => navigate('/auth'), 1500);
+    // Safety net: if the callback flow hangs (e.g., popup message not delivered),
+    // close the popup / redirect after a short grace period.
+    const fallback = window.setTimeout(() => {
+      if (cancelled) return;
+      if (isPopup) {
+        try {
+          window.close();
+        } catch {
+          // If we can't close, at least show success UI by flipping state.
+          setStatus('success');
         }
-        return;
+      } else {
+        navigate('/', { replace: true });
       }
+    }, 12000);
 
-      // CRITICAL: The provider_token is only available right now during the callback
-      // We must capture and store it immediately
-      if (session?.provider_token) {
-        console.log("[AuthCallback] Captured provider_token, storing for all services...");
+    const handleCallback = async () => {
+      try {
+        console.log("[AuthCallback] Processing OAuth callback...");
+
+        // The hash contains the tokens - we need to let the auth client process it.
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("[AuthCallback] Error getting session:", error);
+          setStatus('error');
+          if (isPopup) {
+            try {
+              window.opener?.postMessage({ type: 'supabase_auth_callback', success: false }, "*");
+            } catch {}
+            setTimeout(() => window.close(), 500);
+          } else {
+            setTimeout(() => navigate('/auth', { replace: true }), 1500);
+          }
+          return;
+        }
+
+        // CRITICAL: The provider_token is only available right now during the callback
+        // We must capture and store it immediately
+        if (session?.provider_token) {
+          console.log("[AuthCallback] Captured provider_token, storing for all services...");
         
         const expiryTime = Date.now() + 3600 * 1000; // 1 hour
         const expiryStr = expiryTime.toString();
@@ -110,51 +126,71 @@ const AuthCallback = () => {
           }
         })();
         
-        console.log("[AuthCallback] All tokens stored successfully");
-      } else {
-        console.warn("[AuthCallback] No provider_token available in session");
-      }
-
-      setStatus('success');
-
-      if (isPopup) {
-        // Notify parent window that auth is complete with token info
-        try {
-          window.opener.postMessage({ 
-            type: 'supabase_auth_callback', 
-            success: !!session,
-            hasProviderToken: !!session?.provider_token,
-          }, window.location.origin);
-        } catch (e) {
-          console.error("[AuthCallback] Failed to post message to opener:", e);
-        }
-        // Close the popup after a short delay to ensure message is sent
-        setTimeout(() => {
-          try {
-            window.close();
-          } catch (e) {
-            // If close fails, show message
-            console.log("[AuthCallback] Could not auto-close popup, please close manually");
-          }
-        }, 100);
-      } else {
-        // Not a popup - dispatch event and redirect to dashboard immediately
-        if (session) {
-          window.dispatchEvent(new CustomEvent('google-auth-synced', {
-            detail: { 
-              access_token: session.provider_token, 
-              expiry: Date.now() + 3600 * 1000 
-            }
-          }));
-          // Use replace to avoid back-button issues
-          navigate('/visitor-intelligence-dashboard', { replace: true });
+          console.log("[AuthCallback] All tokens stored successfully");
         } else {
-          navigate('/auth', { replace: true });
+          console.warn("[AuthCallback] No provider_token available in session");
+        }
+
+        setStatus('success');
+
+        if (isPopup) {
+          // Notify parent window that auth is complete with token info
+          try {
+            window.opener?.postMessage({
+              type: 'supabase_auth_callback',
+              success: !!session,
+              hasProviderToken: !!session?.provider_token,
+            }, "*");
+          } catch (e) {
+            console.error("[AuthCallback] Failed to post message to opener:", e);
+          }
+          // Close the popup after a short delay to ensure message is sent
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch {
+              console.log("[AuthCallback] Could not auto-close popup, please close manually");
+            }
+          }, 100);
+        } else {
+          // Not a popup - dispatch event and redirect to dashboard immediately
+          if (session) {
+            window.dispatchEvent(new CustomEvent('google-auth-synced', {
+              detail: {
+                access_token: session.provider_token,
+                expiry: Date.now() + 3600 * 1000
+              }
+            }));
+            // Use replace to avoid back-button issues
+            navigate('/visitor-intelligence-dashboard', { replace: true });
+          } else {
+            navigate('/auth', { replace: true });
+          }
+        }
+      } catch (e) {
+        console.error("[AuthCallback] Callback processing failed:", e);
+        if (cancelled) return;
+        setStatus('error');
+
+        if (isPopup) {
+          try {
+            window.opener?.postMessage({ type: 'supabase_auth_callback', success: false }, "*");
+          } catch {}
+          setTimeout(() => window.close(), 500);
+        } else {
+          setTimeout(() => navigate('/auth', { replace: true }), 1500);
         }
       }
     };
 
-    handleCallback();
+    void handleCallback().finally(() => {
+      window.clearTimeout(fallback);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallback);
+    };
   }, [navigate]);
 
   return (
