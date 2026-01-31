@@ -124,13 +124,22 @@ export function useUserDomains(_isSuperAdmin: boolean = false): UseUserDomainsRe
   ): Promise<UserDomain | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user) {
+        toast.error('You must be signed in to add a domain');
+        return null;
+      }
 
       const normalizedDomain = normalizeDomain(domain);
       
-      // Check if already exists
+      if (!normalizedDomain) {
+        toast.error('Please enter a valid domain');
+        return null;
+      }
+      
+      // Check if already exists in local state
       const existing = domains.find(d => normalizeDomain(d.domain) === normalizedDomain);
       if (existing) {
+        toast.info('This domain is already in your list');
         return existing;
       }
 
@@ -149,14 +158,27 @@ export function useUserDomains(_isSuperAdmin: boolean = false): UseUserDomainsRe
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useUserDomains] Insert error:', error);
+        // Check for specific error types
+        if (error.code === '23505') {
+          toast.error('This domain already exists');
+        } else if (error.code === '42501') {
+          toast.error('Permission denied. Please try signing in again.');
+        } else {
+          toast.error(`Failed to add domain: ${error.message}`);
+        }
+        return null;
+      }
 
       const newDomain = data as UserDomain;
       setDomains(prev => [...prev, newDomain]);
       
       return newDomain;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('[useUserDomains] Error adding domain:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to add domain: ${message}`);
       return null;
     }
   }, [domains]);
