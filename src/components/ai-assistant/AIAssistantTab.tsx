@@ -500,7 +500,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
 
   return (
     <TooltipProvider>
-      {/* Floating AI Button - Bottom Position with Ultra Futuristic Design */}
+      {/* Floating AI Button - Left side below the shield */}
       <AnimatePresence>
         {!isOpen && (
           <motion.div
@@ -508,7 +508,8 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50"
+            className="fixed left-6 z-50 hidden lg:block"
+            style={{ top: '85%' }}
           >
             <motion.button
               whileHover={{ scale: 1.02 }}
