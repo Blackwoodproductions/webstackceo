@@ -180,8 +180,14 @@ export const CADEVaultIntegration = memo(function CADEVaultIntegration({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30">
-            <Archive className="w-5 h-5 text-amber-400" />
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-600/20 flex items-center justify-center border-2 border-amber-500/50 shadow-lg shadow-amber-500/20 relative overflow-hidden">
+            {/* Safe door effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-amber-400/10 to-transparent" />
+            <div className="absolute top-1 left-1 right-1 h-0.5 bg-amber-400/30 rounded-full" />
+            <div className="relative flex flex-col items-center">
+              <Archive className="w-7 h-7 text-amber-400" />
+              <div className="w-2 h-2 rounded-full bg-amber-500 mt-0.5 shadow-sm shadow-amber-400/50" />
+            </div>
           </div>
           <div>
             <h3 className="font-semibold text-foreground">SEO Vault</h3>
