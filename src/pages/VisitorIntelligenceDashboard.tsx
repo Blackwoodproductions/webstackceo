@@ -1905,13 +1905,6 @@ const MarketingDashboard = () => {
           {/* Corner accent - static */}
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 via-violet-500/5 to-transparent rounded-bl-[50px] pointer-events-none" />
         
-          {/* Tabs (shared component) */}
-          <VIDashboardTabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            variant="compact"
-          />
-        
         {/* Row 1: Logo and User Controls */}
         <div className="relative z-10 px-8 py-3 flex items-center justify-between">
           {/* Left: Logo */}
@@ -2010,12 +2003,21 @@ const MarketingDashboard = () => {
           </div>
         </div>
         
-        {/* Row 2: Domain Selector - Integrated into header */}
+        {/* Row 2: Domain Selector & Tabs - Integrated into header */}
         <div
-          className="relative z-[200] px-8 py-2 flex items-center justify-between border-t border-border/50 bg-card/90 backdrop-blur-xl shadow-sm"
+          className="relative z-[200] px-8 py-2 flex items-center justify-between bg-card/95 backdrop-blur-xl"
         >
-          {/* Left: Domain Selector & Time Range */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Dashboard Tabs - Left side */}
+          <div className="flex items-center gap-4">
+            <VIDashboardTabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              variant="compact"
+            />
+          </div>
+          
+          {/* Center: Domain Selector & Time Range */}
+          <div className="flex items-center gap-3">
             {/* Domain Selector with Search */}
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-cyan-500/10">
