@@ -325,19 +325,6 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 {tab.label}
               </motion.span>
 
-              {/* Premium indicator dot for highlighted tabs */}
-              {isHighlighted && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
-                  style={{
-                    background: `linear-gradient(135deg, rgba(${color.rgb}, 0.8), rgba(${color.rgb}, 0.4))`,
-                    boxShadow: `0 0 8px rgba(${color.rgb}, 0.6)`,
-                  }}
-                />
-              )}
-
               {/* Active tab bottom cover */}
               {isActive && (
                 <motion.span
