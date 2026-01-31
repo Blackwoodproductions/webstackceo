@@ -91,7 +91,7 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed top-0 left-0 right-0 z-[180] bg-gradient-to-r from-primary via-cyan-600 to-violet-600 text-white shadow-lg"
+          className="fixed top-[64px] left-0 right-0 z-40 bg-gradient-to-r from-primary via-cyan-600 to-violet-600 text-white shadow-lg"
         >
           <div className="container mx-auto px-4 py-2">
             <div className="flex items-center justify-between gap-4">
