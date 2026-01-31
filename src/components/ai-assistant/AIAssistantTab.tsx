@@ -1,6 +1,6 @@
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, ChevronDown, Shield, Cpu } from 'lucide-react';
+import { Bot, X, Maximize2, Minimize2, Send, Plus, Trash2, MessageSquare, Sparkles, Clock, AlertCircle, Globe, Shield, Cpu, Mic, MicOff, Volume2, VolumeX, Zap, Brain, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,8 +16,64 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useVoiceRecognition, useTextToSpeech } from '@/hooks/use-voice-recognition';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Futuristic animated background orb
+const AIOrb = memo(function AIOrb({ isActive }: { isActive: boolean }) {
+  return (
+    <div className="relative w-12 h-12">
+      {/* Outer glow rings */}
+      <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/30 to-violet-500/30 blur-lg transition-all duration-700 ${isActive ? 'scale-150 opacity-100' : 'scale-100 opacity-50'}`} />
+      <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-violet-500/20 to-cyan-500/20 blur-md transition-all duration-500 ${isActive ? 'scale-125 animate-pulse' : 'scale-100'}`} />
+      
+      {/* Core orb */}
+      <div className="absolute inset-1 rounded-full bg-gradient-to-br from-violet-600 via-cyan-500 to-violet-600 animate-gradient-slow flex items-center justify-center shadow-lg shadow-cyan-500/30">
+        <Brain className="w-5 h-5 text-white drop-shadow-lg" />
+      </div>
+      
+      {/* Active indicator rings */}
+      {isActive && (
+        <>
+          <div className="absolute inset-0 rounded-full border-2 border-cyan-400/50 animate-ping" />
+          <div className="absolute inset-0 rounded-full border border-violet-400/30 animate-pulse" style={{ animationDelay: '0.5s' }} />
+        </>
+      )}
+    </div>
+  );
+});
+
+// Voice activity indicator
+const VoiceWaveform = memo(function VoiceWaveform({ isActive }: { isActive: boolean }) {
+  if (!isActive) return null;
+  return (
+    <div className="flex items-center gap-0.5 h-4">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="w-0.5 bg-gradient-to-t from-cyan-400 to-violet-400 rounded-full animate-voice-wave"
+          style={{
+            animationDelay: `${i * 0.1}s`,
+            height: isActive ? '100%' : '20%',
+          }}
+        />
+      ))}
+    </div>
+  );
+});
+
 // Message component
-const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { message: AIMessage; isStreaming?: boolean }) {
+const ChatMessage = memo(function ChatMessage({ 
+  message, 
+  isStreaming,
+  onSpeak,
+  isSpeaking 
+}: { 
+  message: AIMessage; 
+  isStreaming?: boolean;
+  onSpeak?: (text: string) => void;
+  isSpeaking?: boolean;
+}) {
   const isUser = message.role === 'user';
   
   // Simple markdown-like rendering
@@ -33,7 +89,7 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { messag
       if (i % 3 === 2) {
         // Code block content
         elements.push(
-          <pre key={i} className="bg-muted p-3 rounded-lg overflow-x-auto text-xs my-2">
+          <pre key={i} className="bg-background/80 border border-border/50 p-3 rounded-lg overflow-x-auto text-xs my-2 backdrop-blur-sm">
             <code>{part}</code>
           </pre>
         );
@@ -43,17 +99,17 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { messag
           .split('\n')
           .map((line, j) => {
             // Headers
-            if (line.startsWith('### ')) return <h4 key={j} className="font-semibold mt-3 mb-1">{line.slice(4)}</h4>;
-            if (line.startsWith('## ')) return <h3 key={j} className="font-bold mt-4 mb-2">{line.slice(3)}</h3>;
+            if (line.startsWith('### ')) return <h4 key={j} className="font-semibold mt-3 mb-1 text-cyan-300">{line.slice(4)}</h4>;
+            if (line.startsWith('## ')) return <h3 key={j} className="font-bold mt-4 mb-2 text-violet-300">{line.slice(3)}</h3>;
             if (line.startsWith('# ')) return <h2 key={j} className="font-bold text-lg mt-4 mb-2">{line.slice(2)}</h2>;
             // Lists
-            if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="ml-4">{line.slice(2)}</li>;
-            if (/^\d+\. /.test(line)) return <li key={j} className="ml-4 list-decimal">{line.replace(/^\d+\. /, '')}</li>;
+            if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} className="ml-4 text-foreground/80">{line.slice(2)}</li>;
+            if (/^\d+\. /.test(line)) return <li key={j} className="ml-4 list-decimal text-foreground/80">{line.replace(/^\d+\. /, '')}</li>;
             // Bold and italic
             const processed = line
-              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground">$1</strong>')
               .replace(/\*(.+?)\*/g, '<em>$1</em>')
-              .replace(/`(.+?)`/g, '<code class="bg-muted px-1 rounded text-xs">$1</code>');
+              .replace(/`(.+?)`/g, '<code class="bg-cyan-500/10 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">$1</code>');
             return line ? <p key={j} className="mb-1" dangerouslySetInnerHTML={{ __html: processed }} /> : <br key={j} />;
           });
         elements.push(<div key={i}>{formatted}</div>);
@@ -65,24 +121,44 @@ const ChatMessage = memo(function ChatMessage({ message, isStreaming }: { messag
   
   return (
     <div className={cn(
-      "flex gap-3 p-4",
-      isUser ? "bg-muted/30" : "bg-background"
+      "flex gap-3 p-4 group transition-colors",
+      isUser ? "bg-gradient-to-r from-primary/5 to-transparent" : "bg-gradient-to-r from-cyan-500/5 via-transparent to-violet-500/5"
     )}>
       <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-        isUser ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-violet-500 to-cyan-500"
+        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:scale-105",
+        isUser 
+          ? "bg-gradient-to-br from-primary to-primary/80 shadow-primary/20" 
+          : "bg-gradient-to-br from-violet-500 via-cyan-500 to-violet-600 shadow-cyan-500/20"
       )}>
         {isUser ? (
-          <span className="text-sm font-medium">U</span>
+          <span className="text-sm font-bold text-primary-foreground">U</span>
         ) : (
-          <Bot className="w-4 h-4 text-white" />
+          <Brain className="w-4 h-4 text-white" />
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium mb-1">
-          {isUser ? 'You' : 'Webstack.ceo AI'}
+        <div className="flex items-center gap-2 mb-1">
+          <span className={cn(
+            "text-sm font-semibold",
+            isUser ? "text-foreground" : "bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent"
+          )}>
+            {isUser ? 'You' : 'Webstack AI'}
+          </span>
+          {!isUser && onSpeak && message.content && (
+            <button
+              onClick={() => onSpeak(message.content)}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted/50"
+              title={isSpeaking ? "Stop speaking" : "Read aloud"}
+            >
+              {isSpeaking ? (
+                <VolumeX className="w-3.5 h-3.5 text-cyan-400" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5 text-muted-foreground hover:text-cyan-400" />
+              )}
+            </button>
+          )}
         </div>
-        <div className="text-sm text-foreground/90">
+        <div className="text-sm text-foreground/85 leading-relaxed">
           {renderContent(message.content)}
         </div>
       </div>
@@ -176,6 +252,7 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [showHistory, setShowHistory] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -200,12 +277,56 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     clearCurrentConversation,
   } = useAIAssistant();
 
+  // Voice recognition
+  const handleVoiceTranscript = useCallback((transcript: string, isFinal: boolean) => {
+    if (isFinal && transcript.trim()) {
+      setInputValue(transcript);
+    } else {
+      setInputValue(transcript);
+    }
+  }, []);
+
+  const { 
+    isListening, 
+    isSupported: voiceSupported, 
+    toggleListening, 
+    transcript 
+  } = useVoiceRecognition({
+    onTranscript: handleVoiceTranscript,
+    continuous: false,
+  });
+
+  // Text-to-speech
+  const { isSpeaking, isSupported: ttsSupported, speak, stop: stopSpeaking } = useTextToSpeech();
+
+  const handleSpeak = useCallback((text: string, messageId?: string) => {
+    if (isSpeaking) {
+      stopSpeaking();
+      setSpeakingMessageId(null);
+    } else {
+      // Clean markdown from text for speech
+      const cleanText = text
+        .replace(/[#*`_~\[\]()]/g, '')
+        .replace(/\n+/g, '. ')
+        .slice(0, 2000); // Limit length
+      speak(cleanText);
+      setSpeakingMessageId(messageId || null);
+    }
+  }, [isSpeaking, speak, stopSpeaking]);
+
+  // Stop speaking when component unmounts or message changes
+  useEffect(() => {
+    if (!isSpeaking) {
+      setSpeakingMessageId(null);
+    }
+  }, [isSpeaking]);
+
   // Get current model info
   const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
 
   // Dispatch event when panel opens/closes so dashboard can adjust layout
   useEffect(() => {
-    const width = isOpen ? (isExpanded ? 600 : 380) : 0;
+    const width = isOpen ? (isExpanded ? 600 : 420) : 0;
     window.dispatchEvent(new CustomEvent('ai-assistant-state', { 
       detail: { isOpen, width } 
     }));
@@ -223,6 +344,18 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
     }
   }, [isOpen]);
 
+  // Send voice transcript when listening stops
+  useEffect(() => {
+    if (!isListening && transcript.trim() && !isLoading) {
+      // Small delay to allow user to see the transcript
+      const timer = setTimeout(() => {
+        sendMessage(transcript);
+        setInputValue('');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isListening, transcript, isLoading, sendMessage]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
@@ -237,8 +370,8 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
   if (!user) return null;
 
   return (
-    <>
-      {/* Floating Tab Button */}
+    <TooltipProvider>
+      {/* Floating Tab Button - Modernized */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -246,61 +379,86 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -100, opacity: 0 }}
             onClick={() => setIsOpen(true)}
-            className="fixed left-0 top-24 z-50 flex items-center gap-2 bg-gradient-to-r from-violet-600 to-cyan-500 text-white px-3 py-3 rounded-r-xl shadow-lg hover:shadow-xl transition-all group"
+            className="fixed left-0 top-24 z-50 flex items-center gap-2 bg-gradient-to-r from-violet-600 via-cyan-500 to-violet-600 bg-[length:200%_100%] animate-gradient-slow text-white px-4 py-3 rounded-r-2xl shadow-lg shadow-cyan-500/20 hover:shadow-xl hover:shadow-cyan-500/30 transition-all group border border-white/10"
           >
-            <Bot className="w-5 h-5" />
+            <div className="relative">
+              <Brain className="w-5 h-5" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            </div>
             <span className="max-w-0 overflow-hidden group-hover:max-w-[100px] transition-all duration-300 whitespace-nowrap text-sm font-medium">
               AI Assistant
             </span>
-            <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Zap className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-amber-300" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Chat Panel */}
+      {/* Chat Panel - Futuristic Design */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ x: -400, opacity: 0 }}
+            initial={{ x: -450, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -400, opacity: 0 }}
+            exit={{ x: -450, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={cn(
-              "fixed left-0 top-0 z-50 h-screen bg-background/95 backdrop-blur-xl border-r border-border/50 shadow-2xl flex flex-col",
-              isExpanded ? "w-[600px]" : "w-[380px]"
+              "fixed left-0 top-0 z-50 h-screen bg-gradient-to-b from-background via-background to-background/95 backdrop-blur-xl border-r border-cyan-500/20 shadow-2xl shadow-cyan-500/10 flex flex-col overflow-hidden",
+              isExpanded ? "w-[600px]" : "w-[420px]"
             )}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/50 bg-gradient-to-r from-violet-500/10 to-cyan-500/10">
+            {/* Decorative glow effect */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-cyan-500/5 via-violet-500/5 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-violet-500/5 to-transparent pointer-events-none" />
+            
+            {/* Header - Enhanced */}
+            <div className="relative flex items-center justify-between p-4 border-b border-border/30 bg-gradient-to-r from-violet-500/10 via-cyan-500/5 to-violet-500/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
+                <AIOrb isActive={isLoading || isStreaming || isListening} />
                 <div>
-                  <h2 className="font-semibold text-sm">Webstack.ceo AI</h2>
-                  <p className="text-xs text-muted-foreground">SEO Assistant & Troubleshooter</p>
+                  <h2 className="font-bold text-sm bg-gradient-to-r from-foreground via-cyan-300 to-foreground bg-clip-text">Webstack AI</h2>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">SEO Intelligence</p>
+                    {isListening && (
+                      <span className="flex items-center gap-1 text-xs text-cyan-400">
+                        <Radio className="w-3 h-3 animate-pulse" />
+                        Listening...
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowHistory(!showHistory)}
-                  className={cn(showHistory && "bg-muted")}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowHistory(!showHistory)}
+                      className={cn("hover:bg-cyan-500/10", showHistory && "bg-cyan-500/10 text-cyan-400")}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Chat History</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="hover:bg-cyan-500/10"
+                    >
+                      {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{isExpanded ? 'Minimize' : 'Expand'}</TooltipContent>
+                </Tooltip>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsOpen(false)}
+                  className="hover:bg-destructive/10 hover:text-destructive"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -401,34 +559,37 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 relative">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center mb-4">
-                        <Sparkles className="w-8 h-8 text-primary" />
+                      <div className="relative mb-6">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500/20 via-cyan-500/20 to-violet-500/20 flex items-center justify-center">
+                          <Brain className="w-10 h-10 text-cyan-400" />
+                        </div>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-violet-500/20 blur-xl animate-pulse" />
                       </div>
-                      <h3 className="font-semibold mb-2">How can I help you today?</h3>
-                      <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                        I can assist with keyword research, domain onboarding, SEO troubleshooting, and more.
+                      <h3 className="font-bold mb-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">What can I help with?</h3>
+                      <p className="text-sm text-muted-foreground mb-6 max-w-[250px]">
+                        Keyword research, competitor analysis, or SEO troubleshooting.
                       </p>
-                      <div className="grid gap-2 w-full max-w-xs">
+                      <div className="grid gap-2 w-full max-w-[280px]">
                         {[
-                          "Research keywords for my domain",
-                          "Help me set up Google Search Console",
-                          "Why isn't my site ranking?",
-                          "Analyze my competitor's SEO",
+                          { text: "🔍 Research keywords", full: "Research keywords for my domain" },
+                          { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy" },
+                          { text: "🚀 Improve rankings", full: "How can I improve my search rankings?" },
+                          { text: "🔗 Find backlink opportunities", full: "Find backlink partner opportunities for my site" },
                         ].map((suggestion, i) => (
                           <Button
                             key={i}
                             variant="outline"
                             size="sm"
-                            className="justify-start text-left h-auto py-2 px-3"
+                            className="justify-start text-left h-auto py-2.5 px-3 bg-gradient-to-r from-muted/30 to-transparent border-border/50 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all"
                             onClick={() => {
-                              setInputValue(suggestion);
+                              setInputValue(suggestion.full);
                               inputRef.current?.focus();
                             }}
                           >
-                            {suggestion}
+                            {suggestion.text}
                           </Button>
                         ))}
                       </div>
@@ -440,6 +601,8 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                           key={msg.id} 
                           message={msg} 
                           isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+                          onSpeak={(text) => handleSpeak(text, msg.id)}
+                          isSpeaking={isSpeaking && speakingMessageId === msg.id}
                         />
                       ))}
                       <div ref={messagesEndRef} />
@@ -455,26 +618,77 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                   </div>
                 )}
 
-                {/* Input */}
-                <form onSubmit={handleSubmit} className="p-4 border-t border-border/50">
-                  <div className="flex gap-2">
+                {/* Enhanced Input with Voice */}
+                <form onSubmit={handleSubmit} className="p-4 border-t border-border/30 bg-gradient-to-r from-transparent via-muted/20 to-transparent">
+                  {/* Voice indicator */}
+                  {isListening && (
+                    <div className="flex items-center justify-center gap-2 mb-3 text-sm text-cyan-400">
+                      <VoiceWaveform isActive={isListening} />
+                      <span>Listening... speak now</span>
+                      <VoiceWaveform isActive={isListening} />
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-2 items-center">
+                    {/* Voice Input Button */}
+                    {voiceSupported && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant={isListening ? "default" : "outline"}
+                            size="icon"
+                            onClick={toggleListening}
+                            disabled={isLoading || isStreaming}
+                            className={cn(
+                              "shrink-0 transition-all",
+                              isListening 
+                                ? "bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-lg shadow-cyan-500/30 animate-pulse" 
+                                : "hover:border-cyan-500/50 hover:bg-cyan-500/10"
+                            )}
+                          >
+                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{isListening ? 'Stop listening' : 'Voice input'}</TooltipContent>
+                      </Tooltip>
+                    )}
+                    
                     <Input
                       ref={inputRef}
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
-                      placeholder="Ask about keywords, SEO, troubleshooting..."
-                      disabled={isLoading || (usage && !usage.canUse && !usage.isUnlimited)}
-                      className="flex-1"
+                      placeholder={isListening ? "Listening..." : "Ask me anything..."}
+                      disabled={isLoading || isListening || (usage && !usage.canUse && !usage.isUnlimited)}
+                      className="flex-1 bg-background/50 border-border/50 focus:border-cyan-500/50 focus:ring-cyan-500/20"
                     />
+                    
                     {isStreaming ? (
-                      <Button type="button" variant="destructive" onClick={stopStreaming}>
-                        Stop
+                      <Button 
+                        type="button" 
+                        variant="destructive" 
+                        size="icon"
+                        onClick={stopStreaming}
+                        className="shrink-0"
+                      >
+                        <X className="w-4 h-4" />
                       </Button>
                     ) : (
-                      <Button type="submit" disabled={!inputValue.trim() || isLoading}>
+                      <Button 
+                        type="submit" 
+                        size="icon"
+                        disabled={!inputValue.trim() || isLoading}
+                        className="shrink-0 bg-gradient-to-r from-cyan-500 to-violet-500 hover:opacity-90 shadow-lg shadow-cyan-500/20"
+                      >
                         <Send className="w-4 h-4" />
                       </Button>
                     )}
+                  </div>
+                  
+                  {/* Voice/TTS status */}
+                  <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+                    {voiceSupported && <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> Voice ready</span>}
+                    {ttsSupported && <span className="flex items-center gap-1"><Volume2 className="w-3 h-3" /> Audio ready</span>}
                   </div>
                 </form>
               </div>
@@ -490,12 +704,12 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsOpen(false)}
           />
         )}
       </AnimatePresence>
-    </>
+    </TooltipProvider>
   );
 });
 

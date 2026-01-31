@@ -202,6 +202,32 @@ const SEO_TOOLS = [
         required: ["user_domain", "competitors"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "find_backlink_partners",
+      description: "Find potential backlink partner opportunities by analyzing competitor backlinks and identifying high-authority sites in the same niche. Use this when users ask about link building, backlink opportunities, or want to find sites to reach out to.",
+      parameters: {
+        type: "object",
+        properties: {
+          domain: {
+            type: "string",
+            description: "The user's domain to find backlink partners for"
+          },
+          competitor_domains: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of competitor domains to analyze for backlink sources (optional)"
+          },
+          niche: {
+            type: "string",
+            description: "The niche/industry to focus on (e.g., 'dentist', 'plumber', 'saas')"
+          }
+        },
+        required: ["domain"]
+      }
+    }
   }
 ];
 
@@ -497,6 +523,9 @@ async function executeToolCalls(toolCalls: any[], supabase: any, userId: string,
           break;
         case "save_competitors":
           results.push(await saveCompetitors(supabase, userId, parsedArgs.user_domain, parsedArgs.competitors));
+          break;
+        case "find_backlink_partners":
+          results.push(await findBacklinkPartners(parsedArgs.domain, parsedArgs.competitor_domains, parsedArgs.niche));
           break;
         default:
           results.push({ error: `Unknown tool: ${name}` });
@@ -930,6 +959,73 @@ async function saveCompetitors(supabase: any, userId: string, userDomain: string
   }
 }
 
+// Find backlink partner opportunities using Ahrefs API
+async function findBacklinkPartners(domain: string, competitorDomains?: string[], niche?: string): Promise<any> {
+  const ahrefsApiKey = Deno.env.get("AHREFS_API_KEY");
+  
+  if (!ahrefsApiKey) {
+    return {
+      domain,
+      message: "Backlink partner discovery requires Ahrefs API. Here are general recommendations:",
+      strategies: [
+        "Guest posting on industry blogs",
+        "HARO (Help a Reporter Out) submissions",
+        "Broken link building",
+        "Resource page outreach",
+        "Local business directories",
+        "Industry association websites"
+      ],
+      niche_specific: niche ? `Focus on ${niche}-related publications and forums` : null
+    };
+  }
+
+  try {
+    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get referring domains for the user's domain
+    const params = new URLSearchParams({
+      target: cleanDomain,
+      date: today,
+      mode: 'domain',
+      limit: '50',
+      select: 'domain_rating,domain,backlinks',
+      order_by: 'domain_rating:desc'
+    });
+
+    const response = await fetch(`https://api.ahrefs.com/v3/site-explorer/refdomains?${params.toString()}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${ahrefsApiKey}`, 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ahrefs API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const existingPartners = (data.refdomains || []).map((d: any) => ({
+      domain: d.domain,
+      dr: d.domain_rating,
+      backlinks: d.backlinks
+    }));
+
+    return {
+      domain: cleanDomain,
+      existing_partners: existingPartners.slice(0, 20),
+      total_referring_domains: data.stats?.refdomains || existingPartners.length,
+      opportunities: [
+        "Analyze competitor backlinks for untapped sources",
+        "Find industry directories and resource pages",
+        "Reach out to sites linking to competitors but not you"
+      ],
+      message: `Found ${existingPartners.length} existing link partners. Focus outreach on DR 30+ sites in your niche.`
+    };
+  } catch (error) {
+    console.error("Backlink partners error:", error);
+    return { error: "Failed to fetch backlink data", message: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
 async function getUserUsage(supabase: any, userId: string): Promise<number> {
   const weekStart = getWeekStart();
   const { data } = await supabase
@@ -1063,115 +1159,59 @@ async function getUserDomainContext(supabase: any, userId: string, selectedDomai
 }
 
 function buildSystemPrompt(domainContext: any, userEmail?: string): string {
-  let prompt = `You are Webstack.ceo AI Assistant - an expert SEO consultant, growth strategist, and business advisor. You **control the conversation flow** to help clients achieve their goals efficiently.
+  let prompt = `You are Webstack AI - a friendly, expert SEO assistant. Be concise and action-oriented.
 
-## PERSONALITY & APPROACH:
-- Be warm, confident, and proactively helpful - like a senior consultant who knows exactly what to do
-- **Take the lead** - don't wait for users to know what they need
-- Ask clarifying questions ONE AT A TIME to keep focus
-- After gathering context, create action plans and execute immediately using your tools
-- Celebrate wins and provide encouragement throughout
+## STYLE GUIDE:
+- Keep responses SHORT (2-4 sentences for simple questions)
+- Use bullet points for lists, not paragraphs
+- Skip pleasantries after the first message
+- Get to the point quickly
+- Use emojis sparingly: 🎯 for goals, ✅ for wins, 💡 for tips
 
-## CONVERSATION CONTROL PROTOCOL:
+## DOMAIN PROTOCOL:
+- If a domain is selected (shown below), use it automatically
+- Only ask to confirm if changing domains
+- Say: "Using **[domain]**" then proceed with the task
 
-### When User Asks for Keyword Research:
-1. **ALWAYS check the domain selector first** - if a domain is selected (shown in context below), confirm it:
-   - "I see you have **[domain]** selected. Should I research keywords for this domain, or would you like to analyze a different one?"
-2. Wait for confirmation before running any keyword tools
-3. If they confirm, proceed with analysis; if they want another domain, ask for it
+## QUICK RESPONSES:
+- For simple questions: Answer directly, no preamble
+- For data requests: Use tools immediately, show results
+- For complex tasks: Brief plan (3 bullets max), then execute
 
-### First Message from User:
-1. Greet them warmly by name if available
-2. If a domain is already selected, acknowledge it: "I'm focused on **[domain]** - let me know if you'd like to switch."
-3. Ask ONE focused question to understand their primary goal:
-   - "What's the #1 thing you want to achieve with your website right now?"
-   - Options: More traffic, better rankings, beat competitors, generate leads, increase sales
+## TOOLS (use liberally):
+- **get_keyword_suggestions**: Related keywords for any seed term
+- **get_keyword_metrics**: Volume/CPC for specific keywords  
+- **get_competitor_keywords**: What competitors rank for (Ahrefs)
+- **get_backlinks**: Domain's backlink profile
+- **get_serp_report**: SERP rankings overview
+- **save_competitors**: Save competitor domains to track
 
-### Discovery Flow (ask one at a time):
-1. **Goal**: What's your primary objective?
-2. **Domain**: If not selected, ask: "What's your website URL?"
-3. **Competitors**: Who are your top 2-3 competitors?
-4. **Timeline**: What's your urgency level?
+## BACKLINK PARTNER DISCOVERY:
+When asked about backlink opportunities:
+1. Use get_backlinks to analyze current link profile
+2. Use get_competitor_keywords to find competitor's linking sites
+3. Suggest high-authority sites in the same niche
+4. Recommend outreach strategies
 
-### After Discovery:
-- Immediately run analysis using your tools
-- Present findings in a clear, actionable format
-- Propose a specific action plan with next steps
-- Ask: "Ready to get started on this?"
+## FORMAT:
+- Tables for metrics/comparisons
+- Bold for key numbers
+- One clear CTA per response
 
-## YOUR CAPABILITIES:
-
-### 1. **Keyword Research & Suggestions** (POWERED BY DATAFORSEO LABS)
-- Use **get_keyword_suggestions** for related keywords and long-tail opportunities
-- Use **get_keyword_metrics** for specific keywords the user provides
-
-### 2. **Competitor Analysis** (POWERED BY AHREFS)
-- Use **get_competitor_keywords** to analyze what keywords competitors rank for
-- Identify gap opportunities and quick wins
-
-### 3. **Competitor Tracking** (CADE INTEGRATION)
-- Use **save_competitors** to save competitor domains for ongoing tracking
-- Always offer to save after competitors are mentioned
-
-### 4. **Domain Analysis** (POWERED BY BRON SEO)
-- Check tracked keywords and SERP rankings
-- Get backlink information (inbound and outbound)
-- Review domain authority and traffic metrics
-
-### 5. **Onboarding & Troubleshooting**
-- Guide users through setup and Google services connection
-- Diagnose SEO issues and indexation problems
-
-## RESPONSE FORMAT:
-- Use markdown formatting for clarity
-- Use tables for data (keywords, metrics, comparisons)
-- Use ✅ ❌ 🎯 💡 emojis to highlight key points
-- Keep responses concise but comprehensive
-- Always end with a clear next step or question
-
-## IMPORTANT RULES:
-- **ALWAYS USE TOOLS** for data - never fabricate metrics
-- **BE PROACTIVE** - suggest actions, don't just wait
-- **STAY FOCUSED** - one topic at a time, guide the conversation
-- **SHOW VALUE** - highlight opportunities and wins
-- If user seems confused, simplify and re-focus
-
-Current user: ${userEmail || 'Anonymous'}
+User: ${userEmail || 'Anonymous'}
 `;
 
-  if (domainContext.domains && domainContext.domains.length > 0) {
-    prompt += `\n\n**User's Connected Domains:**\n`;
-    domainContext.domains.forEach((d: any) => {
-      prompt += `- ${d.domain} (${d.verification_status})\n`;
-    });
-  }
-
-  if (domainContext.gscData && domainContext.gscData.length > 0) {
-    prompt += `\n\n**Recent Keyword Data (from Google Search Console):**\n`;
-    domainContext.gscData.slice(0, 15).forEach((k: any) => {
-      prompt += `- "${k.keyword}": Position ${k.google_position || 'N/A'}, Volume: ${k.search_volume || 'N/A'}\n`;
-    });
+  if (domainContext.domains?.length > 0) {
+    prompt += `\n**Connected Domains:** ${domainContext.domains.map((d: any) => d.domain).join(', ')}\n`;
   }
 
   if (domainContext.auditData) {
-    const audit = domainContext.auditData;
-    prompt += `\n\n**Domain Audit Summary:**
-- Domain Rating: ${audit.domain_rating || 'N/A'}
-- Organic Traffic: ${audit.organic_traffic || 'N/A'}
-- Backlinks: ${audit.backlinks || 'N/A'}
-- Referring Domains: ${audit.referring_domains || 'N/A'}
-`;
+    const a = domainContext.auditData;
+    prompt += `\n**Current Domain:** DR ${a.domain_rating || '?'} | Traffic: ${a.organic_traffic || '?'} | Backlinks: ${a.backlinks || '?'}\n`;
   }
 
-  if (domainContext.domainContext) {
-    const ctx = domainContext.domainContext;
-    prompt += `\n\n**Business Context:**
-- Business: ${ctx.business_name || 'N/A'}
-- Primary Keyword: ${ctx.primary_keyword || 'N/A'}
-- Services: ${ctx.services_offered?.join(', ') || 'N/A'}
-- Service Areas: ${ctx.service_areas?.join(', ') || 'N/A'}
-- Known Competitors: ${ctx.competitors || 'None saved yet'}
-`;
+  if (domainContext.domainContext?.competitors) {
+    prompt += `\n**Known Competitors:** ${domainContext.domainContext.competitors}\n`;
   }
 
   return prompt;
