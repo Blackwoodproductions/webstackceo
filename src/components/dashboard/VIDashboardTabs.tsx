@@ -246,8 +246,8 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               }}
               className={`group relative flex flex-row items-center justify-center ${
                 isCompact 
-                  ? 'min-w-[80px] py-1.5 px-3 gap-2' 
-                  : 'min-w-[100px] py-2 px-4 gap-2'
+                  ? 'min-w-[90px] py-2.5 px-4 gap-2' 
+                  : 'min-w-[110px] py-3 px-5 gap-2'
               } rounded-t-xl border border-b-0 backdrop-blur-xl transition-all duration-300 ${
                 isActive 
                   ? `${color.border} ${color.bg} shadow-lg` 
@@ -297,7 +297,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 className={`relative z-10 flex items-center justify-center ${
-                  isCompact ? 'w-6 h-6' : 'w-7 h-7'
+                  isCompact ? 'w-7 h-7' : 'w-8 h-8'
                 } rounded-lg transition-all duration-300 ${
                   isActive 
                     ? color.iconBg 
@@ -309,7 +309,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
                     : 'none',
                 }}
               >
-                <Icon className={`${isCompact ? 'w-3.5 h-3.5' : 'w-4 h-4'} transition-colors duration-300 ${
+                <Icon className={`${isCompact ? 'w-4 h-4' : 'w-4.5 h-4.5'} transition-colors duration-300 ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`} />
               </motion.div>
@@ -317,7 +317,7 @@ export const VIDashboardTabs = memo(function VIDashboardTabs({
               {/* Label with elegant typography */}
               <motion.span 
                 className={`relative z-10 ${
-                  isCompact ? 'text-[10px]' : 'text-[11px]'
+                  isCompact ? 'text-[11px]' : 'text-xs'
                 } font-semibold tracking-wide transition-colors duration-300 whitespace-nowrap ${
                   isActive ? color.text : `text-muted-foreground ${color.textHover}`
                 }`}
