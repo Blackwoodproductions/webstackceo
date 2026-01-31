@@ -120,6 +120,49 @@ const SEO_TOOLS = [
         required: ["domain"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_competitor_keywords",
+      description: "Get organic keywords that a competitor domain ranks for using Ahrefs. Use this to analyze competitor SEO strategy and find keyword opportunities.",
+      parameters: {
+        type: "object",
+        properties: {
+          domain: {
+            type: "string",
+            description: "The competitor domain to analyze (e.g., competitor.com)"
+          },
+          limit: {
+            type: "integer",
+            description: "Maximum number of keywords to return (default 50, max 100)"
+          }
+        },
+        required: ["domain"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_competitors",
+      description: "Save competitor domains to the user's CADE domain context. Use this after the user mentions their competitors during keyword research. Always ask users about competitors when doing keyword research.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_domain: {
+            type: "string",
+            description: "The user's own domain to save competitors for"
+          },
+          competitors: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of competitor domains to save (e.g., ['competitor1.com', 'competitor2.com'])"
+          }
+        },
+        required: ["user_domain", "competitors"]
+      }
+    }
   }
 ];
 
@@ -233,7 +276,7 @@ serve(async (req) => {
         console.log("Tool calls detected:", assistantMessage.tool_calls.length);
         
         // Execute tool calls
-        const toolResults = await executeToolCalls(assistantMessage.tool_calls);
+        const toolResults = await executeToolCalls(assistantMessage.tool_calls, supabase, user.id);
         
         // Build messages with tool results
         const messagesWithTools = [
@@ -335,7 +378,7 @@ serve(async (req) => {
 });
 
 // Execute SEO tool calls
-async function executeToolCalls(toolCalls: any[]): Promise<any[]> {
+async function executeToolCalls(toolCalls: any[], supabase: any, userId: string): Promise<any[]> {
   const results = [];
   
   for (const toolCall of toolCalls) {
@@ -366,6 +409,12 @@ async function executeToolCalls(toolCalls: any[]): Promise<any[]> {
           break;
         case "get_backlinks":
           results.push(await getBacklinks(parsedArgs.domain, parsedArgs.type || "inbound"));
+          break;
+        case "get_competitor_keywords":
+          results.push(await getCompetitorKeywords(parsedArgs.domain, parsedArgs.limit || 50));
+          break;
+        case "save_competitors":
+          results.push(await saveCompetitors(supabase, userId, parsedArgs.user_domain, parsedArgs.competitors));
           break;
         default:
           results.push({ error: `Unknown tool: ${name}` });
@@ -647,6 +696,158 @@ async function getBacklinks(domain: string, type: string): Promise<any> {
   }
 }
 
+// Get competitor keywords using Ahrefs API
+async function getCompetitorKeywords(domain: string, limit: number = 50): Promise<any> {
+  const ahrefsApiKey = Deno.env.get('AHREFS_API_KEY');
+  
+  if (!ahrefsApiKey) {
+    console.log("Ahrefs API not configured");
+    return {
+      error: "Ahrefs API not configured",
+      message: "Competitor keyword analysis requires Ahrefs API credentials."
+    };
+  }
+  
+  try {
+    // Clean domain format
+    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
+    console.log(`Fetching Ahrefs organic keywords for: ${cleanDomain}`);
+    
+    const params = new URLSearchParams({
+      target: cleanDomain,
+      country: 'us',
+      date: today,
+      mode: 'domain',
+      limit: String(Math.min(limit, 100)),
+      select: 'keyword,volume,keyword_difficulty,cpc,best_position,sum_traffic',
+      order_by: 'sum_traffic:desc'
+    });
+    
+    const response = await fetch(`https://api.ahrefs.com/v3/site-explorer/organic-keywords?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${ahrefsApiKey}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Ahrefs API error:", response.status, errorText);
+      
+      if (response.status === 401) {
+        return { error: "Ahrefs API authentication failed. Please check API key." };
+      }
+      if (response.status === 403) {
+        return { error: "Ahrefs API access denied. Check subscription and permissions." };
+      }
+      
+      throw new Error(`Ahrefs API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const keywords = (data.keywords || []).map((kw: any) => ({
+      keyword: kw.keyword,
+      search_volume: kw.volume || 0,
+      keyword_difficulty: kw.keyword_difficulty || null,
+      cpc: kw.cpc || 0,
+      position: kw.best_position || null,
+      traffic: kw.sum_traffic || 0
+    }));
+
+    return {
+      competitor_domain: cleanDomain,
+      keywords: keywords,
+      total: keywords.length,
+      message: `Found ${keywords.length} organic keywords for competitor ${cleanDomain}`
+    };
+  } catch (error) {
+    console.error("Ahrefs competitor keywords error:", error);
+    return { 
+      error: "Failed to fetch competitor keywords",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    };
+  }
+}
+
+// Save competitors to CADE domain_contexts
+async function saveCompetitors(supabase: any, userId: string, userDomain: string, competitors: string[]): Promise<any> {
+  try {
+    // Clean domain
+    const cleanDomain = userDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    
+    // Format competitors as comma-separated string
+    const competitorsStr = competitors.map(c => 
+      c.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
+    ).join(', ');
+    
+    console.log(`Saving competitors for ${cleanDomain}: ${competitorsStr}`);
+    
+    // Check if domain context exists
+    const { data: existing } = await supabase
+      .from('domain_contexts')
+      .select('id, competitors')
+      .eq('domain', cleanDomain)
+      .eq('user_id', userId)
+      .single();
+    
+    if (existing) {
+      // Merge with existing competitors
+      const existingCompetitors = existing.competitors || '';
+      const allCompetitors = new Set([
+        ...existingCompetitors.split(',').map((c: string) => c.trim()).filter(Boolean),
+        ...competitorsStr.split(',').map(c => c.trim()).filter(Boolean)
+      ]);
+      const mergedCompetitors = Array.from(allCompetitors).join(', ');
+      
+      const { error } = await supabase
+        .from('domain_contexts')
+        .update({ 
+          competitors: mergedCompetitors,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id);
+      
+      if (error) throw error;
+      
+      return {
+        success: true,
+        domain: cleanDomain,
+        competitors: mergedCompetitors,
+        message: `Updated competitors for ${cleanDomain}: ${mergedCompetitors}`
+      };
+    } else {
+      // Create new domain context with competitors
+      const { error } = await supabase
+        .from('domain_contexts')
+        .insert({
+          user_id: userId,
+          domain: cleanDomain,
+          competitors: competitorsStr
+        });
+      
+      if (error) throw error;
+      
+      return {
+        success: true,
+        domain: cleanDomain,
+        competitors: competitorsStr,
+        message: `Saved competitors for ${cleanDomain}: ${competitorsStr}`
+      };
+    }
+  } catch (error) {
+    console.error("Save competitors error:", error);
+    return { 
+      error: "Failed to save competitors",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    };
+  }
+}
+
 async function getUserUsage(supabase: any, userId: string): Promise<number> {
   const weekStart = getWeekStart();
   const { data } = await supabase
@@ -780,37 +981,48 @@ async function getUserDomainContext(supabase: any, userId: string, selectedDomai
 }
 
 function buildSystemPrompt(domainContext: any, userEmail?: string): string {
-  let prompt = `You are Webstack.ceo AI Assistant - an expert SEO consultant, keyword researcher, and website troubleshooter. You have access to REAL SEO data tools powered by DataForSEO and can perform actual keyword research with live data.
+  let prompt = `You are Webstack.ceo AI Assistant - an expert SEO consultant, keyword researcher, and website troubleshooter. You have access to REAL SEO data tools powered by DataForSEO, Ahrefs, and BRON SEO.
 
 ## Your Capabilities:
 
 ### 1. **Keyword Research & Suggestions** (POWERED BY DATAFORSEO LABS)
 - Use **get_keyword_suggestions** to find related keywords, long-tail variations, and new opportunities from a seed keyword
 - Each suggestion includes: search volume, CPC, competition level, and keyword difficulty
-- Great for: content planning, finding low-competition opportunities, expanding keyword lists
-- Use **get_keyword_metrics** to get detailed data for specific keywords the user provides
+- Use **get_keyword_metrics** for specific keywords the user provides
 
-### 2. **Domain Analysis** (POWERED BY BRON SEO)
+### 2. **Competitor Analysis** (POWERED BY AHREFS)
+- Use **get_competitor_keywords** to analyze what keywords competitors rank for
+- Discover keyword opportunities by seeing what's working for competitors
+- **IMPORTANT**: Always ask users about their competitors during keyword research!
+
+### 3. **Competitor Tracking** (CADE INTEGRATION)
+- Use **save_competitors** to save competitor domains to the user's profile
+- This helps with ongoing competitive analysis and content optimization
+- **ALWAYS** offer to save competitors after the user mentions them
+
+### 4. **Domain Analysis** (POWERED BY BRON SEO)
 - Check tracked keywords and SERP rankings for connected domains
 - Get backlink information (inbound and outbound links)
 - Review domain authority and traffic metrics
 
-### 3. **Domain Onboarding**
+### 5. **Domain Onboarding & Troubleshooting**
 - Guide users through setting up domains, connecting Google services
-- Help configure SEO tools and tracking
-
-### 4. **Troubleshooting**
 - Diagnose website issues, SEO problems, indexation issues
-- Provide technical recommendations
+
+## CRITICAL WORKFLOW FOR KEYWORD RESEARCH:
+1. **Always ask about competitors first!** Say something like: "To give you the best keyword recommendations, who are your main competitors? I can analyze their organic keywords to find opportunities."
+2. If user provides competitors:
+   - Use **get_competitor_keywords** to analyze their rankings
+   - Offer to **save_competitors** to their CADE profile for ongoing tracking
+   - Use **get_keyword_suggestions** to expand on the most promising competitor keywords
+3. Use the data to provide actionable recommendations
 
 ## Guidelines:
 - **ALWAYS USE TOOLS** for keyword research - never make up data
-- Use get_keyword_suggestions when users want to discover new keywords around a topic
-- Use get_keyword_metrics when users provide specific keywords they want analyzed
+- **ALWAYS ASK ABOUT COMPETITORS** when doing keyword research
 - Format keyword data in clear markdown tables when presenting results
-- Include keyword difficulty, search volume, and CPC in your analysis
-- Provide actionable recommendations based on the data
 - Highlight low-competition, high-volume opportunities
+- Compare user's domain against competitor data when available
 
 Current user: ${userEmail || 'Anonymous'}
 `;
@@ -846,6 +1058,7 @@ Current user: ${userEmail || 'Anonymous'}
 - Primary Keyword: ${ctx.primary_keyword || 'N/A'}
 - Services: ${ctx.services_offered?.join(', ') || 'N/A'}
 - Service Areas: ${ctx.service_areas?.join(', ') || 'N/A'}
+- Known Competitors: ${ctx.competitors || 'None saved yet'}
 `;
   }
 
