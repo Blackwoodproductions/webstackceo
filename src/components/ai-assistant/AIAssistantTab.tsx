@@ -723,7 +723,21 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setShowHistory(!showHistory)}
+                      onClick={() => {
+                        // If there's an active conversation with messages, go back to it
+                        if (currentConversation && messages.length > 0) {
+                          setShowHistory(false);
+                          setShowVault(false);
+                        } else if (conversations.length > 0 && !currentConversation) {
+                          // If no active conversation but history exists, select the most recent one
+                          selectConversation(conversations[0]);
+                          setShowHistory(false);
+                          setShowVault(false);
+                        } else {
+                          // Otherwise toggle history view
+                          setShowHistory(!showHistory);
+                        }
+                      }}
                       className={cn("hover:bg-cyan-500/10", showHistory && "bg-cyan-500/10 text-cyan-400")}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -1116,36 +1130,60 @@ export const AIAssistantTab = memo(function AIAssistantTab() {
                         <p className="text-xs text-muted-foreground mb-3 max-w-[240px] relative z-10">
                           Keyword research, competitor analysis, or SEO troubleshooting.
                         </p>
-                        <div className="grid gap-1.5 w-full max-w-[280px] relative z-10">
+                        <div className="grid gap-2 w-full max-w-[300px] relative z-10">
                           {[
-                            { text: "🔍 Research keywords", full: "Research keywords for my domain" },
-                            { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy" },
-                            { text: "🚀 Improve rankings", full: "How can I improve my search rankings?" },
-                            { text: "🔗 Find backlinks", full: "Find backlink partner opportunities for my site" },
+                            { text: "🔍 Research keywords", full: "Research keywords for my domain", cost: 2, discount: 0 },
+                            { text: "📊 Analyze competitors", full: "Analyze my competitor's SEO strategy", cost: 3, discount: 25 },
+                            { text: "🚀 Improve rankings", full: "How can I improve my search rankings?", cost: 2, discount: 0 },
+                            { text: "🔗 Find backlinks", full: "Find backlink partner opportunities for my site", cost: 4, discount: 50 },
                           ].map((suggestion, i) => (
                             <motion.div
                               key={i}
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.05 + i * 0.05 }}
-                              whileHover={{ scale: 1.02, x: 3 }}
-                              whileTap={{ scale: 0.98 }}
+                              whileHover={{ scale: 1.01 }}
+                              whileTap={{ scale: 0.99 }}
+                              className="relative"
                             >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full justify-start text-left h-auto py-2 px-3 text-xs relative overflow-hidden group
-                                  bg-gradient-to-r from-slate-900/80 to-slate-800/50 
-                                  border-cyan-500/20 hover:border-cyan-400/50
-                                  hover:shadow-[0_0_15px_rgba(6,182,212,0.25)] transition-all duration-200"
-                                onClick={() => {
-                                  setInputValue(suggestion.full);
-                                  inputRef.current?.focus();
-                                }}
-                              >
-                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <span className="relative z-10">{suggestion.text}</span>
-                              </Button>
+                              <div className="flex items-center gap-2 p-2 rounded-lg bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-cyan-500/20 hover:border-cyan-400/40 transition-all group">
+                                {/* Main action text */}
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-xs text-foreground/90 truncate block">{suggestion.text}</span>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className={cn(
+                                      "text-[10px]",
+                                      suggestion.discount > 0 ? "line-through text-muted-foreground/50" : "text-amber-400"
+                                    )}>
+                                      ~{suggestion.cost} min
+                                    </span>
+                                    {suggestion.discount > 0 && (
+                                      <>
+                                        <span className="text-[10px] text-emerald-400 font-semibold">
+                                          ~{Math.ceil(suggestion.cost * (1 - suggestion.discount / 100))} min
+                                        </span>
+                                        <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
+                                          -{suggestion.discount}%
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Run button */}
+                                <Button
+                                  size="sm"
+                                  className="h-7 px-3 text-[10px] font-semibold shrink-0 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all"
+                                  onClick={() => {
+                                    sendMessage(suggestion.full);
+                                  }}
+                                  disabled={isLoading || isStreaming}
+                                >
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  Run
+                                </Button>
+                              </div>
+                              {/* Accent bar on hover */}
+                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-violet-500 to-fuchsia-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-l" />
                             </motion.div>
                           ))}
                         </div>
