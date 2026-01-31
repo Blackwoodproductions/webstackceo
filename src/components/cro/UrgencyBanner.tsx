@@ -107,68 +107,142 @@ export const UrgencyBanner = memo(function UrgencyBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed top-[64px] left-0 right-0 z-40 bg-gradient-to-r from-primary via-cyan-600 to-violet-600 text-white shadow-lg"
+          className="fixed top-[64px] left-0 right-0 z-40"
         >
-          <div className="container mx-auto px-4 py-2">
-            <div className="flex items-center justify-between gap-4">
-              {/* Left: Offer text */}
-              <div className="flex items-center gap-3">
-                <Flame className="w-5 h-5 text-amber-300 animate-pulse" />
-                <span className="font-semibold text-sm sm:text-base">
-                  🔥 Flash Sale: <span className="text-amber-300">{discount}% OFF</span> all plans today only!
-                </span>
-              </div>
-              
-              {/* Center: Countdown & Spots */}
-              <div className="hidden md:flex items-center gap-6">
-                {/* Countdown */}
-                {showCountdown && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">Ends in:</span>
-                    <div className="flex items-center gap-1 font-mono font-bold">
-                      <span className="bg-white/20 px-2 py-0.5 rounded">
-                        {formatTime(timeLeft.hours)}
-                      </span>
-                      <span>:</span>
-                      <span className="bg-white/20 px-2 py-0.5 rounded">
-                        {formatTime(timeLeft.minutes)}
-                      </span>
-                      <span>:</span>
-                      <span className="bg-white/20 px-2 py-0.5 rounded">
-                        {formatTime(timeLeft.seconds)}
-                      </span>
-                    </div>
+          {/* Futuristic glassmorphism container */}
+          <div className="relative overflow-hidden">
+            {/* Multi-layer gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-violet-500/15 to-primary/10" />
+            
+            {/* Animated scanning line */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+              style={{ width: '50%' }}
+            />
+            
+            {/* Top highlight border */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+            
+            {/* Bottom glow border */}
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-400/40 to-transparent" />
+            
+            {/* Content */}
+            <div className="relative container mx-auto px-6 py-3">
+              <div className="flex items-center justify-between gap-6">
+                {/* Left: Offer text with futuristic styling */}
+                <div className="flex items-center gap-4">
+                  {/* Animated icon container */}
+                  <div className="relative">
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-500/20 border border-amber-400/40 flex items-center justify-center backdrop-blur-sm shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+                    >
+                      <Flame className="w-5 h-5 text-amber-400" />
+                    </motion.div>
+                    {/* Pulse ring */}
+                    <motion.div
+                      animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="absolute inset-0 rounded-xl border border-amber-400/50"
+                    />
                   </div>
-                )}
-                
-                {/* Spots left */}
-                {showSpots && (
-                  <div className="flex items-center gap-2 text-amber-200">
-                    <Users className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      Only <span className="font-bold">{spotsLeft}</span> spots left!
+                  
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-cyan-400/80 font-medium">
+                      Limited Time Offer
+                    </span>
+                    <span className="font-bold text-sm sm:text-base text-white">
+                      Flash Sale: <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 bg-clip-text text-transparent">{discount}% OFF</span> all plans
                     </span>
                   </div>
-                )}
-              </div>
-              
-              {/* Right: CTA & Close */}
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleClaim}
-                  size="sm"
-                  className="bg-white text-primary hover:bg-white/90 font-bold shadow-lg"
-                >
-                  <Zap className="w-4 h-4 mr-1" />
-                  Claim Offer
-                </Button>
-                <button
-                  onClick={handleDismiss}
-                  className="p-1 hover:bg-white/20 rounded-full transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                </div>
+                
+                {/* Center: Countdown & Spots - High-tech display */}
+                <div className="hidden md:flex items-center gap-8">
+                  {/* Countdown - Digital display style */}
+                  {showCountdown && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-muted-foreground/80">
+                        <Clock className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs uppercase tracking-wider">Ends in</span>
+                      </div>
+                      <div className="flex items-center gap-1 font-mono">
+                        <div className="relative">
+                          <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-cyan-500/30 rounded-lg px-3 py-1.5 shadow-[0_0_15px_rgba(6,182,212,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]">
+                            <span className="text-lg font-bold bg-gradient-to-b from-white to-cyan-100 bg-clip-text text-transparent">
+                              {formatTime(timeLeft.hours)}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-cyan-400 font-bold text-lg animate-pulse">:</span>
+                        <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-cyan-500/30 rounded-lg px-3 py-1.5 shadow-[0_0_15px_rgba(6,182,212,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]">
+                          <span className="text-lg font-bold bg-gradient-to-b from-white to-cyan-100 bg-clip-text text-transparent">
+                            {formatTime(timeLeft.minutes)}
+                          </span>
+                        </div>
+                        <span className="text-cyan-400 font-bold text-lg animate-pulse">:</span>
+                        <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-cyan-500/30 rounded-lg px-3 py-1.5 shadow-[0_0_15px_rgba(6,182,212,0.2),inset_0_1px_0_rgba(255,255,255,0.05)]">
+                          <span className="text-lg font-bold bg-gradient-to-b from-white to-cyan-100 bg-clip-text text-transparent">
+                            {formatTime(timeLeft.seconds)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Divider */}
+                  <div className="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+                  
+                  {/* Spots left - Scarcity indicator */}
+                  {showSpots && (
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/30 to-purple-600/20 border border-violet-400/40 flex items-center justify-center">
+                          <Users className="w-4 h-4 text-violet-400" />
+                        </div>
+                        {/* Active indicator */}
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-wider text-violet-400/80">Availability</span>
+                        <span className="text-sm font-semibold text-white">
+                          Only <span className="text-amber-400 font-bold">{spotsLeft}</span> spots left
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Right: CTA & Close - Premium button design */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleClaim}
+                    size="sm"
+                    className="relative group overflow-hidden bg-gradient-to-r from-cyan-500 via-primary to-violet-500 hover:from-cyan-400 hover:via-primary hover:to-violet-400 text-white font-bold shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] border-0 px-5 py-2 transition-all duration-300"
+                  >
+                    {/* Button shine effect */}
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                    />
+                    <span className="relative flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      <span>Claim Offer</span>
+                    </span>
+                  </Button>
+                  
+                  <button
+                    onClick={handleDismiss}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-200"
+                  >
+                    <X className="w-4 h-4 text-white/60 hover:text-white" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
